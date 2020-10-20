@@ -1,0 +1,44 @@
+ 
+    
+    data {
+    int Ndays; // number of days
+    vector [Ndays] light; // relativized to max value; unitless
+    vector [Ndays] GPP; // estimates from posterior probability distributions; g O2 m-2 d-1
+    vector [Ndays] GPP_sd; // sd estimates from posterior probability distributions; g O2 m-2 d-1
+    vector [Ndays] tQ; // standardized discharge; unitless
+    }
+    
+    parameters {
+    // Growth & Loss Parameters
+    real l_pred_GPP [Ndays]; // predicted GPP; g O2 m-2 d-1
+    real<lower=0, upper=1> phi; // autoregressive coefficient; unitless
+    real<lower=0> alpha; // growth term; g O2 m-2 d-1
+    real beta; // discharge to loss conversion term; g O2 m-2 d-1
+    
+    // Error parameters
+    real<lower=0> sig_p; // sigma processes error
+    }
+    
+    model {
+    // Initial value
+    l_pred_GPP[1] ~ normal(log(GPP[1]), 0.01);
+    
+    // Process model
+    for (j in 2:(Ndays)) {
+    l_pred_GPP[j] ~ normal(phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], log(sig_p));
+    }
+    
+    // Observation model
+    GPP ~ normal(exp(l_pred_GPP), GPP_sd);
+    
+    // Error priors
+    sig_p ~ normal(0,2);
+    
+    // Param priors (weakly informative)  
+    phi ~ beta(1,1);
+    alpha ~ normal(0,5);
+    beta ~ normal(0,5);
+    
+    
+    }
+    
