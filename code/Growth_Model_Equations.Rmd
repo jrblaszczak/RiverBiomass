@@ -25,7 +25,7 @@ where input data includes $L$ which is daily light at time $t$ relativized to th
 G_{mod,t} = e^{(G_{pred, t})}
 \end{equation}
 
-
+blah
 
 
 #### 2. Latent biomass logistic growth
