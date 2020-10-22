@@ -1,21 +1,64 @@
 ---
-title: "Productivity Model 2: Logistic Growth Model"
-author: "JRB/ROH"
-date: "April 2020"
+title: "Productivity Model Structures"
+author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
 output: html_document
 ---
 
-#### 1. Growth Model Component
+Each model used to estimate productivity dynamics in rivers through time consists of three components: (1) a growth model component, (2) a disturbance model component, and (3) the stochastic version of the full model which accounts for process and observation error.
 
-We can model stream autotrophic population growth through time by treating biomass as a latent variable and modeling its dynamics using a logistic growth model:
+We selected a subset of three river metabolism time series from 356 rivers with daily estimates of metabolism generated using the streamMetabolizer package in R by the US Geological Survey Powell Center (Appling et al. 2018a,b). Daily metabolism estimates were generated using a hierarchical state-space inverse modeling approach with partial-pooling of piece-wise $K_{600}$ relationships with mean daily discharge ($Q$) to reduce issues of equifinality and uncertainty (Appling et al. 2018). Daily metabolism and gas exchange estimates were generated from sub-daily time series of dissolved oxygen (units: $mg$ $L^{-1}$), light (photosynthetic photon flux density (PPFD); units: $\mu mol$ $m^{-2}$ $s^{-1}$), water temperature ($^\circ$ C), and reach averaged depth (m). A Bayesian Markov chain Monte Carlo (MCMC) fitting procedure was used to determine the mean and standard deviation of the posterior probability distributions of daily gross primary productivity (GPP; $g$ $O_{2}$ $m^{-2}$ $d^{-1}$),  ecosystem respiration (ER; $g$ $O_{2}$ $m^{-2}$ $d^{-1}$), and gas exchange ($K_{600}$; $d^{-1}$). In this study, we treat the mean and standard deviation of the daily GPP estimates from each river as "data" in the stochastic models described below.
 
-\begin{equation}
-B_{t} = B_{t-1} + r_{max}B_{t-1}(1-\frac{B_{t-1}}{K})
+
+
+### Growth models
+
+#### 1. Linear growth
+We estimated parameters $\phi$ and $\alpha$ without incorporation of latent biomass dynamics using a linear model:
+
+\begin{equation} 
+G_{pred,t} = \phi G_{pred,(t-\triangle t)} + \alpha L_{t}
 \end{equation}
 
-where $B_{t}$ is biomass, $K$ is the carrying capacity, and $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance.
+where input data includes $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1). Estimated parameters include $G_{pred,t}$ which is the predicted daily GPP (g $O_2$ $m^{-2}$ $d^{-1}$) at time $t$ (in days) on a natural log scale, $\phi$ which is the estimated autoregressive parameter (unitless; 0<$\phi$<1), and $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$). We estimate the parameters by fitting the linear growth model to the previously modeled mean daily GPP time series (g $O_2$ $m^{-2}$ $d^{-1}$):
 
-#### 2. Disturbance Model Component
+\begin{equation} 
+G_{mod,t} = e^{(G_{pred, t})}
+\end{equation}
+
+
+
+
+#### 2. Latent biomass logistic growth
+We modeled stream autotrophic population growth through time by treating biomass as a latent variable and modeling its dynamics using a logistic growth model:
+
+\begin{equation}
+    B_{t} = B_{(t-\triangle t)} e^{r_{max}B_{(t-\triangle t)}(1-\frac{B_{(t-\triangle t)}}{K})}
+\end{equation}
+
+
+where estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, $K$ which is the estimated carrying capacity of a river, and $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance. We fit the latent biomass equation to the input variable mean daily GPP time series:
+
+\begin{equation}
+    G_{t} = \alpha L_{t} e^{B_{t}}
+\end{equation}
+
+\noindent where $G_{t}$ is gross primary productivity estimates from the metabolism model component (Fig. 4A), $\alpha$ is a light use efficiency parameter, $L_{t}$ is daily light at the channel surface, and $\varepsilon_{G}$ is a random variable representing observation error normally distributed around 0 with standard deviation $\sigma_o$ truncated at zero.
+
+
+
+
+
+#### 3. Latent biomass thin film growth (density independent growth, density dependent death)
+
+
+
+
+
+
+
+
+
+### Disturbance model
 
 We lack sufficient geomorphic information to estimate the critical discharge of stream bed disturbance for each river in this study and expect to lack the necessary data as well for future analyses in more broadly spatially distributed rivers. The discharge threshold at which benthic autorophic biomass is removed can be different than that needed to move the bed. Therefore, we incorporate the effects of disturbance by modeling the persistence ($P$) of biomass using a complementary log-log link function of the form:
 \begin{equation}
@@ -38,7 +81,8 @@ Now expand to the full model:
 B_t = P_t (B_{t-1} + r_{max}B_{t-1}(1-\frac{B_{t-1}}{K})-\beta_r) + \beta_r
 \end{equation}
 
-#### 3. Stochastic model
+
+### Stochastic model
 We fit the stochastic version of full model which accounts for process and observation error. For each model, we fit latent biomass ($B_{t}$) to daily GPP estimates which we treat as "observed data". We set the observation error ($\sigma_{G}$) to the standard deviation of the posterior probability distribution of the GPP estimates from the original streamMetabolizer output. We multiply $B_t$ by the daily light data (photosynthetic photon flux density (PPFD)) relativized to the annual maximum 0 and 1 ($L_t$) to account for instantaneous responses of autotrophic biomass photosynthesic rates to daily changes in light. Process error ($\sigma_{p}$), $r_{max}$, $\beta_r$, and $K$ have weakly informative priors based on a truncated (half) normal distribution:
 
 \begin{equation}
@@ -68,304 +112,4 @@ K \sim N(> 0, 0, 30)
 
 
 Notes: When $\alpha$ was included in the model and multiplied by $L_{t}B_t$ as a light use efficiency parameter there seemed to be an interaction between $\alpha$ and $K$ which caused issues with chain convergence
-
-## Model Code
-
-```{r, include=FALSE, warning=FALSE}
-source("SimData_Source.R")
-```
-
-#### Stan code PM2_FK_FO (FK = fixed K, FO = fixed observation error)
-```{r, eval=FALSE}
-
-    data {
-    int Ndays; // number of days
-    vector [Ndays] light; // relativized to max value
-    vector [Ndays] GPP; // mean estimates from posterior probability distributions
-    vector [Ndays] GPP_sd; // sd estimates from posterior probability distributions
-    vector [Ndays] tQ; // standardized discharge
-    }
-    
-    parameters {
-    // Disturbance (persistence) parameters
-    real<lower=0> beta_r; // refugia biomass after Qcrit > Q
-    real<lower=0, upper=15> critQ; // estimate of Qcrit
-    real<lower=0, upper=30> bQ; // steepness of the transition from P=1 to P=0
-    
-    // Logistic growth parameters  
-    real<lower=0> B [Ndays]; // Biomass; g m-2
-    real<lower=0> r; // growth rate; d-1
-    // real<lower=0> alpha; // light conversion; unitless
-    real<lower=0> K; // carrying capacity; g m-2
-    
-    // Error parameters
-    real<lower=0> sig_p; // sigma processes error
-    }
-    
-    transformed parameters {
-    real pred_GPP [Ndays];
-    real P [Ndays];
-    
-    for(i in 1:Ndays){
-    P[i]=exp(-exp(bQ*(tQ[i]-critQ)));
-    pred_GPP[i] = light[i]*exp(B[i]);
-    }
-    
-    } 
-    
-    model {
-    // Process Model
-    for (j in 2:(Ndays)){
-    B[j] ~ normal((B[(j-1)] + (r*B[(j-1)]*(1-(B[(j-1)]/K))) - beta_r)*P[j] + beta_r, sig_p);
-    }
-    
-    // Observation model
-    GPP ~ normal(pred_GPP, GPP_sd);
-    
-    // Error priors
-    sig_p ~ normal(0,2);
-    
-    // Param priors
-    beta_r ~ normal(0,10);
-    K ~ normal(0,30);
-    r ~ normal(0,15);
-    
-    
-    }
-    
-```
-
-#### PM2_FK_FO data simulation code
-```{r, warning=FALSE}
-PM2_FK_FO <- function(bQ, critQ, r, K, beta_r, sig_p, df) {
-  
-  ## Data
-  Ndays<-length(df$GPP)
-  GPP <- df$GPP
-  GPP_sd <- df$GPP_sd
-  light <- df$light_rel
-  tQ <- df$tQ
-  ## Error
-  proc_err <- rnorm(Ndays, mean = 0, sd = sig_p)
-  obs_err<-numeric(length(Ndays))
-  for(i in 1:Ndays){
-    obs_err[i] = rnorm(Ndays, mean=0, sd=GPP_sd[i])
-  }
-  
-  ## Vectors for model output of B and pred_GPP
-  B<-numeric(Ndays)
-  pred_GPP<-numeric(Ndays)
-  
-  ## Persistence (P) following floods
-  P <- numeric(Ndays)
-  for(i in 1:Ndays){
-    P[i]=exp(-exp(bQ*(tQ[i]-critQ)))
-  }
-  
-  ## Process Model
-  for (j in 2:Ndays){
-    B[j] = (B[j-1] + r*B[(j-1)]*(1-(B[(j-1)]/K)) - beta_r)*P[j] + beta_r + proc_err
-  }
-  
-  pred_GPP <- light*exp(B) + obs_err
-  return(pred_GPP)
-  
-}
-
-## Example to check if the model works
-#plot(dat$Clackamas_OR$GPP)
-#lines(PM2_FK_FO(bQ=0.1, critQ=0.1, r=4, K=2, beta_r=0.2, sig_p=0.5, df=dat$Clackamas_OR))
-
-```
-
-
-
-
-## Parameter estimates from original data
-```{r, warning=FALSE}
-## Original GPP data
-ggplot(data, aes(date, GPP))+geom_line(color="chartreuse4")+geom_point(pch=21, color="chartreuse4")+
-  geom_errorbar(aes(ymin=GPP-GPP_sd, ymax=GPP+GPP_sd), width=.2,position=position_dodge(0.05), color="chartreuse4")+
-  facet_wrap(~ID, nrow = 3, scales = "free_y")+
-  labs(x="Date (2010)", y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))
-```
-
-
-
-```{r, warning=FALSE}
-## First round of parameter estimates
-PM2_par <- readRDS("PM2_FK_FO_firstfitparams.rds")
-
-## Visualize parameter relationships output
-## In order of the Clackamas, OR;  Medina, TX; South Platte, CO
-lapply(PM2_par, function(x) chart.Correlation(as.data.frame(x[c("bQ","critQ","r","beta_r","sig_p")])))
-
-#################################
-## Summarize parameters by median
-##################################
-med_par_PM2 <- function(par) {
-  ## Find the med of all
-  med_par <- lapply(par, function(x) median(x))
-  ## med of ts parameters
-  med_pred_GPP_ts <- apply(par$pred_GPP,2,median)
-  med_B_ts <- apply(par$B,2,median)
-  med_P_ts <- apply(par$P,2,median)
-  ## Compile in list and return
-  med_par_ts <- list(med_par, med_pred_GPP_ts,med_B_ts, med_P_ts)
-  names(med_par_ts) <- c("par","pred_GPP","B","P")
-  return(med_par_ts)
-}
-PM2_medpar <- lapply(PM2_par, function(x) med_par_PM2(x))
-
-## Visualize biomass dynamics with K plotted as a line
-par(mfrow=c(3,1))
-plot(PM2_medpar$Clackamas_OR$B, ylab="Biomass (OR)"); abline(h=PM2_medpar$Clackamas_OR$par$K)
-plot(PM2_medpar$Medina_TX$B, ylab="Biomass (TX)"); abline(h=PM2_medpar$Medina_TX$par$K)
-plot(PM2_medpar$SouthPlatte_CO$B, ylab="Biomass (CO)"); abline(h=PM2_medpar$SouthPlatte_CO$par$K)
-
-############################
-## Generate simulated data
-###########################
-simdat2 <- function(x, df_orig){
-  s <- PM2_FK_FO(bQ= x$par$bQ,
-              critQ = x$par$critQ,
-              K = x$par$K,
-              r = x$par$r,
-              beta_r = x$par$beta_r,
-              sig_p = x$par$sig_p,
-              df = df_orig)
-  
-  return(s)
-}
-
-PM2_simdat_OR <- simdat2(PM2_medpar$Clackamas_OR, dat$Clackamas_OR)
-PM2_simdat_TX <- simdat2(PM2_medpar$Medina_TX, dat$Medina_TX)
-PM2_simdat_CO <- simdat2(PM2_medpar$SouthPlatte_CO, dat$SouthPlatte_CO)
-
-## Visualize original GPP data in points, model fit lines
-par(mfrow=c(3,1))
-plot(dat$Clackamas_OR$GPP, ylab="GPP (OR)"); lines(PM2_simdat_OR)
-plot(dat$Medina_TX$GPP, ylab="GPP (TX)"); lines(PM2_simdat_TX)
-plot(dat$SouthPlatte_CO$GPP, ylab="GPP (CO)"); lines(PM2_simdat_CO)
-
-```
-
-
-#### Parameter recovery from data simulation using the median of the the parameter estimates
-```{r, warning=FALSE}
-PM2_FD_par <- readRDS("PM2_FK_FO_FD_par.rds")
-
-## Extract
-CI_par_PM2 <- function(par) {
-  ## Find CI of all
-  medCI_par <- lapply(par, function(x) quantile(x, probs = 0.5))
-  lowerCI_par <- lapply(par, function(x) quantile(x, probs = 0.025))
-  upperCI_par <- lapply(par, function(x) quantile(x, probs = 0.975))
-  ## CI of ts parameters
-  medCI_pred_GPP_ts <- apply(par$pred_GPP,2,function(x) quantile(x, probs = 0.5))
-  lowerCI_pred_GPP_ts <- apply(par$pred_GPP,2,function(x) quantile(x, probs = 0.025))
-  upperCI_pred_GPP_ts <- apply(par$pred_GPP,2,function(x) quantile(x, probs = 0.975))
-  ## Compile in list and return
-  CI_par_l <- list(lowerCI_par,medCI_par,upperCI_par,lowerCI_pred_GPP_ts,medCI_pred_GPP_ts,upperCI_pred_GPP_ts)
-  names(CI_par_l) <- c("lowCI_par","medCI_par","upCI_par","lowCI_pred_GPP","medCI_pred_GPP","upCI_pred_GPP")
-  return(CI_par_l)
-}
-
-PM2_FD_CIpar <- lapply(PM2_FD_par, function(x) CI_par_PM2(x))
-
-## Plot comparison of input versus output parameters
-in_vs_out <- function(plist, inputvaluestring){
-  
-  PM_inputs <- as.data.frame(as.matrix(inputvaluestring))
-  PM_inputs$Param <- rownames(PM_inputs)
-  colnames(PM_inputs)[1] <- "Value"
-  
-  lowCI <- ldply(plist$lowCI_par, data.frame)
-  medCI <- ldply(plist$medCI_par, data.frame)
-  upCI <- ldply(plist$upCI_par, data.frame)
-  CI_list <- list(lowCI, medCI, upCI)
-  CI_list <- lapply(CI_list, setNames, nm = c("Param","Value"))
-  
-  CI_df <- bind_cols(CI_list)
-  CI_df <- CI_df[,c("Param","Value","Value1","Value2")]
-  colnames(CI_df) <- c("Param","ParOutput_low","ParOutput_med","ParOutput_up")
-
-  in_out <- merge(PM_inputs, CI_df, by="Param")
-  
-  ggplot(in_out, aes(Value, ParOutput_med, color=Param))+
-    geom_abline(slope = 1, intercept = 0, color="grey") +
-    geom_linerange(aes(ymin = ParOutput_low, ymax= ParOutput_up), color="black",size=1)+
-    geom_point(size=3)+
-    labs(x = "Input Parameter Values", y="Median (+/- CI) Posterior Values")
-    #scale_x_continuous(limits = c(-0.5, 1.5)) #scale_y_continuous(limits = c(-1, 3.5))
-  
-}
-
-input_params <- function(x){
-  s <- c(bQ= x$par$bQ,
-              critQ = x$par$critQ,
-              K = x$par$K,
-              r = x$par$r,
-              beta_r = x$par$beta_r,
-              sig_p = x$par$sig_p)
-  
-  return(s)
-}
-
-ip_OR <- input_params(PM2_medpar$Clackamas_OR)
-ip_TX <- input_params(PM2_medpar$Medina_TX)
-ip_CO <- input_params(PM2_medpar$SouthPlatte_CO)
-
-plot_grid(  
-  in_vs_out(PM2_FD_CIpar$OR, ip_OR)+
-    theme(legend.position = "none")+ggtitle("OR"),
-  in_vs_out(PM2_FD_CIpar$TX, ip_TX)+
-    theme(legend.position = "none")+ggtitle("TX"),
-  in_vs_out(PM2_FD_CIpar$CO, ip_CO)+
-    theme(legend.position = "none")+ggtitle("CO"),
-  get_legend(in_vs_out(PM2_FD_CIpar$CO, ip_CO)),
-  ncol=4, rel_widths = c(1,1,1,0.3))
-```
-
-#### Time series comparisons
-Below is the original data (grey dots), the simulated data (purple dots), and the model fit to the fake data (black line) for OR, TX, and CO
-
-### Oregon
-```{r}
-simdat <- readRDS("PM2_FK_FO_simGPPdata.rds")
-
-GPP_comparison <- as.data.frame(cbind(dat$Clackamas_OR$date, dat$Clackamas_OR$GPP, simdat$Clackamas_OR, PM2_FD_CIpar$OR$medCI_pred_GPP))
-colnames(GPP_comparison) <- c("Date","Original","Simulated","Model Recovery")
-
-ggplot(GPP_comparison, aes(Date, Original))+geom_point(pch=21, color="grey45")+
-  geom_point(aes(Date, Simulated), color="purple")+
-  geom_line(aes(Date, `Model Recovery`), size=1)
-
-
-```
-
-### Medina, TX
-```{r}
-GPP_comparison2 <- as.data.frame(cbind(dat$Medina_TX$date, dat$Medina_TX$GPP, simdat$Medina_TX, PM2_FD_CIpar$TX$medCI_pred_GPP))
-colnames(GPP_comparison2) <- c("Date","Original","Faked","Model Recovery")
-
-ggplot(GPP_comparison2, aes(Date, Original))+geom_point(pch=21, color="grey45")+
-  geom_point(aes(Date, Faked), color="purple")+
-  geom_line(aes(Date, `Model Recovery`), size=1)
-
-```
-
-### South Platte, CO
-```{r}
-GPP_comparison3 <- as.data.frame(cbind(dat$SouthPlatte_CO$date, dat$SouthPlatte_CO$GPP, simdat$SouthPlatte_CO, PM2_FD_CIpar$CO$medCI_pred_GPP))
-colnames(GPP_comparison3) <- c("Date","Original","Faked","Model Recovery")
-
-ggplot(GPP_comparison3, aes(Date, Original))+geom_point(pch=21, color="grey45")+
-  geom_point(aes(Date, Faked), color="purple")+
-  geom_line(aes(Date, `Model Recovery`), size=1)
-
-```
-
-
-
 
