@@ -221,6 +221,47 @@ G_{mod,t} = e^{(G_{pred, t})}
 <div id="latent-biomass-thin-film-growth-density-independent-growth-density-dependent-death" class="section level4">
 <h4>3. Latent biomass thin film growth (density independent growth, density dependent death)</h4>
 <p>Finally, we predict the temporal dyanmics of daily estimates of GPP (<span class="math inline">\(G_{mod}\)</span>) by incorporating biomass as a latent variable and modeling its dynamics using a modified logistic growth model with density independent growth rates and density dependent death rates. We fit the model to the <span class="math inline">\(G_{mod}\)</span> times series from Appling et al. (2018) to estimate the model parameters:</p>
+<p>Start with a exponential growth model of biomass in a river:</p>
+<span class="math display">\[\begin{equation}
+\frac {dB}{dt} = rB 
+\end{equation}\]</span>
+<p>where <span class="math inline">\(B\)</span> is biomass and <span class="math inline">\(r\)</span> is the intrinsic growth rate equal to <span class="math inline">\(r = b - d\)</span> where <span class="math inline">\(b\)</span> is the birth rate or creation of new autotrophic cells and <span class="math inline">\(d\)</span> is the death rate of those cells. If we numerically integrate the exponential growth model we get:</p>
+<span class="math display">\[\begin{equation}
+B_t = B_{t-1} + rB_{t-1}
+\end{equation}\]</span>
+<p>If we assume the GPP signal is derived from photosynthetically-active biomass in the form of a thin biofilm on the surface of the streambed, we might expect that biofilm growth (meaning births, <span class="math inline">\(b\)</span>) is independent of density while biofilm loss (meaning deaths, <span class="math inline">\(d\)</span>, in the form of predation, respiration, or export) is density dependent. Therefore the birth rate will be constant as biomass <span class="math inline">\(B\)</span> approaches the carrying capacity <span class="math inline">\(K\)</span>, which can be described as <span class="math inline">\(X_{t} = \frac {B_{t}}{K}\)</span>. While it is possible that the relationship is non-linear, here we describe the death rate as a linear function in which death is a function of the biomass relative to the river carrying capacity (<span class="math inline">\(X_{t}\)</span>) with a slope of <span class="math inline">\((1-\gamma)b\)</span> and an intercept of <span class="math inline">\(\gamma b\)</span> representing the following relationship:</p>
+<p>Therefore, the relationship of <span class="math inline">\(d\)</span> to biomass relative to carrying capacity (<span class="math inline">\(X_t\)</span>), the birth rate (<span class="math inline">\(b\)</span>), and the death rate as biomass approaches zero (<span class="math inline">\(\gamma\)</span>) is:</p>
+<span class="math display">\[\begin{equation}
+d = b(1-\gamma)X + \gamma b
+\end{equation}\]</span>
+<p>If we factor out <span class="math inline">\(b\)</span> and assume that death is not a function of instantaneous births, but an average over some period of previous births, we get:</p>
+<span class="math display">\[\begin{equation}
+d = \overline {b}((1-\gamma)X_{t} + \gamma)
+\end{equation}\]</span>
+<p>Then we return to the original exponential growth function and subsitute the new death rate equation into <span class="math inline">\(r = b - d\)</span> we get:</p>
+<span class="math display">\[\begin{equation}
+r = b - \overline {b}((1-\gamma)X_t + \gamma) 
+\end{equation}\]</span>
+<p>And if we substitute this equation into the numerical integration of the exponential growth model and subsitute <span class="math inline">\(\frac {B_{t}}{K}\)</span> back in for <span class="math inline">\(X_{t}\)</span> we get:</p>
+<span class="math display">\[\begin{equation}
+B_t = B_{t-1} + B_{t-1}[b - \overline {b}(\gamma + (1-\gamma)\frac{B_{t-1}}{K})]
+\end{equation}\]</span>
+Normalize to <span class="math inline">\(X\)</span> as <span class="math inline">\(X_t=\frac{B_t}{K}\)</span>, thus substitute <span class="math inline">\(B_t=KX_t\)</span>
+<span class="math display">\[\begin{equation}
+KX_t = KX_{t-1}+KX_{t-1}(b-\bar b(\gamma + (1-\gamma) X_{t-1}))
+\end{equation}\]</span>
+<p>cancel the K to arrive at the final deterministic version of the model</p>
+<span class="math display">\[\begin{equation}
+X_t = X_{t-1}+X_{t-1}(b-\bar b(\gamma + (1-\gamma) X_{t-1}))
+\end{equation}\]</span>
+<p>Note that if <span class="math inline">\(\gamma = 0\)</span> and <span class="math inline">\(\overline{b} = b\)</span> this equation reduces to:</p>
+<span class="math display">\[\begin{equation}
+X_t = X_{t-1}+X_{t-1}(b-\bar b(0 + (1-0) X_{t-1}))
+\end{equation}\]</span>
+<span class="math display">\[\begin{equation}
+X_t = X_{t-1}+X_{t-1}(b-\overline{b}X_{t-1})
+\end{equation}\]</span>
+<p>However, when attempting to fit the model, the actually tends to approach 1 meaning the birth rate is approximately equal to the death rate when biomass is close to zero. In addition, the carrying capacity of the stream may change through time, but in this instance we are keeping it constant.</p>
 </div>
 </div>
 <div id="disturbance-model" class="section level3">
