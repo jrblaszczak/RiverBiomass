@@ -4,52 +4,47 @@ author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
 output: html_document
 ---
 
+
 Each model used to estimate productivity dynamics in rivers through time consists of three components: (1) a growth model component, (2) a disturbance model component, and (3) the stochastic version of the full model which accounts for process and observation error.
 
-We selected a subset of three river metabolism time series from 356 rivers with daily estimates of metabolism generated using the streamMetabolizer package in R by the US Geological Survey Powell Center (Appling et al. 2018a,b). Daily metabolism estimates were generated using a hierarchical state-space inverse modeling approach with partial-pooling of piece-wise $K_{600}$ relationships with mean daily discharge ($Q$) to reduce issues of equifinality and uncertainty (Appling et al. 2018). Daily metabolism and gas exchange estimates were generated from sub-daily time series of dissolved oxygen (units: $mg$ $L^{-1}$), light (photosynthetic photon flux density (PPFD); units: $\mu mol$ $m^{-2}$ $s^{-1}$), water temperature ($^\circ$ C), and reach averaged depth (m). A Bayesian Markov chain Monte Carlo (MCMC) fitting procedure was used to determine the mean and standard deviation of the posterior probability distributions of daily gross primary productivity (GPP; $g$ $O_{2}$ $m^{-2}$ $d^{-1}$),  ecosystem respiration (ER; $g$ $O_{2}$ $m^{-2}$ $d^{-1}$), and gas exchange ($K_{600}$; $d^{-1}$). In this study, we treat the mean and standard deviation of the daily GPP estimates from each river as "data" in the stochastic models described below.
-
+We selected a subset of three river metabolism time series from 356 rivers with daily estimates of metabolism generated using the streamMetabolizer package in R by the US Geological Survey Powell Center (Appling et al. 2018a,b). Daily metabolism estimates were generated using a hierarchical state-space inverse modeling approach with partial-pooling of piece-wise $K_{600}$ relationships with mean daily discharge ($Q$) to reduce issues of equifinality and uncertainty (Appling et al. 2018). Daily metabolism and gas exchange estimates were generated from sub-daily time series of dissolved oxygen (units: $mg$ $L^{-1}$), light (photosynthetic photon flux density (PPFD); units: $\mu mol$ $m^{-2}$ $s^{-1}$), water temperature ($^\circ$ C), and reach averaged depth (m). A Bayesian Markov chain Monte Carlo (MCMC) fitting procedure was used to determine the mean and standard deviation of the posterior probability distributions of daily gross primary productivity (GPP; $g$ $O_{2}$ $m^{-2}$ $d^{-1}$),  ecosystem respiration (ER; $g$ $O_{2}$ $m^{-2}$ $d^{-1}$), and gas exchange ($K_{600}$; $d^{-1}$). In this study, we treat the mean and standard deviation of the daily GPP estimates from each river as "data" in the state-space models described below.
 
 
 ### Growth models
-
+<div style="margin-bottom:20px;">
+</div>
 #### 1. Linear growth
-We estimated parameters $\phi$ and $\alpha$ without incorporation of latent biomass dynamics using a linear model:
+We first predict the temporal dynamics of daily estimates of GPP ($G_{mod}$) using a linear model without latent biomass dynamics. We fit the model to the $G_{mod}$ times series from Appling et al. (2018) to estimate the model parameters:
 
 \begin{equation} 
 G_{pred,t} = \phi G_{pred,(t-\triangle t)} + \alpha L_{t}
 \end{equation}
 
-where input data includes $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1). Estimated parameters include $G_{pred,t}$ which is the predicted daily GPP (g $O_2$ $m^{-2}$ $d^{-1}$) at time $t$ (in days) on a natural log scale, $\phi$ which is the estimated autoregressive parameter (unitless; 0<$\phi$<1), and $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$). We estimate the parameters by fitting the linear growth model to the previously modeled mean daily GPP time series (g $O_2$ $m^{-2}$ $d^{-1}$):
-
 \begin{equation} 
 G_{mod,t} = e^{(G_{pred, t})}
 \end{equation}
 
-blah
+where input data includes previously modeled mean daily GPP time series ($GPP_{mod,t}$; g $O_2$ $m^{-2}$ $d^{-1}$) and $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1). Estimated parameters include $G_{pred,t}$ which is the predicted daily GPP (g $O_2$ $m^{-2}$ $d^{-1}$) at time $t$ (in days) on a natural log scale, $\phi$ which is the estimated autoregressive parameter (unitless; 0<$\phi$<1), and $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$). 
 
-
+<div style="margin-bottom:20px;">
+</div>
 #### 2. Latent biomass logistic growth
-We modeled stream autotrophic population growth through time by treating biomass as a latent variable and modeling its dynamics using a logistic growth model:
+Next, we predict the temporal dyanmics of daily estimates of GPP ($G_{mod}$) by incorporating biomass as a latent variable and modeling its dynamics using a logistic growth model. We fit the model to the $G_{mod}$ times series from Appling et al. (2018) to estimate the model parameters:
 
 \begin{equation}
     B_{t} = B_{(t-\triangle t)} e^{r_{max}B_{(t-\triangle t)}(1-\frac{B_{(t-\triangle t)}}{K})}
 \end{equation}
 
-
-where estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, $K$ which is the estimated carrying capacity of a river, and $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance. We fit the latent biomass equation to the input variable mean daily GPP time series:
-
 \begin{equation}
-    G_{t} = \alpha L_{t} e^{B_{t}}
+    G_{mod,t} = \alpha L_{t} e^{B_{t}}
 \end{equation}
 
-\noindent where $G_{t}$ is gross primary productivity estimates from the metabolism model component (Fig. 4A), $\alpha$ is a light use efficiency parameter, $L_{t}$ is daily light at the channel surface, and $\varepsilon_{G}$ is a random variable representing observation error normally distributed around 0 with standard deviation $\sigma_o$ truncated at zero.
+input data includes previously modeled mean daily GPP time series ($GPP_{mod,t}$; g $O_2$ $m^{-2}$ $d^{-1}$) and $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1). Estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, $K$ which is the estimated carrying capacity of a river, $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance, and $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$).
 
-
-
-
-
+<div style="margin-bottom:20px;">
+</div>
 #### 3. Latent biomass thin film growth (density independent growth, density dependent death)
-
+Finally, we predict the temporal dyanmics of daily estimates of GPP ($G_{mod}$) by incorporating biomass as a latent variable and modeling its dynamics using a modified logistic growth model with density independent growth rates and density dependent death rates. We fit the model to the $G_{mod}$ times series from Appling et al. (2018) to estimate the model parameters:
 
 
 
