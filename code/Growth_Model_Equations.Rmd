@@ -29,7 +29,7 @@ where input data includes the daily mean of the posterior probability distributi
 
 ### Semi-mechanistic models
 
-Next, we developed two semi-mechanistic models of hypothesized latent biomass dynamics in rivers to predict productivity dynamics through time. These process-based models are fit to the previously estimated daily GPP time series. Each model has a different growth equation, but has the same disturbance equation component detailed below.
+Next, we developed two semi-mechanistic models of hypothesized latent biomass dynamics in rivers to predict productivity dynamics through time. These process-based models are fit to the previously estimated daily GPP time series. Each model has a different growth equation, but has the same disturbance equation component detailed below. Input data for each model includes the mean of the posterior probability distribution of previously modeled daily GPP time series ($GPP_{mod,t}$; g $O_2$ $m^{-2}$ $d^{-1}$), $\sigma_o$ which is the observation error set to the daily standard deviation of the posterior probability distribution of the previously modeled daily GPP estimates, and $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1).
 
 #### Disturbance component explanation
 
@@ -60,7 +60,7 @@ We predict the temporal dynamics of mean daily estimates of GPP ($G_{mod}$) by i
     G_{mod,t} \sim N(\alpha L_{t} e^{B_{t}}, \sigma_{o})
 \end{equation}
 
-input data includes previously modeled mean daily GPP time series ($GPP_{mod,t}$; g $O_2$ $m^{-2}$ $d^{-1}$), $\sigma_o$ which is the observation error set to the standard deviation of the posterior probability distribution of the previously modeled daily GPP estimates, and $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1). Estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $K$ which is the estimated carrying capacity of a river, $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_p$ which is the process error.
+where estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $K$ which is the estimated carrying capacity of a river, $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_p$ which is the process error.
 
 
 #### Productivity Model 3: Latent biomass thin film growth (density independent growth, density dependent death) and disturbance
@@ -154,49 +154,10 @@ Thus the final version of the model that we fit to $G_{mod,t}$ time series is:
 \end{equation}
 
 \begin{equation}
-    b = \alpha*L_{t}
+    b = \alpha L_{t}
 \end{equation}
 
-where input data includes previously modeled mean daily GPP time series ($GPP_{mod,t}$; g $O_2$ $m^{-2}$ $d^{-1}$) and $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1). Estimated parameters include $N_{t}$ which is a latent variable representative of photosynthetically-active biomass relative to the carrying capacity of a river, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, and $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$).
+where estimated parameters include $N_{t}$ which is a latent variable representative of photosynthetically-active biomass relative to the carrying capacity of a river, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_p$ which is the process error.
 
 
-
-
-
-
-
-
-### OTHER TEXT TO BE INCOPORATED
-
-Process error ($\sigma_{p}$), $r_{max}$, $\beta_r$, and $K$ have weakly informative priors based on a truncated (half) normal distribution:
-
-\begin{equation}
-B_{t} \sim N(P_{t}(B_{t-1} + r_{max}B_{t-1}(1-\frac{B_{t-1}}{K})-\beta_r) + \beta_{r},\sigma_{p})
-\end{equation}
-
-\begin{equation}
-G_{t} \sim (L_{t} B_{t}, \sigma_{G})
-\end{equation}
-
-\begin{equation}
-\sigma_{p} \sim N(> 0, 0, 2)
-\end{equation}
-
-\begin{equation}
-r_{max} \sim N(> 0, 0, 15)
-\end{equation}
-
-\begin{equation}
-K \sim N(> 0, 0, 30)
-\end{equation}
-
-\begin{equation}
-\beta_r \sim N(> 0, 0, 10)
-\end{equation}
-
-
-
-Notes: When $\alpha$ was included in the model and multiplied by $L_{t}B_t$ as a light use efficiency parameter there seemed to be an interaction between $\alpha$ and $K$ which caused issues with chain convergence
-
-
-
+*Note: Prior information will be included in future versions of this document.*

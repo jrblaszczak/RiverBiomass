@@ -396,7 +396,7 @@ G_{mod,t} \sim N(e^{(G_{pred, t})}, \sigma_{o})
 </div>
 <div id="semi-mechanistic-models" class="section level3">
 <h3>Semi-mechanistic models</h3>
-<p>Next, we developed two semi-mechanistic models of hypothesized latent biomass dynamics in rivers to predict productivity dynamics through time. These process-based models are fit to the previously estimated daily GPP time series. Each model has a different growth equation, but has the same disturbance equation component detailed below.</p>
+<p>Next, we developed two semi-mechanistic models of hypothesized latent biomass dynamics in rivers to predict productivity dynamics through time. These process-based models are fit to the previously estimated daily GPP time series. Each model has a different growth equation, but has the same disturbance equation component detailed below. Input data for each model includes the mean of the posterior probability distribution of previously modeled daily GPP time series (<span class="math inline">\(GPP_{mod,t}\)</span>; g <span class="math inline">\(O_2\)</span> <span class="math inline">\(m^{-2}\)</span> <span class="math inline">\(d^{-1}\)</span>), <span class="math inline">\(\sigma_o\)</span> which is the observation error set to the daily standard deviation of the posterior probability distribution of the previously modeled daily GPP estimates, and <span class="math inline">\(L\)</span> which is daily light at time <span class="math inline">\(t\)</span> relativized to the annual maximum daily light (unitless; 0&lt;<span class="math inline">\(L\)</span>&lt;1).</p>
 <div id="disturbance-component-explanation" class="section level4">
 <h4>Disturbance component explanation</h4>
 <p>We lack sufficient geomorphic information to estimate the critical discharge for stream bed disturbance during an event for each river in this study and expect to lack the necessary data as well for future analyses in more broadly spatially distributed rivers. The discharge threshold at which benthic autotrophic biomass is removed can be different than that needed to move sediment on the bed. Therefore, we incorporated the effects of disturbance by modeling the persistence (<span class="math inline">\(P\)</span>) of biomass using a complementary log-log link function of the form: <span class="math display">\[\begin{equation}
@@ -418,7 +418,7 @@ B_t \sim N(P_{t}([Growth\;Model]), \sigma_{p})
 <p><span class="math display">\[\begin{equation}
     G_{mod,t} \sim N(\alpha L_{t} e^{B_{t}}, \sigma_{o})
 \end{equation}\]</span></p>
-<p>input data includes previously modeled mean daily GPP time series (<span class="math inline">\(GPP_{mod,t}\)</span>; g <span class="math inline">\(O_2\)</span> <span class="math inline">\(m^{-2}\)</span> <span class="math inline">\(d^{-1}\)</span>) and <span class="math inline">\(L\)</span> which is daily light at time <span class="math inline">\(t\)</span> relativized to the annual maximum daily light (unitless; 0&lt;<span class="math inline">\(L\)</span>&lt;1). Estimated parameters include <span class="math inline">\(B_{t}\)</span> which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, <span class="math inline">\(P_{t}\)</span> which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, <span class="math inline">\(K\)</span> which is the estimated carrying capacity of a river, <span class="math inline">\(r_{max}\)</span> is the maximum per capita growth rate when <span class="math inline">\(\frac {B_t}{K}\)</span> approaches zero following a disturbance, <span class="math inline">\(\alpha\)</span> which is a light growth efficiency parameter (units: g <span class="math inline">\(O_2\)</span> <span class="math inline">\(m^{-2}\)</span> <span class="math inline">\(d^{-1}\)</span>).</p>
+<p>where estimated parameters include <span class="math inline">\(B_{t}\)</span> which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, <span class="math inline">\(P_{t}\)</span> which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, <span class="math inline">\(K\)</span> which is the estimated carrying capacity of a river, <span class="math inline">\(r_{max}\)</span> is the maximum per capita growth rate when <span class="math inline">\(\frac {B_t}{K}\)</span> approaches zero following a disturbance, <span class="math inline">\(\alpha\)</span> which is a light growth efficiency parameter (units: g <span class="math inline">\(O_2\)</span> <span class="math inline">\(m^{-2}\)</span> <span class="math inline">\(d^{-1}\)</span>), and <span class="math inline">\(\sigma_p\)</span> which is the process error.</p>
 </div>
 <div id="productivity-model-3-latent-biomass-thin-film-growth-density-independent-growth-density-dependent-death-and-disturbance" class="section level4">
 <h4>Productivity Model 3: Latent biomass thin film growth (density independent growth, density dependent death) and disturbance</h4>
@@ -477,38 +477,19 @@ N_t = N_{(t-\triangle t)}+N_{(t-\triangle t)}(b- b(0 + (1-0) N_{(t-\triangle t)}
 N_t = N_{(t-\triangle t)}+bN_{(t-\triangle t)}(1 - N_{(t-\triangle t)})
 \end{equation}\]</span></p>
 <p>However, when attempting to fit the model, the actually tends to approach 1 meaning the birth rate is approximately equal to the death rate when biomass is close to zero. In addition, the carrying capacity of the stream may change through time, but in this instance we are keeping it constant.</p>
-<p>The final version of the model that we fit to <span class="math inline">\(G_{mod,t}\)</span> time series is:</p>
+<p>Thus the final version of the model that we fit to <span class="math inline">\(G_{mod,t}\)</span> time series is:</p>
 <p><span class="math display">\[\begin{equation}
-    B_{t} \sim N(P_{t}(B_{((t-\triangle t))} e^{r_{max}B_{((t-\triangle t))}(1-\frac{B_{((t-\triangle t))}}{K})}), \sigma_{p})
+    N_{t} \sim N(P_{t}(N_{(t-\triangle t)}+bN_{(t-\triangle t)}(1 - N_{(t-\triangle t)})), \sigma_{p})
 \end{equation}\]</span></p>
 <p><span class="math display">\[\begin{equation}
-    G_{mod,t} \sim N(\alpha L_{t} e^{B_{t}}, \sigma_{o})
+    G_{mod,t} \sim N(b N_{t}, \sigma_{o})
 \end{equation}\]</span></p>
-<p>input data includes previously modeled mean daily GPP time series (<span class="math inline">\(GPP_{mod,t}\)</span>; g <span class="math inline">\(O_2\)</span> <span class="math inline">\(m^{-2}\)</span> <span class="math inline">\(d^{-1}\)</span>) and <span class="math inline">\(L\)</span> which is daily light at time <span class="math inline">\(t\)</span> relativized to the annual maximum daily light (unitless; 0&lt;<span class="math inline">\(L\)</span>&lt;1). Estimated parameters include <span class="math inline">\(B_{t}\)</span> which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, <span class="math inline">\(P_{t}\)</span> which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, <span class="math inline">\(K\)</span> which is the estimated carrying capacity of a river, <span class="math inline">\(r_{max}\)</span> is the maximum per capita growth rate when <span class="math inline">\(\frac {B_t}{K}\)</span> approaches zero following a disturbance, <span class="math inline">\(\alpha\)</span> which is a light growth efficiency parameter (units: g <span class="math inline">\(O_2\)</span> <span class="math inline">\(m^{-2}\)</span> <span class="math inline">\(d^{-1}\)</span>).</p>
+<p><span class="math display">\[\begin{equation}
+    b = \alpha L_{t}
+\end{equation}\]</span></p>
+<p>where estimated parameters include <span class="math inline">\(N_{t}\)</span> which is a latent variable representative of photosynthetically-active biomass relative to the carrying capacity of a river, <span class="math inline">\(P_{t}\)</span> which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, <span class="math inline">\(\alpha\)</span> which is a light growth efficiency parameter (units: g <span class="math inline">\(O_2\)</span> <span class="math inline">\(m^{-2}\)</span> <span class="math inline">\(d^{-1}\)</span>), and <span class="math inline">\(\sigma_p\)</span> which is the process error.</p>
+<p><em>Note: Prior information will be included in future versions of this document.</em></p>
 </div>
-</div>
-<div id="other-text-to-be-incoporated" class="section level3">
-<h3>OTHER TEXT TO BE INCOPORATED</h3>
-<p>Process error (<span class="math inline">\(\sigma_{p}\)</span>), <span class="math inline">\(r_{max}\)</span>, <span class="math inline">\(\beta_r\)</span>, and <span class="math inline">\(K\)</span> have weakly informative priors based on a truncated (half) normal distribution:</p>
-<p><span class="math display">\[\begin{equation}
-B_{t} \sim N(P_{t}(B_{t-1} + r_{max}B_{t-1}(1-\frac{B_{t-1}}{K})-\beta_r) + \beta_{r},\sigma_{p})
-\end{equation}\]</span></p>
-<p><span class="math display">\[\begin{equation}
-G_{t} \sim (L_{t} B_{t}, \sigma_{G})
-\end{equation}\]</span></p>
-<p><span class="math display">\[\begin{equation}
-\sigma_{p} \sim N(&gt; 0, 0, 2)
-\end{equation}\]</span></p>
-<p><span class="math display">\[\begin{equation}
-r_{max} \sim N(&gt; 0, 0, 15)
-\end{equation}\]</span></p>
-<p><span class="math display">\[\begin{equation}
-K \sim N(&gt; 0, 0, 30)
-\end{equation}\]</span></p>
-<p><span class="math display">\[\begin{equation}
-\beta_r \sim N(&gt; 0, 0, 10)
-\end{equation}\]</span></p>
-<p>Notes: When <span class="math inline">\(\alpha\)</span> was included in the model and multiplied by <span class="math inline">\(L_{t}B_t\)</span> as a light use efficiency parameter there seemed to be an interaction between <span class="math inline">\(\alpha\)</span> and <span class="math inline">\(K\)</span> which caused issues with chain convergence</p>
 </div>
 
 
