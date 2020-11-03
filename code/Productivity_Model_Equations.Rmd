@@ -1,5 +1,5 @@
 ---
-title: "Productivity Model Structures"
+title: "Productivity Model Equations"
 author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
 output: html_document
 ---
