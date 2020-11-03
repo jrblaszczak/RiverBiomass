@@ -31,3 +31,11 @@ r <- rel_LQT(d)
 df <- na.omit(r)
 
 rm(d,km,l,r)
+
+
+
+
+obs_err<-numeric(length(Ndays))
+for(i in 1:Ndays){
+  obs_err[i] = rnorm(Ndays, mean=0, sd = sig_o)
+}

@@ -4,6 +4,87 @@ author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
 output: html_document
 ---
 
+```{r,echo=FALSE,warning=FALSE,message=FALSE, include=FALSE}
+# load packages
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
+         "tidyverse", "reshape2","PerformanceAnalytics",
+         "rstan","bayesplot","shinystan"), require, character.only=T)
+
+# source data
+source("SimData_Source.R")
+
+# source simulation models
+# input variables: GPP, GPP_sd, light, tQ
+source("GrowthModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p, df
+source("GrowthModel2_Logistic.R") # estimated parameters: r, K, beta_r, sig_p, df
+source("GrowthModel3_ThinFilm.R") # estimated parameters: alpha, gamma, beta_r, sig_p, df
+```
+
+#### Snow-Melt GPP Example Data - Weitchpec reach of the Klamath river (2012)
+```{r, warning=FALSE, echo=FALSE}
+plot_grid(
+ ggplot(df, aes(date, GPP))+
+    geom_point(color="chartreuse4", size=2)+
+    labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.title.x = element_blank(), axis.text = element_text(size=13),
+          axis.title.y = element_text(size=15)),
+  
+  ggplot(df, aes(date, tQ))+geom_point(size=2, color="deepskyblue4")+
+    geom_point(data=df, aes(date, light_rel), size=2, color="darkgoldenrod3")+
+    scale_y_continuous(sec.axis = sec_axis(~./1, name=expression("Relativized Q")))+
+    labs(y="Relativized Light", x="Date (2012)")+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.text = element_text(size=13),
+          axis.title = element_text(size=15)),
+  
+  align="hv",ncol=1)
+
+```
+
+#### Check Data Simulation Performance
+```{r, warning=FALSE}
+## Simulate data for each growth model
+df$simGPP_GM1 <- PM1(phi=0.8, alpha=0.7, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
+df$simGPP_GM2 <- PM2(r=1.2, K=1, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
+df$simGPP_GM3 <- PM3(alpha=2, gamma=0.8, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
+
+ggplot(df, aes(date, GPP))+
+  geom_point()+
+  geom_line(data=df, aes(date, simGPP_GM1), color="red")+
+  geom_line(data=df, aes(date, simGPP_GM2), color="blue")+
+  geom_line(data=df, aes(date, simGPP_GM3), color="purple")+
+  scale_y_continuous(limits = c(0,25))
+
+```
+
+```{r}
+####################
+## Stan data prep ##
+####################
+rstan_options(auto_write=TRUE)
+options(mc.cores=parallel::detectCores())
+
+stan_data_compile <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, tQ = x$tQ, Q95 = x$Q95)
+  return(data)
+}
+
+sd_r2 <- stan_data_compile(r2)
+
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
