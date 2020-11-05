@@ -7,7 +7,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot",
 ##############################
 ## Data Import & Processing ##
 ##############################
-data <- read.csv("NWIS_sub_SiteYears.csv", header=T)
+data <- read.csv("../data/NWIS_sub_SiteYears.csv", header=T)
 data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 
 ## subset to only 2010
@@ -35,6 +35,7 @@ rel_LQT <- function(x){
 }
 
 dat <- lapply(l, function(x) rel_LQT(x))
+
 
 
 

@@ -1,5 +1,5 @@
 ---
-title: "Productivity Model Simulations"
+title: "Productivity Model Simulations - Klamath Test"
 author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
 output: html_document
 ---
@@ -11,7 +11,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "rstan","bayesplot","shinystan"), require, character.only=T)
 
 ## Source data
-source("SimData_Source.R")
+source("KlamathData_Source.R")
 
 # source simulation models
 # input variables: GPP, GPP_sd, light, tQ
@@ -23,7 +23,6 @@ source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha,
 
 #### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
-df <- dat$Clackamas_OR
 plot_grid(
  ggplot(df, aes(date, GPP))+
     geom_point(color="chartreuse4", size=2)+
@@ -46,22 +45,7 @@ plot_grid(
 
 ```
 
-#### Check Data Simulation Performance
-```{r, warning=FALSE}
-## Simulate data for each growth model
-df$simGPP_PM1 <- PM1(phi=0.8, alpha=0.7, beta=-1, sig_p=0.1, df=df)
-df$simGPP_PM2 <- PM2(r=1.2, K=1, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
-df$simGPP_PM3 <- PM3(alpha=2, gamma=0.8, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
-
-ggplot(df, aes(date, GPP))+
-  geom_point()+
-  geom_line(data=df, aes(date, simGPP_PM1), color="red")+
-  geom_line(data=df, aes(date, simGPP_PM2), color="blue")+
-  geom_line(data=df, aes(date, simGPP_PM3), color="purple")+
-  scale_y_continuous(limits = c(0,25))
-
-```
-
+#### First-pass at approximating parameter estimates for different models
 ```{r}
 ####################
 ## Stan data prep ##
@@ -76,15 +60,39 @@ stan_data_compile <- function(x){
 
 stan_data <- stan_data_compile(df)
 
-
 ###############################
 ## Run Stan to get estimates ##
 ###############################
-r2_stan2 <- stan("PM2_2020_06_26.stan", data=sd_r2,chains=4,iter=1000)
+PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=4, iter=1000)
+PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=4, iter=1000)
+PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=4, iter=1000)
 
-
+launch_shinystan(PM3_DataOutput) ## Click explore tab when new window opens
 ```
 
+
+#### Extract median estimate and simulate GPP data (despite poor parameter convergence)
+```{r, warning=FALSE}
+source("StanParameterExtraction_Source.R")
+
+PM1_medpar <- phenom_extract_medians(extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
+PM2_medpar <- mechB_extract_medians(extract(PM2_DataOutput, c("r","K","s","c","B","P","pred_GPP","sig_p")))
+PM3_medpar <- mechN_extract_medians(extract(PM3_DataOutput, c("alpha","gamma","s","c","N","P","pred_GPP","sig_p")))
+
+
+## Simulate data for each growth model
+df$simGPP_PM1 <- PM1(phi=0.8, alpha=0.7, beta=-1, sig_p=0.1, df=df)
+df$simGPP_PM2 <- PM2(r=1.2, K=1, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
+df$simGPP_PM3 <- PM3(alpha=2, gamma=0.8, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
+
+ggplot(df, aes(date, GPP))+
+  geom_point()+
+  geom_line(data=df, aes(date, simGPP_PM1), color="red")+
+  geom_line(data=df, aes(date, simGPP_PM2), color="blue")+
+  geom_line(data=df, aes(date, simGPP_PM3), color="purple")+
+  scale_y_continuous(limits = c(0,25))
+
+```
 
 
 
