@@ -1,5 +1,4 @@
  
-    
     data {
     int Ndays; // number of days
     vector [Ndays] light; // relativized to max value; unitless
@@ -36,9 +35,8 @@
     
     // Param priors (weakly informative)  
     phi ~ beta(1,1);
-    alpha ~ normal(0,5);
-    beta ~ normal(0,5);
-    
+    alpha ~ normal(0,50);
+    beta ~ normal(0,50);
     
     }
     

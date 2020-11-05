@@ -1,6 +1,6 @@
 ## Growth Model 2 - Data simulation
 
-PM2 <- function(rmax, K, s, c, sig_o, sig_p, df) {
+PM2 <- function(rmax, K, s, c, sig_p, df) {
   
   ## Data
   Ndays<-length(df$GPP)
@@ -16,7 +16,9 @@ PM2 <- function(rmax, K, s, c, sig_o, sig_p, df) {
   
   ## Vectors for model output of P, B, pred_GPP
   P <- numeric(Ndays)
-  P <- 
+  for(i in 2:length(tQ)){
+    P[i] = exp(-exp(s*(tQ[i] - c)))
+  }
   
   B<-numeric(Ndays)
   pred_GPP<-numeric(Ndays)
@@ -27,7 +29,7 @@ PM2 <- function(rmax, K, s, c, sig_o, sig_p, df) {
     B[j] = (B[j-1]*exp(rmax*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j] + proc_err
   }
   
-  pred_GPP <- light*exp(B) + obs_err
+  pred_GPP <- light*exp(B) + obs_err*sample(c(1,-1),1)
   return(pred_GPP)
 }
 

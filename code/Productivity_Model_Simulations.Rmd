@@ -11,13 +11,14 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "rstan","bayesplot","shinystan"), require, character.only=T)
 
 # source data
+setwd("../")
 source("SimData_Source.R")
 
 # source simulation models
 # input variables: GPP, GPP_sd, light, tQ
-source("GrowthModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p, df
-source("GrowthModel2_Logistic.R") # estimated parameters: r, K, beta_r, sig_p, df
-source("GrowthModel3_ThinFilm.R") # estimated parameters: alpha, gamma, beta_r, sig_p, df
+source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
+source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
+source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha, gamma, s, c, sig_p
 ```
 
 #### Snow-Melt GPP Example Data - Weitchpec reach of the Klamath river (2012)

@@ -1,4 +1,5 @@
-data {
+
+    data {
     int Ndays; // number of days
     vector [Ndays] light; // relativized to max value
     vector [Ndays] GPP; // estimates from posterior probability distributions
@@ -8,14 +9,13 @@ data {
     
     parameters {
     // Disturbance (persistence) parameters
-    real<lower=0> beta_r; // refugia biomass after Qcrit > Q
-    real<lower=0,upper=10> critQ; // estimate of Qcrit
-    real<lower=0,upper=20> bQ; // steepness of the transition from P=1 to P=0
+    real<lower=0> c; // estimate of Qcrit
+    real<lower=0> s; // steepness of the transition from P=1 to P=0
     
     // Growth parameters
     real<lower=0> alpha; // light conversion
     real<lower=0> gamma; // multiplied by b it is the intercept of density dependent death
-    vector [Ndays] X; // ratio of biomass to carrying capacity (B/K)
+    vector [Ndays] N; // ratio of biomass to carrying capacity (B/K)
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
@@ -32,15 +32,15 @@ data {
     
     for (i in 1:(Ndays)){
     
-    P[i]=exp(-exp(bQ*(tQ[i]-critQ)));
+    P[i]=exp(-exp(s*(tQ[i]-c)));
     
     b[i] = alpha*light[i];
     if (i < 21){
     ant_b[i] = mean(b[1:i]);
-    } else { ant_b[i] = mean(b[(i-20):i]); // length can be a parameter
+    } else { ant_b[i] = mean(b[(i-15):i]); // length can be a parameter
     }
     
-    pred_GPP[i] = b[i] * X[i];
+    pred_GPP[i] = b[i] * N[i];
     
     }
     
@@ -49,21 +49,18 @@ data {
     model {
     // Process model
     for (j in 2:(Ndays)){
-    X[j] ~ normal((X[(j-1)] + (b[j] - ant_b[j]*X[(j-1)]*(gamma+(1-gamma)*X[(j-1)])) - beta_r)*P[j] + beta_r, sig_p);
+    N[j] ~ normal((N[(j-1)] + (b[j] - ant_b[j]*N[(j-1)]*(gamma+(1-gamma)*N[(j-1)])))*P[j], sig_p);
     }
     
     // Observation model  
     GPP ~ normal(pred_GPP, GPP_sd);
     
     // Error priors
-    sig_p ~ normal(0,1);
+    sig_p ~ normal(0,2);
     
     // Param priors
-    bQ ~ normal(0,15);
-    critQ ~ normal(0,15);
     alpha ~ normal(0,50);
     gamma ~ beta(1,1);
-    beta_r ~ normal(0,1);
     }
     
     

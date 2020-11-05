@@ -9,9 +9,8 @@
     
     parameters {
     // Disturbance (persistence) parameters
-    real<lower=0> beta_r; // refugia biomass after Qcrit > Q
-    real<lower=0, upper=15> critQ; // estimate of Qcrit
-    real<lower=0, upper=30> bQ; // steepness of the transition from P=1 to P=0
+    real<lower=0> c; // estimate of Qcrit
+    real<lower=0> s; // steepness of the transition from P=1 to P=0
     
     // Logistic growth parameters  
     real<lower=0> B [Ndays]; // Biomass; g m-2
@@ -28,7 +27,7 @@
     real P [Ndays];
     
     for(i in 1:Ndays){
-    P[i]=exp(-exp(bQ*(tQ[i]-critQ)));
+    P[i]=exp(-exp(s*(tQ[i]-c)));
     pred_GPP[i] = light[i]*exp(B[i]);
     }
     
@@ -38,7 +37,7 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ normal((B[(j-1)] + (r*B[(j-1)]*(1-(B[(j-1)]/K))) - beta_r)*P[j] + beta_r, sig_p);
+    B[j] ~ normal((B[(j-1)] + (r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
     }
     
     // Observation model
@@ -48,7 +47,6 @@
     sig_p ~ normal(0,2);
     
     // Param priors
-    beta_r ~ normal(0,10);
     K ~ normal(0,30);
     r ~ normal(0,15);
     
