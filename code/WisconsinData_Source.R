@@ -31,14 +31,20 @@ data$ID <- NA
 data[which(data$site_name == "nwis_05406457"),]$ID <- "BlackEarth_CrossPlains"
 data[which(data$site_name == "nwis_05406500"),]$ID <- "BlackEarth_BlackEarth"
 
+## Create a GPP SD
+data$GPP_sd <- ((data$GPP - data$GPP.lower) + (data$GPP.upper - data$GPP))/2
+
 ## split list by ID
 l <- split(data, data$ID)
 
 rel_LQT <- function(x){
   x$light_rel <- x$light/max(x$light)
-  #x$daylength_rel <- x$daylength_hrs/max(x$daylength_hrs)
   x$temp_rel <- x$temp/max(x$temp)
-  x$tQ <- (x$Q-mean(x$Q))/sd(x$Q)
+  x$tQ <- x$Q/max(x$Q)
+  
+  #x$std_light <- (x$light-mean(x$light))/sd(x$light)
+  #x$std_temp <- (x$temp-mean(x$temp))/sd(x$temp)
+  #x$tQ <- (x$Q-mean(x$Q))/sd(x$Q)
   x<-x[order(x$date),]
   return(x)
 }
