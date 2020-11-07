@@ -2,6 +2,9 @@
 .Rhistory
 .Rapp.history
 
+# Large data files
+*data/daily_predictions.tsv
+
 # Session Data files
 .RData
 
