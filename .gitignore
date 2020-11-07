@@ -4,6 +4,9 @@
 
 # Large data files
 *data/daily_predictions.tsv
+*data/NWIS_WI_data.csv
+*data/NWIS_WI_sitedata.csv
+*data/site_data.csv
 
 # Session Data files
 .RData
