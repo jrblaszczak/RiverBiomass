@@ -9,8 +9,8 @@
     
     parameters {
     // Disturbance (persistence) parameters
-    real<lower=0> c; // estimate of Qcrit
-    real<lower=0> s; // steepness of the transition from P=1 to P=0
+    real<lower=0, upper=30> c; // estimate of Qcrit
+    real<lower=0, upper=10> s; // steepness of the transition from P=1 to P=0
     
     // Logistic growth parameters  
     real<lower=0> B [Ndays]; // Biomass; g m-2

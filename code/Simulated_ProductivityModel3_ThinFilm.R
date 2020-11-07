@@ -5,16 +5,14 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
   ## Data
   Ndays<-length(df$GPP)
   GPP <- df$GPP
+  GPP_sd <- df$GPP_sd
   light <- df$light_rel
   tQ <- df$tQ
   Q95 <- df$Q95
   
   ## Error
   proc_err <- rnorm(Ndays, mean = 0, sd = sig_p)
-  obs_err<-numeric(length(Ndays))
-  for(i in 1:Ndays){
-    obs_err[i] = rnorm(Ndays, mean=0, sd = sig_o)
-  }
+  obs_err<-GPP_sd
   
   ## Vectors for model output
   P <- numeric(Ndays)
@@ -39,7 +37,7 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
   ## Process Model
   for (j in 2:Ndays) {
     
-    B[j] = (B[(j-1)] + B[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*B[(j-1)])) - beta_r)*Q95[j] + beta_r + proc_err
+    B[j] = (B[(j-1)] + B[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*B[(j-1)])))*P[j] + proc_err*sample(c(1,-1),1)
     
   }
     pred_GPP <- b*B + obs_err*sample(c(1,-1),1)

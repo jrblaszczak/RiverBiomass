@@ -20,7 +20,7 @@
     
     model {
     // Initial value
-    l_pred_GPP[1] ~ normal(log(GPP[1]), 0.01);
+    l_pred_GPP[1] ~ normal(log(GPP[1]), 0.001);
     
     // Process model
     for (j in 2:(Ndays)) {

@@ -67,7 +67,7 @@ PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_
 PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=4, iter=1000)
 PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=4, iter=1000)
 
-launch_shinystan(PM3_DataOutput) ## Click explore tab when new window opens
+launch_shinystan(PM1_DataOutput) ## Click explore tab when new window opens
 ```
 
 
@@ -81,9 +81,20 @@ PM3_medpar <- mechN_extract_medians(extract(PM3_DataOutput, c("alpha","gamma","s
 
 
 ## Simulate data for each growth model
-df$simGPP_PM1 <- PM1(phi=0.8, alpha=0.7, beta=-1, sig_p=0.1, df=df)
-df$simGPP_PM2 <- PM2(r=1.2, K=1, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
-df$simGPP_PM3 <- PM3(alpha=2, gamma=0.8, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
+df$simGPP_PM1 <- PM1(phi=PM1_medpar$par$phi,
+                     alpha=PM1_medpar$par$alpha,
+                     beta=PM1_medpar$par$beta,
+                     sig_p=PM1_medpar$par$sig_p, df=df)
+df$simGPP_PM2 <- PM2(r=PM2_medpar$par$r,
+                     K=PM2_medpar$par$K,
+                     s=PM2_medpar$par$s,
+                     c=PM2_medpar$par$c,
+                     sig_p=PM2_medpar$par$sig_p, df=df)
+df$simGPP_PM3 <- PM3(alpha=PM3_medpar$par$alpha,
+                     gamma=PM3_medpar$par$gamma,
+                     s=PM3_medpar$par$s,
+                     c=PM3_medpar$par$c,
+                     sig_p=PM3_medpar$par$sig_p, df=df)
 
 ggplot(df, aes(date, GPP))+
   geom_point()+
