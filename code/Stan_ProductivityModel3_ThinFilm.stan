@@ -40,7 +40,7 @@
     } else { ant_b[i] = mean(b[(i-15):i]); // length can be a parameter
     }
     
-    pred_GPP[i] = b[i] * N[i];
+    pred_GPP[i] = b[i] * exp(N[i]);
     
     }
     
@@ -53,7 +53,7 @@
     }
     
     // Observation model  
-    GPP ~ normal(pred_GPP, GPP_sd);
+    GPP ~ normal(pred_GPP, GPP_sd)T[0,];
     
     // Error priors
     sig_p ~ normal(0,2);
