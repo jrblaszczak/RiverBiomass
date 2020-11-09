@@ -26,10 +26,10 @@ PM2 <- function(rmax, K, s, c, sig_p, df) {
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = (B[j-1]*exp(rmax*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j] + proc_err*sample(c(1,-1),1)
+    B[j] = (B[j-1]*exp(rmax*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j] + rnorm(1,0,proc_err)
   }
   
-  pred_GPP <- light*exp(B) + obs_err*sample(c(1,-1),1)
+  pred_GPP <- light*exp(B) + rnorm(1,0,obs_err)
   return(pred_GPP)
 }
 
