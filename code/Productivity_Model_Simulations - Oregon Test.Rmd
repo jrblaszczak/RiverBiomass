@@ -24,6 +24,7 @@ source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha,
 #### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
 df <- dat$Clackamas_OR
+df <- df[which(df$year == "2010"),]
 plot_grid(
  ggplot(df, aes(date, GPP))+
     geom_point(color="chartreuse4", size=2)+
@@ -33,7 +34,7 @@ plot_grid(
           axis.title.x = element_blank(), axis.text = element_text(size=13),
           axis.title.y = element_text(size=15)),
   
-  ggplot(df, aes(date, tQ*1))+geom_point(size=2, color="deepskyblue4")+
+  ggplot(df, aes(date, tQ*1))+geom_line(size=1.5, color="deepskyblue4")+
     geom_point(data=df, aes(date, light_rel), size=2, color="darkgoldenrod3")+
     scale_y_continuous(sec.axis = sec_axis(~./1, name=expression("Relativized Q")))+
     labs(y="Relativized Light", x="Date (2012)")+
@@ -43,6 +44,15 @@ plot_grid(
           axis.title = element_text(size=15)),
   
   align="hv",ncol=1)
+
+
+ggplot(df, aes(light_rel, GPP))+
+  geom_point(size=2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), x="Light (short-wave radiation) relative to annual max")+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.text = element_text(size=13),
+          axis.title = element_text(size=15))
 
 ```
 
@@ -69,7 +79,7 @@ PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, 
 PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=4, iter=1000)
 
 
-launch_shinystan(PM3_DataOutput) ## Click explore tab when new window opens
+#launch_shinystan(PM3_DataOutput) ## Click explore tab when new window opens
 ```
 
 
