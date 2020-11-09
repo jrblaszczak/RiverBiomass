@@ -37,10 +37,11 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
   ## Process Model
   for (j in 2:Ndays) {
     
-    B[j] = (B[(j-1)] + B[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*B[(j-1)])))*P[j] + proc_err*sample(c(1,-1),1)
-    
+    B[j] = (B[(j-1)] + B[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*B[(j-1)])))*P[j] + rnorm(1,0,proc_err)
   }
-    pred_GPP <- b*B + obs_err*sample(c(1,-1),1)
+  
+  pred_GPP <- rtnorm(1,b*B,obs_err)
+  
   return(pred_GPP)
   
 }

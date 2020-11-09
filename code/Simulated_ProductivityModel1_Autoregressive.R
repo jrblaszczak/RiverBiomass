@@ -21,9 +21,9 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   
   ## Process model
   for (j in 2:Ndays) {
-    l_pred_GPP[j] = phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j] + proc_err*sample(c(1,-1),1)
+    l_pred_GPP[j] = phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j] + rnorm(1,0,proc_err)
   }
-  pred_GPP <- exp(l_pred_GPP) + obs_err*sample(c(1,-1),1)
+  pred_GPP <- rtnorm(1,exp(l_pred_GPP),obs_err)
   return(pred_GPP)
 }
 

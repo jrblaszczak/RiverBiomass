@@ -29,7 +29,7 @@ PM2 <- function(rmax, K, s, c, sig_p, df) {
     B[j] = (B[j-1]*exp(rmax*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j] + rnorm(1,0,proc_err)
   }
   
-  pred_GPP <- light*exp(B) + rnorm(1,0,obs_err)
+  pred_GPP <- rtnorm(1,light*exp(B),obs_err)
   return(pred_GPP)
 }
 
