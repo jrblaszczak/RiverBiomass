@@ -9,29 +9,31 @@
     
     parameters {
     // Growth & Loss Parameters
-    real l_pred_GPP [Ndays]; // predicted GPP; g O2 m-2 d-1
+    real l_pred_GPP [Ndays]; // predicted GPP (log scale); g O2 m-2 d-1
     real<lower=0, upper=1> phi; // autoregressive coefficient; unitless
     real<lower=0> alpha; // growth term; g O2 m-2 d-1
-    real beta; // discharge to loss conversion term; g O2 m-2 d-1
+    real<upper=0> beta; // discharge to loss conversion term; g O2 m-2 d-1
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
     }
     
-    model {
-    // Initial value
-    l_pred_GPP[1] ~ normal(log(GPP[1]), 0.001);
     
+    model {
+        
+    // Initial value
+    l_pred_GPP[1] ~ normal(log(GPP[1]), 1e-6);
+
     // Process model
     for (j in 2:(Ndays)) {
-    l_pred_GPP[j] ~ normal(phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], log(sig_p));
+    l_pred_GPP[j] ~ normal(phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sig_p);
     }
     
     // Observation model
     GPP ~ normal(exp(l_pred_GPP), GPP_sd);
     
     // Error priors
-    sig_p ~ normal(0,2);
+    sig_p ~ normal(0,2)T[0,];
     
     // Param priors (weakly informative)  
     phi ~ beta(1,1);

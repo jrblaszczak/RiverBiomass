@@ -1,0 +1,2 @@
+"","site_name","nwis_id","nhdplus_id","long_name","lat","lon","coord_datum","alt","alt_datum","site_type","dvqcoefs.c","dvqcoefs.f","dvqcoefs.a","dvqcoefs.b","dvqcoefs.k","dvqcoefs.m","struct.canal_flag","struct.dam_flag","struct.npdes_flag"
+"542","nwis_14211010",14211010,23809000,"CLACKAMAS RIVER NEAR OREGON CITY, OR",45.3792874,-122.5773134,"NAD83",0,"NGVD29","ST",0.225015038,0.422933145,23.65680076,0.137066855,0.18785919,0.44,NA,NA,NA

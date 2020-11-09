@@ -1,5 +1,5 @@
 ---
-title: "Productivity Model Simulations - Wisconsin Test"
+title: "Productivity Model Simulations - Oregon Test"
 author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
 output: html_document
 ---
@@ -8,10 +8,10 @@ output: html_document
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "tidyverse", "reshape2","PerformanceAnalytics",
-         "rstan","bayesplot","shinystan"), require, character.only=T)
+         "rstan","bayesplot","shinystan","Metrics"), require, character.only=T)
 
 ## Source data
-source("SimData_Source.R")
+source("Oregon_ClackamasData_Source.R")
 
 # source simulation models
 # input variables: GPP, GPP_sd, light, tQ
@@ -23,7 +23,7 @@ source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha,
 
 #### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
-df <- dat$BlackEarth_BlackEarth
+df <- dat$Clackamas_OR
 plot_grid(
  ggplot(df, aes(date, GPP))+
     geom_point(color="chartreuse4", size=2)+
@@ -66,12 +66,10 @@ stan_data <- stan_data_compile(df)
 ###############################
 PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=4, iter=1000)
 PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=4, iter=1000)
-PM2b_DataOutput <- stan("Stan_ProductivityModel2b_Logistic.stan", data=stan_data, chains=4, iter=1000)
-
 PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=4, iter=1000)
 
 
-launch_shinystan(PM2_DataOutput) ## Click explore tab when new window opens
+launch_shinystan(PM3_DataOutput) ## Click explore tab when new window opens
 ```
 
 
@@ -100,12 +98,20 @@ df$simGPP_PM3 <- PM3(alpha=PM3_medpar$par$alpha,
                      c=PM3_medpar$par$c,
                      sig_p=PM3_medpar$par$sig_p, df=df)
 
-ggplot(df, aes(date, GPP))+
-  geom_point()+
-  geom_line(data=df, aes(date, simGPP_PM1), color="red")+
-  geom_line(data=df, aes(date, simGPP_PM2), color="blue")+
-  geom_line(data=df, aes(date, simGPP_PM3), color="purple")+
-  scale_y_continuous(limits = c(0,25))
+sim_viz <- function(x, col){
+  ggplot(df, aes(date, GPP))+
+    geom_point()+
+    geom_line(data=df, aes(date, x), color=col)+
+    scale_y_continuous(limits = c(0,15))
+}
+
+plot_grid(
+  sim_viz(df$simGPP_PM1, "red"),
+  sim_viz(df$simGPP_PM2, "purple"),
+  sim_viz(df$simGPP_PM3, "blue"),
+ncol=1)
+
+apply(df[,c("GPP","simGPP_PM1","simGPP_PM2","simGPP_PM3")], 2, function(x) rmse(df$GPP, x))
 
 ```
 

@@ -9,8 +9,8 @@
     
     parameters {
     // Disturbance (persistence) parameters
-    real<lower=0, upper=1> c; // estimate of Qcrit
-    real<lower=0, upper=50> s; // steepness of the transition from P=1 to P=0
+    real<lower=0> c; // estimate of Qcrit
+    real<lower=0> s; // steepness of the transition from P=1 to P=0
     
     // Logistic growth parameters  
     real<lower=0> B [Ndays]; // Biomass; g m-2
@@ -27,7 +27,7 @@
     real P [Ndays];
     
     for(i in 1:Ndays){
-    P[i]=exp(-exp(s*(tQ[i]-c)));
+    P[i]=exp(-exp(s*tQ[i]+c));
     pred_GPP[i] = light[i]*exp(B[i]);
     }
     
@@ -49,7 +49,6 @@
     // Param priors
     K ~ normal(0,30);
     r ~ normal(0,15);
-    c ~ beta(10,1);
     
     }
     
