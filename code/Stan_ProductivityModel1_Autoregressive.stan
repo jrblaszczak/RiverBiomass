@@ -30,7 +30,7 @@
     }
     
     // Observation model
-    GPP ~ normal(exp(l_pred_GPP), GPP_sd);
+    GPP ~ normal(exp(l_pred_GPP), GPP_sd)T[0,];
     
     // Error priors
     sig_p ~ normal(0,2)T[0,];

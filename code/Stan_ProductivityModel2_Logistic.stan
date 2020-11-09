@@ -37,11 +37,11 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ normal((B[(j-1)] + (r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
+    B[j] ~ normal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
     }
     
     // Observation model
-    GPP ~ normal(pred_GPP, GPP_sd);
+    GPP ~ normal(pred_GPP, GPP_sd)T[0,];
     
     // Error priors
     sig_p ~ normal(0,2);
