@@ -23,7 +23,11 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   for (j in 2:Ndays) {
     l_pred_GPP[j] = phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j] + rnorm(1,0,proc_err)
   }
-  pred_GPP <- rtnorm(1,exp(l_pred_GPP),obs_err)
+  
+  for (i in 2:Ndays){
+  pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = obs_err[i], lower=0)
+  }
+  
   return(pred_GPP)
 }
 

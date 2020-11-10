@@ -8,7 +8,7 @@ output: html_document
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "tidyverse", "reshape2","PerformanceAnalytics",
-         "rstan","bayesplot","shinystan","Metrics"), require, character.only=T)
+         "rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
 
 ## Source data
 source("Oregon_ClackamasData_Source.R")
