@@ -1,6 +1,13 @@
-## Growth Model 3 - Thin Film (Density Independent Growth)
+#PM3 <- function(alpha, gamma, s, c, sig_p, df) {
 
-PM3 <- function(alpha, gamma, s, c, sig_p, df) {
+#Download df from 
+
+  alpha <- 2
+  gamma <- 0.3
+  s <- 10
+  c <- 0.5
+  sig_p <- 0.3
+  
   
   ## Data
   Ndays<-length(df$GPP)
@@ -37,12 +44,36 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
   for (j in 2:Ndays){
     B[j] = rnorm(1, mean = (B[(j-1)] + B[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*B[(j-1)])))*P[j], sd = sig_p)
   }
+  B
+  plot(B)
+  plot(exp(B))
+  
   
   for (i in 2:Ndays){
     pred_GPP[i] <- rtnorm(1, mean = b[i]*B[i], sd = obs_err[i], lower = 0)
   }
+  plot(pred_GPP)
+  lines(GPP)
   
-
-  return(pred_GPP)
   
-}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#  return(pred_GPP)
