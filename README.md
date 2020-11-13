@@ -22,4 +22,6 @@
 
 	B. Please take a look at the corresponding "Stan_ProductivityModel*" scripts and see if you notice errors, again in particular in relation to the process and observation error
 
+	C. **In particular**, when looking at the data simulation for PM1, everytime I try to change the distribution for the process model to log normal (rlnorm) it goes insane (see "PM1_adjusting_params"), but if I leave it a normal distribution it's fine, but GPP is on the log scale so I'm pretty sure the process model should be log normally distributed but maybe I'm confused.
+
 

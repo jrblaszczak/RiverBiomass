@@ -37,7 +37,7 @@
     b[i] = alpha*light[i];
     if (i < 21){
     ant_b[i] = mean(b[1:i]);
-    } else { ant_b[i] = mean(b[(i-20):i]); // length can be a parameter
+    } else { ant_b[i] = mean(b[(i-20):i]); // length can be a parameter but currently fixed
     }
     
     pred_GPP[i] = b[i] * exp(N[i]);
@@ -52,8 +52,10 @@
     N[j] ~ normal((N[(j-1)] + (b[j] - ant_b[j]*N[(j-1)]*(gamma+(1-gamma)*N[(j-1)])))*P[j], sig_p);
     }
     
-    // Observation model  
-    GPP ~ normal(pred_GPP, GPP_sd); //T[0,]
+    // Observation model
+    for (j in 2:(Ndays)) {
+        GPP[j] ~ normal(exp(pred_GPP[j]), GPP_sd[j])T[0,];
+    }
     
     // Error priors
     sig_p ~ normal(0,2);
@@ -61,6 +63,9 @@
     // Param priors
     alpha ~ normal(0,50);
     gamma ~ beta(1,1);
+    
+    
+    
     }
     
     

@@ -10,7 +10,7 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
   tQ <- df$tQ
   
   ## Error
-  proc_err <- rlnorm(Ndays, meanlog = 0, sdlog = sig_p)
+  #proc_err <- rlnorm(Ndays, meanlog = 0, sdlog = sig_p)
   obs_err<-GPP_sd
   
   ## Vectors for model output
@@ -19,12 +19,12 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
     P[i] = exp(-exp(s*(tQ[i] - c)))
   }
   
-  B<-numeric(Ndays)
+  N<-numeric(Ndays)
   pred_GPP<-numeric(Ndays)
   
   b <- alpha*light
   d <- numeric(Ndays)
-  B[1] <- GPP[1]/b[1]
+  N[1] <- GPP[1]/b[1]
   
   ant_b <- numeric(Ndays)
   for (j in 1:Ndays){
@@ -35,14 +35,17 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rnorm(1, mean = (B[(j-1)] + B[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*B[(j-1)])))*P[j], sd = sig_p)
+    N[j] = rnorm(1, mean = (N[(j-1)] + N[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*N[(j-1)])))*P[j], sd = sig_p)
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- rtnorm(1, mean = b[i]*B[i], sd = obs_err[i], lower = 0)
+    pred_GPP[i] <- rtnorm(1, mean = b[i]*exp(N[i]), sd = obs_err[i], lower = 0)
   }
   
 
   return(pred_GPP)
   
 }
+
+
+

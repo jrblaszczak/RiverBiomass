@@ -1,10 +1,11 @@
 ## Growth Model 1 - Data simulation 
 
 #PM1 <- function(phi, alpha, beta, sig_p, df) {
+library(MCMCglmm) ## this is needed to use the function rtnorm (there are other packages)
 
 phi <- 0.95
-alpha <- 2
-beta <- -0.5
+alpha <- 0.02
+beta <- -0.01
 sig_p <- 0.3
 
   ## Data
@@ -26,15 +27,15 @@ sig_p <- 0.3
   
   ## Process model
   for (j in 2:Ndays) {
-    l_pred_GPP[j] = rnorm(1, mean=0.9*l_pred_GPP[j-1] + 2*light[j] + (-2)*tQ[j], sd = sig_p) ## on another scale?
+    l_pred_GPP[j] = rnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p) ## When change to rlnorm, it goes crazy
   }
   plot(l_pred_GPP)
   l_pred_GPP
   
   
-  0.9*l_pred_GPP[1]
-  2*light[2]
-  (-2)*tQ[2]
+  0.95*l_pred_GPP[2]
+  0.02*light[2]
+  (-0.01)*tQ[2]
   
   for (i in 2:Ndays){
     pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = obs_err[i], lower=0)

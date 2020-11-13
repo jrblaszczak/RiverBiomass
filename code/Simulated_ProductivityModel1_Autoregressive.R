@@ -9,7 +9,7 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   tQ <- df$tQ # discharge standardized to max value
   
   ## Error
-  #proc_err <- rlnorm(Ndays, meanlog = 0, sdlog = sig_p)
+  #proc_err <- rlnorm(Ndays, meanlog = 0, sdlog = sig_p) # no longer here, because moved it down to the process model, however process model not working when a log normal distribution
   obs_err <- GPP_sd
   
   ## Vectors for model output
