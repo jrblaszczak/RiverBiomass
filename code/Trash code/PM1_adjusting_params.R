@@ -1,6 +1,12 @@
 ## Growth Model 1 - Data simulation 
 
-PM1 <- function(phi, alpha, beta, sig_p, df) {
+#PM1 <- function(phi, alpha, beta, sig_p, df) {
+
+phi <- 0.95
+alpha <- 2
+beta <- -0.5
+sig_p <- 0.3
+
   ## Data
   Ndays<-length(df$GPP)
   GPP <- df$GPP
@@ -20,14 +26,23 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   
   ## Process model
   for (j in 2:Ndays) {
-    l_pred_GPP[j] = rnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p)
+    l_pred_GPP[j] = rnorm(1, mean=0.9*l_pred_GPP[j-1] + 2*light[j] + (-2)*tQ[j], sd = sig_p) ## on another scale?
   }
+  plot(l_pred_GPP)
+  l_pred_GPP
+  
+  
+  0.9*l_pred_GPP[1]
+  2*light[2]
+  (-2)*tQ[2]
   
   for (i in 2:Ndays){
-  pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = obs_err[i], lower=0)
+    pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = obs_err[i], lower=0)
   }
+  plot(pred_GPP)
+  lines(GPP)
   
-  return(pred_GPP)
-}
+#  return(pred_GPP)
+#}
 
 

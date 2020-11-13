@@ -37,7 +37,7 @@
     b[i] = alpha*light[i];
     if (i < 21){
     ant_b[i] = mean(b[1:i]);
-    } else { ant_b[i] = mean(b[(i-15):i]); // length can be a parameter
+    } else { ant_b[i] = mean(b[(i-20):i]); // length can be a parameter
     }
     
     pred_GPP[i] = b[i] * exp(N[i]);

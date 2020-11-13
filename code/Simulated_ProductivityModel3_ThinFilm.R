@@ -8,10 +8,9 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
   GPP_sd <- df$GPP_sd
   light <- df$light_rel
   tQ <- df$tQ
-  Q95 <- df$Q95
   
   ## Error
-  proc_err <- rnorm(Ndays, mean = 0, sd = sig_p)
+  proc_err <- rlnorm(Ndays, meanlog = 0, sdlog = sig_p)
   obs_err<-GPP_sd
   
   ## Vectors for model output
@@ -37,10 +36,12 @@ PM3 <- function(alpha, gamma, s, c, sig_p, df) {
   ## Process Model
   for (j in 2:Ndays) {
     
-    B[j] = (B[(j-1)] + B[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*B[(j-1)])))*P[j] + rnorm(1,0,proc_err)
+    B[j] = (B[(j-1)] + B[(j-1)]*(b[j] - ant_b[j]*(gamma+(1-gamma)*B[(j-1)])))*P[j] + proc_err
   }
   
-  pred_GPP <- rtnorm(1,b*B,obs_err)
+  for (i in 2:Ndays){
+    pred_GPP[i] <- rnorm(1, mean = b[i]*B[i], sd = obs_err[i])
+  }
   
   return(pred_GPP)
   

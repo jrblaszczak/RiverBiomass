@@ -15,7 +15,6 @@
     // Logistic growth parameters  
     real<lower=0> B [Ndays]; // Biomass; g m-2
     real<lower=0> r; // growth rate; d-1
-    // real<lower=0> alpha; // light conversion; unitless
     real<lower=0> K; // carrying capacity; g m-2
     
     // Error parameters
@@ -28,7 +27,7 @@
     
     for(i in 1:Ndays){
     P[i]=exp(-exp(s*(tQ[i]-c)));
-    pred_GPP[i] = light[i]*exp(B[i]);
+    pred_GPP[i] =light[i]*exp(B[i]);
     }
     
     } 
@@ -37,14 +36,16 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ normal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
+    B[j] ~ lognormal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
     }
-    
+ 
     // Observation model
-    GPP ~ normal(pred_GPP, GPP_sd);
-    
+    for (j in 2:(Ndays)) {
+        GPP[j] ~ normal(exp(pred_GPP[j]), GPP_sd[j])T[0,];
+    }
+ 
     // Error priors
-    sig_p ~ normal(0,2);
+    sig_p ~ normal(0,2)T[0,];
     
     // Param priors
     K ~ normal(0,30);

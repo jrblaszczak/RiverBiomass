@@ -1,10 +1,3 @@
----
-title: "Productivity Model Simulations - Oregon Test"
-author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
-output: html_document
----
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE, include=FALSE}
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "tidyverse", "reshape2","PerformanceAnalytics",
@@ -18,48 +11,13 @@ source("Oregon_ClackamasData_Source.R")
 source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
 source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
 source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha, gamma, s, c, sig_p
-```
 
-
-#### Visualize data
-```{r, warning=FALSE, echo=FALSE}
+# subset the data
 df <- dat$Clackamas_OR
-df <- df[which(df$year == "2010"),]
+df <- df[which(df$year == "2011"),]
 df <- df[1:170,]
+plot(df$GPP)
 
-plot_grid(
- ggplot(df, aes(date, GPP))+
-    geom_point(color="chartreuse4", size=2)+
-    labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
-    theme(legend.position = "none",
-          panel.background = element_rect(color = "black", fill=NA, size=1),
-          axis.title.x = element_blank(), axis.text = element_text(size=13),
-          axis.title.y = element_text(size=15)),
-  
-  ggplot(df, aes(date, tQ*1))+geom_line(size=1.5, color="deepskyblue4")+
-    geom_point(data=df, aes(date, light_rel), size=2, color="darkgoldenrod3")+
-    scale_y_continuous(sec.axis = sec_axis(~./1, name=expression("Relativized Q")))+
-    labs(y="Relativized Light", x="Date (2012)")+
-    theme(legend.position = "none",
-          panel.background = element_rect(color = "black", fill=NA, size=1),
-          axis.text = element_text(size=13),
-          axis.title = element_text(size=15)),
-  
-  align="hv",ncol=1)
-
-
-ggplot(df, aes(light_rel, GPP))+
-  geom_point(size=2)+
-  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), x="Light (short-wave radiation) relative to annual max")+
-    theme(legend.position = "none",
-          panel.background = element_rect(color = "black", fill=NA, size=1),
-          axis.text = element_text(size=13),
-          axis.title = element_text(size=15))
-
-```
-
-#### First-pass at approximating parameter estimates for different models
-```{r}
 ####################
 ## Stan data prep ##
 ####################
@@ -80,20 +38,18 @@ PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_
 PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=4, iter=1000)
 PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=4, iter=1000)
 
+PM1_extract <- extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p"))
+PM2_extract <- extract(PM2_DataOutput, c("r","K","s","c","B","P","pred_GPP","sig_p"))
+PM3_extract <- extract(PM3_DataOutput, c("alpha","gamma","s","c","N","P","pred_GPP","sig_p"))
 
-launch_shinystan(PM1_DataOutput) ## Click explore tab when new window opens
-```
-
-
-#### Extract median estimate and simulate GPP data (despite poor parameter convergence)
-```{r, warning=FALSE}
 source("StanParameterExtraction_Source.R")
-
 PM1_medpar <- phenom_extract_medians(extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
 PM2_medpar <- mechB_extract_medians(extract(PM2_DataOutput, c("r","K","s","c","B","P","pred_GPP","sig_p")))
 PM3_medpar <- mechN_extract_medians(extract(PM3_DataOutput, c("alpha","gamma","s","c","N","P","pred_GPP","sig_p")))
 
-
+###################
+## Simulate Data ##
+###################
 ## Simulate data for each growth model
 df$simGPP_PM1 <- PM1(phi=PM1_medpar$par$phi,
                      alpha=PM1_medpar$par$alpha,
@@ -109,26 +65,6 @@ df$simGPP_PM3 <- PM3(alpha=PM3_medpar$par$alpha,
                      s=PM3_medpar$par$s,
                      c=PM3_medpar$par$c,
                      sig_p=PM3_medpar$par$sig_p, df=df)
-
-sim_viz <- function(x, col){
-  ggplot(df, aes(date, GPP))+
-    geom_point()+
-    geom_line(data=df, aes(date, x), color=col)+
-    scale_y_continuous(limits = c(0,15))
-}
-
-plot_grid(
-  sim_viz(df$simGPP_PM1, "red"),
-  #sim_viz(df$simGPP_PM2, "purple"),
-  #sim_viz(df$simGPP_PM3, "blue"),
-ncol=1)
-
-apply(df[,c("GPP","simGPP_PM1","simGPP_PM2","simGPP_PM3")], 2, function(x) rmse(df$GPP, x))
-
-```
-
-
-
 
 
 
