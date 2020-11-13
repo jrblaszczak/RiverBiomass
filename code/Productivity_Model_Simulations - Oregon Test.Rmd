@@ -12,6 +12,9 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 
 ## Source data
 source("Oregon_ClackamasData_Source.R")
+df <- dat$Clackamas_OR
+df <- df[which(df$year == "2010"),] ## Subset to 2010
+df <- df[1:170,] ## Subset to spring/summer for now
 
 # source simulation models
 # input variables: GPP, GPP_sd, light, tQ
@@ -23,10 +26,6 @@ source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha,
 
 #### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
-df <- dat$Clackamas_OR
-df <- df[which(df$year == "2010"),]
-df <- df[1:170,]
-
 plot_grid(
  ggplot(df, aes(date, GPP))+
     geom_point(color="chartreuse4", size=2)+
@@ -119,8 +118,8 @@ sim_viz <- function(x, col){
 
 plot_grid(
   sim_viz(df$simGPP_PM1, "red"),
-  #sim_viz(df$simGPP_PM2, "purple"),
-  #sim_viz(df$simGPP_PM3, "blue"),
+  sim_viz(df$simGPP_PM2, "purple"),
+  sim_viz(df$simGPP_PM3, "blue"),
 ncol=1)
 
 apply(df[,c("GPP","simGPP_PM1","simGPP_PM2","simGPP_PM3")], 2, function(x) rmse(df$GPP, x))
