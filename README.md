@@ -14,6 +14,12 @@
 
 	* "Simulated_ProductivityModel3_ThinFilm.R" & "Stan_ProductivityModel3_ThinFilm.stan"
 
-3. H
+3. There are three versions of the data simulation R scripts which are in "*/code/Code to play around with params" which are there to play around with the input parameters to get a better handle on what's going on.
+
+4. What I need help on from Bob:
+
+	A. Please look at the "Simulated_ProductivityModel*" R scripts, specifically in relation to the process and observation error; you might create another folder for yourself in the code folder or open up the "Code to play around with params" folder to adjust the simulations
+
+	B. Please take a look at the corresponding "Stan_ProductivityModel*" scripts and see if you notice errors, again in particular in relation to the process and observation error
 
 
