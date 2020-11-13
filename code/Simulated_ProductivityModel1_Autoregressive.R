@@ -1,4 +1,4 @@
-## Growth Model 1 - Data simulation
+## Growth Model 1 - Data simulation 
 
 PM1 <- function(phi, alpha, beta, sig_p, df) {
   ## Data
@@ -6,11 +6,10 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   GPP <- df$GPP
   GPP_sd <- df$GPP_sd
   light <- df$light_rel
-  tQ <- df$tQ # standardized discharge
-  Q95 <- df$Q95
+  tQ <- df$tQ # discharge standardized to max value
   
   ## Error
-  proc_err <- rnorm(Ndays, mean = 0, sd = sig_p)
+  #proc_err <- rlnorm(Ndays, meanlog = 0, sdlog = sig_p) # no longer here, because moved it down to the process model, however process model not working when a log normal distribution
   obs_err <- GPP_sd
   
   ## Vectors for model output
@@ -21,9 +20,13 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   
   ## Process model
   for (j in 2:Ndays) {
-    l_pred_GPP[j] = phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j] + proc_err
+    l_pred_GPP[j] = rnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p)
   }
-  pred_GPP <- exp(l_pred_GPP) + obs_err*sample(c(1,-1),1)
+  
+  for (i in 2:Ndays){
+  pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = obs_err[i], lower=0)
+  }
+  
   return(pred_GPP)
 }
 

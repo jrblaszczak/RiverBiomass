@@ -1,0 +1,123 @@
+---
+title: "Productivity Model Simulations - Wisconsin Test"
+author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
+output: html_document
+---
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE, include=FALSE}
+# load packages
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
+         "tidyverse", "reshape2","PerformanceAnalytics",
+         "rstan","bayesplot","shinystan"), require, character.only=T)
+
+## Source data
+source("SimData_Source.R")
+
+# source simulation models
+# input variables: GPP, GPP_sd, light, tQ
+source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
+source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
+source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha, gamma, s, c, sig_p
+```
+
+
+#### Visualize data
+```{r, warning=FALSE, echo=FALSE}
+df <- dat$BlackEarth_BlackEarth
+plot_grid(
+ ggplot(df, aes(date, GPP))+
+    geom_point(color="chartreuse4", size=2)+
+    labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.title.x = element_blank(), axis.text = element_text(size=13),
+          axis.title.y = element_text(size=15)),
+  
+  ggplot(df, aes(date, tQ*1))+geom_point(size=2, color="deepskyblue4")+
+    geom_point(data=df, aes(date, light_rel), size=2, color="darkgoldenrod3")+
+    scale_y_continuous(sec.axis = sec_axis(~./1, name=expression("Relativized Q")))+
+    labs(y="Relativized Light", x="Date (2012)")+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.text = element_text(size=13),
+          axis.title = element_text(size=15)),
+  
+  align="hv",ncol=1)
+
+```
+
+#### First-pass at approximating parameter estimates for different models
+```{r}
+####################
+## Stan data prep ##
+####################
+rstan_options(auto_write=TRUE)
+options(mc.cores=parallel::detectCores())
+
+stan_data_compile <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+
+stan_data <- stan_data_compile(df)
+
+###############################
+## Run Stan to get estimates ##
+###############################
+PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=4, iter=1000)
+PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=4, iter=1000)
+PM2b_DataOutput <- stan("Stan_ProductivityModel2b_Logistic.stan", data=stan_data, chains=4, iter=1000)
+
+PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=4, iter=1000)
+
+
+launch_shinystan(PM2_DataOutput) ## Click explore tab when new window opens
+```
+
+
+#### Extract median estimate and simulate GPP data (despite poor parameter convergence)
+```{r, warning=FALSE}
+source("StanParameterExtraction_Source.R")
+
+PM1_medpar <- phenom_extract_medians(extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
+PM2_medpar <- mechB_extract_medians(extract(PM2_DataOutput, c("r","K","s","c","B","P","pred_GPP","sig_p")))
+PM3_medpar <- mechN_extract_medians(extract(PM3_DataOutput, c("alpha","gamma","s","c","N","P","pred_GPP","sig_p")))
+
+
+## Simulate data for each growth model
+df$simGPP_PM1 <- PM1(phi=PM1_medpar$par$phi,
+                     alpha=PM1_medpar$par$alpha,
+                     beta=PM1_medpar$par$beta,
+                     sig_p=PM1_medpar$par$sig_p, df=df)
+df$simGPP_PM2 <- PM2(r=PM2_medpar$par$r,
+                     K=PM2_medpar$par$K,
+                     s=PM2_medpar$par$s,
+                     c=PM2_medpar$par$c,
+                     sig_p=PM2_medpar$par$sig_p, df=df)
+df$simGPP_PM3 <- PM3(alpha=PM3_medpar$par$alpha,
+                     gamma=PM3_medpar$par$gamma,
+                     s=PM3_medpar$par$s,
+                     c=PM3_medpar$par$c,
+                     sig_p=PM3_medpar$par$sig_p, df=df)
+
+ggplot(df, aes(date, GPP))+
+  geom_point()+
+  geom_line(data=df, aes(date, simGPP_PM1), color="red")+
+  geom_line(data=df, aes(date, simGPP_PM2), color="blue")+
+  geom_line(data=df, aes(date, simGPP_PM3), color="purple")+
+  scale_y_continuous(limits = c(0,25))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

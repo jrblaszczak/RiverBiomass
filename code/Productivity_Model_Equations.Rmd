@@ -16,20 +16,20 @@ We selected a subset of three river metabolism time series from 356 rivers with 
 We first predict the temporal dynamics of daily estimates of GPP ($G_{mod}$) using a linear autoregressive model without latent biomass dynamics. We fit the model to the $G_{mod}$ times series from Appling et al. (2018) to estimate the parameters described below:
 
 \begin{equation} 
-G_{pred,t} \sim N(\phi G_{pred,((t-\triangle t))} + \alpha L_{t} + \beta Q_{t}, \sigma_{p})
+G_{pred,t} \sim N(\phi G_{pred,((t-\triangle t))} + \alpha L_{t} + \beta Q_{t}, \sigma_{proc})
 \end{equation}
 
 \begin{equation} 
-G_{mod,t} \sim N(e^{(G_{pred, t})}, \sigma_{o})
+G_{mod,t} \sim N(e^{(G_{pred, t})}, \sigma_{obs})
 \end{equation}
 
-where input data includes the daily mean of the posterior probability distribution of previously modeled daily GPP time series ($GPP_{mod,t}$; $g\ O_{2}\ m^{-2}\ d^{-1}$), $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1), and $Q_t$ which is daily discharge at time $t$ normalized by subtracting the mean and dividing by the standard deviation ($m^{3} s^{-1}$). Estimated parameters include $G_{pred,t}$ which is the predicted daily GPP (g $O_2$ $m^{-2}$ $d^{-1}$) at time $t$ (in days) on a natural log scale, $\phi$ which is the estimated autoregressive parameter (unitless; 0<$\phi$<1), $\alpha$ which is a GPP increase as a function of light parameter (g $O_2$ $m^{-2}$ $d^{-1}$), $\beta$ which is a GPP reduction per unit discharge parameter ($\frac{g\ O_{2}\ m^{-2}\ d^{-1}}{m^{3} s^{-1}}$), $\sigma_o$ which is the observation error set to the standard deviation of the posterior probability distribution of the previously modeled daily GPP estimates, $\sigma_p$ which is the process error.
+where input data includes the daily mean of the posterior probability distribution of previously modeled daily GPP time series ($GPP_{mod,t}$; $g\ O_{2}\ m^{-2}\ d^{-1}$), $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1), and $Q_t$ which is daily discharge at time $t$ normalized by subtracting the mean and dividing by the standard deviation ($m^{3} s^{-1}$). Estimated parameters include $G_{pred,t}$ which is the predicted daily GPP (g $O_2$ $m^{-2}$ $d^{-1}$) at time $t$ (in days) on a natural log scale, $\phi$ which is the estimated autoregressive parameter (unitless; 0<$\phi$<1), $\alpha$ which is a GPP increase as a function of light parameter (g $O_2$ $m^{-2}$ $d^{-1}$), $\beta$ which is a GPP reduction per unit discharge parameter ($\frac{g\ O_{2}\ m^{-2}\ d^{-1}}{m^{3} s^{-1}}$), $\sigma_{obs}$ which is the observation error set to the standard deviation of the posterior probability distribution of the previously modeled daily GPP estimates, $\sigma_{proc}$ which is the process error.
 
 *Note: This iteration of the phenomenolgical model excludes the version where GPP is divided by light. This second model can be added in.* 
 
 ### Semi-mechanistic models
 
-Next, we developed two semi-mechanistic models of hypothesized latent biomass dynamics in rivers to predict productivity dynamics through time. These process-based models are fit to the previously estimated daily GPP time series. Each model has a different growth equation, but has the same disturbance equation component detailed below. Input data for each model includes the mean of the posterior probability distribution of previously modeled daily GPP time series ($GPP_{mod,t}$; g $O_2$ $m^{-2}$ $d^{-1}$), $\sigma_o$ which is the observation error set to the daily standard deviation of the posterior probability distribution of the previously modeled daily GPP estimates, and $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1).
+Next, we developed two semi-mechanistic models of hypothesized latent biomass dynamics in rivers to predict productivity dynamics through time. These process-based models are fit to the previously estimated daily GPP time series. Each model has a different growth equation, but has the same disturbance equation component detailed below. Input data for each model includes the mean of the posterior probability distribution of previously modeled daily GPP time series ($GPP_{mod,t}$; g $O_2$ $m^{-2}$ $d^{-1}$), $\sigma_{obs}$ which is the observation error set to the daily standard deviation of the posterior probability distribution of the previously modeled daily GPP estimates, and $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1).
 
 #### Disturbance component explanation
 
@@ -43,7 +43,7 @@ where input data includes $Q_t$ which is daily discharge at time $t$ normalized 
 We substituted different models of biomass growth within a model framework which accounts for the day-to-day persistence of biomass to loss from flow (i.e. sloughing, autogenic detachment, storm losses):
 
 \begin{equation}
-B_t \sim N(P_{t}([Growth\;Model]), \sigma_{p})
+B_t \sim N(P_{t}([Growth\;Model]), \sigma_{proc})
 \end{equation}
 
 where estimated parameters include $B_{t}$ which is a form of latent biomass dependent on the form of the growth model, and $P_{t}$ which is the estimated persistence on that day based on equation 1.
@@ -53,14 +53,14 @@ where estimated parameters include $B_{t}$ which is a form of latent biomass dep
 We predict the temporal dynamics of mean daily estimates of GPP ($G_{mod}$) by incorporating biomass as a latent variable and modeling its dynamics using a logistic growth model. We fit the model to the $G_{mod}$ times series from Appling et al. (2018) to estimate the model parameters:
 
 \begin{equation}
-    B_{t} \sim N(P_{t}(B_{((t-\triangle t))} e^{r_{max}B_{((t-\triangle t))}(1-\frac{B_{((t-\triangle t))}}{K})}), \sigma_{p})
+    B_{t} \sim N(P_{t}(B_{((t-\triangle t))} e^{r_{max}B_{((t-\triangle t))}(1-\frac{B_{((t-\triangle t))}}{K})}), \sigma_{proc})
 \end{equation}
 
 \begin{equation}
-    G_{mod,t} \sim N(\alpha L_{t} e^{B_{t}}, \sigma_{o})
+    G_{mod,t} \sim N(\alpha L_{t} e^{B_{t}}, \sigma_{obs})
 \end{equation}
 
-where estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $K$ which is the estimated carrying capacity of a river, $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_p$ which is the process error.
+where estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $K$ which is the estimated carrying capacity of a river, $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_{proc}$ which is the process error.
 
 
 #### Productivity Model 3: Latent biomass thin film growth (density independent growth, density dependent death) and disturbance
@@ -146,18 +146,18 @@ However, when attempting to fit the model, the \gamma actually tends to approach
 Thus the final version of the model that we fit to $G_{mod,t}$ time series is:
 
 \begin{equation}
-    N_{t} \sim N(P_{t}(N_{(t-\triangle t)}+bN_{(t-\triangle t)}(1 - N_{(t-\triangle t)})), \sigma_{p})
+    N_{t} \sim N(P_{t}(N_{(t-\triangle t)}+bN_{(t-\triangle t)}(1 - N_{(t-\triangle t)})), \sigma_{proc})
 \end{equation}
 
 \begin{equation}
-    G_{mod,t} \sim N(b N_{t}, \sigma_{o})
+    G_{mod,t} \sim N(b N_{t}, \sigma_{obs})
 \end{equation}
 
 \begin{equation}
     b = \alpha L_{t}
 \end{equation}
 
-where estimated parameters include $N_{t}$ which is a latent variable representative of photosynthetically-active biomass relative to the carrying capacity of a river, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_p$ which is the process error.
+where estimated parameters include $N_{t}$ which is a latent variable representative of photosynthetically-active biomass relative to the carrying capacity of a river, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_{proc}$ which is the process error.
 
 
 *Note: Prior information will be included in future versions of this document.*

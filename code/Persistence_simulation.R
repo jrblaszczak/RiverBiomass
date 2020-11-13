@@ -15,7 +15,7 @@ c <- 11
 for(i in 2:length(Q)){
   P[i] = exp(-exp(s*(Q[i] - c)))
 }
-P #P is never 0 and therefore can serve as refuge biomass but cannot be modeled using a binomial fit
+#P #P is never 0 and therefore can serve as refuge biomass but cannot be modeled using a binomial fit
 
 # Repeat with a steeper and shallower curve (higher and lower s values)
 P_steeper <- numeric(length(Q)); P_shallower <- numeric(length(Q))

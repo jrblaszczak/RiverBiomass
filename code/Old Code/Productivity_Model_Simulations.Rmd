@@ -10,8 +10,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "tidyverse", "reshape2","PerformanceAnalytics",
          "rstan","bayesplot","shinystan"), require, character.only=T)
 
-# source data
-setwd("../")
+## Source data
 source("SimData_Source.R")
 
 # source simulation models
@@ -21,8 +20,10 @@ source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, 
 source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha, gamma, s, c, sig_p
 ```
 
-#### Snow-Melt GPP Example Data - Weitchpec reach of the Klamath river (2012)
+
+#### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
+df <- dat$Clackamas_OR
 plot_grid(
  ggplot(df, aes(date, GPP))+
     geom_point(color="chartreuse4", size=2)+
@@ -32,9 +33,9 @@ plot_grid(
           axis.title.x = element_blank(), axis.text = element_text(size=13),
           axis.title.y = element_text(size=15)),
   
-  ggplot(df, aes(date, tQ))+geom_point(size=2, color="deepskyblue4")+
+  ggplot(df, aes(date, tQ*0.2))+geom_point(size=2, color="deepskyblue4")+
     geom_point(data=df, aes(date, light_rel), size=2, color="darkgoldenrod3")+
-    scale_y_continuous(sec.axis = sec_axis(~./1, name=expression("Relativized Q")))+
+    scale_y_continuous(sec.axis = sec_axis(~./0.2, name=expression("Relativized Q")))+
     labs(y="Relativized Light", x="Date (2012)")+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),
@@ -48,15 +49,15 @@ plot_grid(
 #### Check Data Simulation Performance
 ```{r, warning=FALSE}
 ## Simulate data for each growth model
-df$simGPP_GM1 <- PM1(phi=0.8, alpha=0.7, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
-df$simGPP_GM2 <- PM2(r=1.2, K=1, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
-df$simGPP_GM3 <- PM3(alpha=2, gamma=0.8, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
+df$simGPP_PM1 <- PM1(phi=0.8, alpha=0.7, beta=-1, sig_p=0.1, df=df)
+df$simGPP_PM2 <- PM2(r=1.2, K=1, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
+df$simGPP_PM3 <- PM3(alpha=2, gamma=0.8, beta_r=0.8, sig_o=0.1, sig_p=0.1, df=df)
 
 ggplot(df, aes(date, GPP))+
   geom_point()+
-  geom_line(data=df, aes(date, simGPP_GM1), color="red")+
-  geom_line(data=df, aes(date, simGPP_GM2), color="blue")+
-  geom_line(data=df, aes(date, simGPP_GM3), color="purple")+
+  geom_line(data=df, aes(date, simGPP_PM1), color="red")+
+  geom_line(data=df, aes(date, simGPP_PM2), color="blue")+
+  geom_line(data=df, aes(date, simGPP_PM3), color="purple")+
   scale_y_continuous(limits = c(0,25))
 
 ```
@@ -69,11 +70,18 @@ rstan_options(auto_write=TRUE)
 options(mc.cores=parallel::detectCores())
 
 stan_data_compile <- function(x){
-  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, tQ = x$tQ, Q95 = x$Q95)
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, GPP_sd = x$GPP_sd, tQ = x$tQ)
   return(data)
 }
 
-sd_r2 <- stan_data_compile(r2)
+stan_data <- stan_data_compile(df)
+
+
+###############################
+## Run Stan to get estimates ##
+###############################
+r2_stan2 <- stan("PM2_2020_06_26.stan", data=sd_r2,chains=4,iter=1000)
+
 
 ```
 

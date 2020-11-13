@@ -1,7 +1,7 @@
 ## Klamath Data Example - No disturbance
 
 ## Import
-km <- read.table("KlamMetab.txt", header=T)
+km <- read.table("../data/KlamMetab.txt", header=T)
 names(km)
 ## Fix date
 km$date <- as.POSIXct(as.character(km$date), format="%Y-%m-%d")
@@ -18,12 +18,13 @@ ggplot(d, aes(jday, GPP))+geom_point(aes(color=year), alpha=0.5)+
   geom_line(aes(jday, GPP, group = year, color=year), alpha=0.5)
 
 rel_LQT <- function(x){
+  x$GPP_sd <- abs(rnorm(length(x$GPP), mean = 0, sd = 0.3))
   x$light_rel <- x$solar_rad/max(x$solar_rad)
   x$temp_rel <- x$mean_wtemp/max(x$mean_wtemp)
-  x$tQ <- x$cms/max(x$cms) #(x$cms-mean(x$cms))/sd(x$cms)
+  x$tQ <- (x$cms-mean(x$cms))/sd(x$cms)
   x$Q95 <- 1 #ifelse(x$cms>quantile(x$cms, probs = 0.99), yes=1, no=0)
   x<-x[order(x$date),]
-  x <- x[,c("site","date","jday","GPP","light_rel","temp_rel","tQ","Q95")]
+  x <- x[,c("site","date","jday","GPP","GPP_sd","light_rel","temp_rel","tQ","Q95")]
   return(x)
 }
 
@@ -32,10 +33,3 @@ df <- na.omit(r)
 
 rm(d,km,l,r)
 
-
-
-
-obs_err<-numeric(length(Ndays))
-for(i in 1:Ndays){
-  obs_err[i] = rnorm(Ndays, mean=0, sd = sig_o)
-}
