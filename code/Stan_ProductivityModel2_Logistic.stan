@@ -36,7 +36,7 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ lognormal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
+    B[j] ~ normal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
     }
  
     // Observation model

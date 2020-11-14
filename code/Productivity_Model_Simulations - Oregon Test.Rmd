@@ -80,7 +80,7 @@ PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, 
 PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=4, iter=1000)
 
 
-launch_shinystan(PM1_DataOutput) ## Click explore tab when new window opens
+launch_shinystan(PM2_DataOutput) ## Click explore tab when new window opens
 ```
 
 
@@ -112,8 +112,8 @@ df$simGPP_PM3 <- PM3(alpha=PM3_medpar$par$alpha,
 sim_viz <- function(x, col){
   ggplot(df, aes(date, GPP))+
     geom_point()+
-    geom_line(data=df, aes(date, x), color=col)+
-    scale_y_continuous(limits = c(0,15))
+    geom_line(data=df, aes(date, x), color=col)
+    #scale_y_continuous(limits = c(0,15))
 }
 
 plot_grid(
