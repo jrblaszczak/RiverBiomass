@@ -58,12 +58,13 @@
     }
     
     // Error priors
-    sig_p ~ normal(0,2);
+    sig_p ~ normal(0,2)T[0,];
     
     // Param priors
     alpha ~ normal(0,50);
     gamma ~ beta(1,1);
-    
+    c ~ rayleigh(0.5);
+    s ~ normal(0,50);   
     
     
     }
