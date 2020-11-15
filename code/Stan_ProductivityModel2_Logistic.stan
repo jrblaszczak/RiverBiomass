@@ -13,9 +13,9 @@
     real<lower=0, upper=50> s; // steepness of the transition from P=1 to P=0
     
     // Logistic growth parameters  
-    real<lower=0> B [Ndays]; // Biomass; g m-2
-    real<lower=0> r; // growth rate; d-1
-    real<lower=0> K; // carrying capacity; g m-2
+    real B [Ndays]; // Biomass; g m-2
+    real r; // growth rate; d-1
+    real K; // carrying capacity; g m-2
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
@@ -41,15 +41,15 @@
  
     // Observation model
     for (j in 2:(Ndays)) {
-        GPP[j] ~ normal(exp(pred_GPP[j]), GPP_sd[j])T[0,];
+        GPP[j] ~ normal(pred_GPP[j], GPP_sd[j])T[0,];
     }
  
     // Error priors
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    K ~ normal(0,30);
-    r ~ normal(0,15);
+    K ~ normal(3,1);
+    r ~ normal(0,1);
     c ~ beta(10,1);
     
     }

@@ -6,7 +6,7 @@ output: html_document
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE, include=FALSE}
 # load packages
-lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "tidyverse", "reshape2","PerformanceAnalytics",
          "rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
 
@@ -14,7 +14,6 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 source("Oregon_ClackamasData_Source.R")
 df <- dat$Clackamas_OR
 df <- df[which(df$year == "2010"),] ## Subset to 2010
-df <- df[1:170,] ## Subset to spring/summer for now
 
 # source simulation models
 # input variables: GPP, GPP_sd, light, tQ
