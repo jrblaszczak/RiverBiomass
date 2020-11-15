@@ -23,17 +23,14 @@ data %>%
 ## subset to year with more than 300 days
 data <- subset(data, year >= 2009 & year <= 2013)
 
-## Change GPP sd column name
-colnames(data)[which(colnames(data) == "GPP_daily_sd_name")] <- "GPP_sd"
-
 ## Assign IDs
 data$ID <- NA
 data[which(data$site_name == "nwis_14211010"),]$ID <- "Clackamas_OR"
 
-## Create a GPP SD
-data$GPP_sd <- ((data$GPP - data$GPP.lower) + (data$GPP.upper - data$GPP))/2
+## Create a GPP SD; SD = (CI - mean)/1.96
+data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
 
-## Set any GPP < 0 to 0
+## Set any GPP < 0 to a small value close to 0
 data[which(data$GPP < 0 & data$GPP > -0.5),]$GPP <- sample(exp(-6):exp(-4), 1)
 data[which(data$GPP < -0.5),]$GPP <- sample(exp(-6):exp(-4), 1) ## eventually change to NA when figure out how to do so
 
@@ -57,3 +54,4 @@ rel_LQT <- function(x){
 
 dat <- lapply(l, function(x) rel_LQT(x))
 
+rm(data,l)

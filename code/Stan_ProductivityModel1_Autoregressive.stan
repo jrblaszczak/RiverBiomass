@@ -10,7 +10,7 @@
     parameters {
     // Growth & Loss Parameters
     real l_pred_GPP [Ndays]; // predicted GPP (log scale); g O2 m-2 d-1
-    real<lower=0, upper=1> phi; // autoregressive coefficient; unitless
+    real<lower=0> phi; // autoregressive coefficient; unitless
     real<lower=0> alpha; // growth term; g O2 m-2 d-1
     real<upper=0> beta; // discharge to loss conversion term; g O2 m-2 d-1
     
@@ -38,9 +38,9 @@
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors (weakly informative)  
-    phi ~ beta(1,1);
-    alpha ~ normal(0,50);
-    beta ~ normal(0,50);
+    phi ~ normal(0,1)T[0,];
+    alpha ~ normal(0,1)T[0,];
+    beta ~ normal(0,1)T[,0];
     
     }
     

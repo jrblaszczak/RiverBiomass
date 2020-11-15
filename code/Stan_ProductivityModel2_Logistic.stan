@@ -48,7 +48,7 @@
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    K ~ normal(3,1);
+    K ~ normal(3,1)T[0,];
     r ~ normal(0,1);
     c ~ beta(10,1);
     

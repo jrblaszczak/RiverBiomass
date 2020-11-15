@@ -7,13 +7,13 @@ output: html_document
 ```{r,echo=FALSE,warning=FALSE,message=FALSE, include=FALSE}
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
-         "tidyverse", "reshape2","PerformanceAnalytics",
          "rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
 
 ## Source data
 source("Oregon_ClackamasData_Source.R")
 df <- dat$Clackamas_OR
 df <- df[which(df$year == "2010"),] ## Subset to 2010
+df <- df[1:20,]
 
 # source simulation models
 # input variables: GPP, GPP_sd, light, tQ
@@ -26,8 +26,9 @@ source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha,
 #### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
 plot_grid(
- ggplot(df, aes(date, GPP))+
+ ggplot(df, aes(date, GPP, ymin = GPP-GPP_sd, ymax = GPP+GPP_sd))+
     geom_point(color="chartreuse4", size=2)+
+    geom_errorbar(width=0.2)+
     labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),
@@ -74,12 +75,12 @@ stan_data <- stan_data_compile(df)
 ###############################
 ## Run Stan to get estimates ##
 ###############################
-PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=4, iter=1000)
+PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
 PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=4, iter=1000)
 PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=4, iter=1000)
 
 
-launch_shinystan(PM2_DataOutput) ## Click explore tab when new window opens
+launch_shinystan(PM1_DataOutput) ## Click explore tab when new window opens
 ```
 
 
