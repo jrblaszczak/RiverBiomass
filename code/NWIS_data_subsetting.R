@@ -52,4 +52,48 @@ write.csv(OR_location,"../data/NWIS_OR_sitedata.csv")
 write.csv(NWIS_OR,"../data/NWIS_OR_data.csv")
 
 
+## Other sites across the country for P simulation ##
+# Which locations have >300 days in a year
+NWIS_sub$year <- year(NWIS_sub$date)
+NWIS_sub_siteyears <- NWIS_sub %>%
+  group_by(site_name, year) %>%
+  count()
+NWIS_sub_siteyears <- NWIS_sub_siteyears[which(NWIS_sub_siteyears$n > 350),]
+
+#locations from Phil's visualizations
+Psim_locations <- NWIS_site_data[which(NWIS_site_data$site_name %in% c("nwis_14211010", #2010
+                                                                     "nwis_01608500", #2012
+                                                                     "nwis_02156500",
+                                                                     "nwis_02168504",
+                                                                     "nwis_03298150",
+                                                                     "nwis_04121944",
+                                                                     "nwis_04136000",
+                                                                     "nwis_05435950",
+                                                                     "nwis_06711565",
+                                                                     "nwis_08181500")),]
+NWIS_Psim <- NWIS_sub[which(NWIS_sub$site_name %in% Psim_locations$site_name),]
+
+ggplot(NWIS_Psim, aes(date, GPP))+geom_point()
+
+# Export
+write.csv(Psim_locations,"../data/NWIS_Psim_sitedata.csv")
+write.csv(NWIS_Psim,"../data/NWIS_Psim_data.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
