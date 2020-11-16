@@ -40,7 +40,7 @@
     } else { ant_b[i] = mean(b[(i-20):i]); // length can be a parameter but currently fixed
     }
     
-    pred_GPP[i] = b[i] * exp(N[i]);
+    pred_GPP[i] = b[i]*N[i];
     
     }
     
@@ -54,14 +54,14 @@
     
     // Observation model
     for (j in 2:(Ndays)) {
-        GPP[j] ~ normal(exp(pred_GPP[j]), GPP_sd[j])T[0,];
+        GPP[j] ~ normal(pred_GPP[j], GPP_sd[j])T[0,];
     }
     
     // Error priors
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    alpha ~ normal(0,50);
+    alpha ~ normal(0,5);
     gamma ~ beta(1,1);
     c ~ rayleigh(0.5);
     s ~ normal(0,50);   

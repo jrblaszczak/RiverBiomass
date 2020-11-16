@@ -8,6 +8,12 @@
 *data/NWIS_WI_sitedata.csv
 *data/site_data.csv
 
+# Stan outputs
+*code/PM1_DataOutput.rds
+*code/PM2_DataOutput.rds
+*code/simPM1_DataOutput.rds
+*code/simPM2_DataOutput.rds
+
 # Session Data files
 .RData
 
