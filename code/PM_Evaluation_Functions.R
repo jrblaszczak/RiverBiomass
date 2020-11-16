@@ -51,12 +51,16 @@ CI_par_PM3 <- function(par) {
 require(RColorBrewer)
 ygb <- brewer.pal(10, "Paired")
 
-in_vs_out <- function(plist, inputvaluestring){
-  
+in_vs_out <- function(par_IN, par_OUT){
+
+  #Inputs
+  inputvaluestring <- par_IN
   PM_inputs <- as.data.frame(as.matrix(inputvaluestring))
   PM_inputs$Param <- rownames(PM_inputs)
-  colnames(PM_inputs)[1] <- "Value"
+  colnames(PM_inputs)[1] <- "ParInput"
   
+  #Outputs
+  plist <- par_OUT
   lowCI <- ldply(plist$lowCI_par, data.frame)
   medCI <- ldply(plist$medCI_par, data.frame)
   upCI <- ldply(plist$upCI_par, data.frame)
@@ -64,27 +68,31 @@ in_vs_out <- function(plist, inputvaluestring){
   CI_list <- lapply(CI_list, setNames, nm = c("Param","Value"))
   
   CI_df <- bind_cols(CI_list)
-  CI_df <- CI_df[,c("Param","Value","Value1","Value2")]
+  CI_df <- CI_df[,c("Param...1","Value...2","Value...4","Value...6")]
   colnames(CI_df) <- c("Param","ParOutput_low","ParOutput_med","ParOutput_up")
   
+  #Merge and plot
   in_out <- merge(PM_inputs, CI_df, by="Param")
+  #in_out$Param <- factor(in_out$Param, levels(c("phi","alpha","beta","r","K","s","c","sig_p")))
   
-  ggplot(in_out, aes(log(abs(Value)), log(abs(ParOutput_med)), color=Param))+
-    geom_abline(slope = 1, intercept = 0, color="grey", size=1) +
+  ggplot(in_out, aes(log(abs(ParInput)), log(abs(ParOutput_med)), color=Param))+
+    geom_abline(slope = 1, intercept = 0, color="grey", size=1)+
     geom_linerange(aes(ymin = log(abs(ParOutput_low)), ymax= log(abs(ParOutput_up))), color="black",size=1)+
     geom_point(size=4)+
     labs(x = "Input Parameter Values", y="Median Posterior Values")+
     theme(axis.text.x = element_text(angle = 45, hjust=1),
           axis.text = element_text(size=15),
           axis.title = element_text(size=20),
-          legend.text = element_text(hjust = 0, size=15))+
-    scale_color_manual(name="",values=c('alpha'=ygb[1], 'beta_r'=ygb[2],'bQ'=ygb[3],
-    'critQ'=ygb[4], 'gamma'=ygb[5],'r'=ygb[6],'sig_p'=ygb[7],'beta_0'=ygb[8],
-    'phi'=ygb[9],'beta'=ygb[10]), labels=c('alpha'=expression(alpha), 'beta_r'=expression(beta[r]),'bQ'="s",
-                                'critQ'="critQ", 'gamma'=expression(gamma),'r'="r",'sig_p'=expression(sigma[p]),
-                                'beta_0'=expression(theta),'phi'=expression(phi),'beta'=expression(beta[l])))+
-    scale_x_continuous(limits=c(-6,6))+
-    scale_y_continuous(limits=c(-6,6))
+          legend.text = element_text(hjust = 0, size=15),
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          panel.grid = element_line(color="gray90"))+
+    scale_color_manual(name="",values=c('alpha'=ygb[1], 'beta'=ygb[2],'phi'=ygb[3],
+    's'=ygb[4], 'c'=ygb[5],'r'=ygb[6],'sig_p'=ygb[7],'K'=ygb[8]),
+    labels=c('alpha'=expression(alpha), 'beta'=expression(beta),
+             'phi'=expression(phi),'s'="s",'c'="c", 'r'="r",'K'="K",
+             'sig_p'=expression(sigma[p])))+
+    scale_x_continuous(limits=c(-2.5,3.5))+
+    scale_y_continuous(limits=c(-5,5))
   
 }
 

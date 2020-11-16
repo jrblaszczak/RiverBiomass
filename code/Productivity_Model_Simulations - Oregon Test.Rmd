@@ -90,11 +90,14 @@ saveRDS(PM2_DataOutput,"PM2_DataOutput.rds")
 
 #### Extract median estimate and simulate GPP data (despite poor parameter convergence)
 ```{r, warning=FALSE}
+PM1_DataOutput <- readRDS("PM1_DataOutput.rds")
+PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
+
 source("StanParameterExtraction_Source.R")
 
 PM1_medpar <- phenom_extract_medians(rstan::extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
 PM2_medpar <- mechB_extract_medians(rstan::extract(PM2_DataOutput,c("r","K","s","c","B","P","pred_GPP","sig_p")))
-PM3_medpar <- mechN_extract_medians(rstan::extract(PM3_DataOutput, c("alpha","gamma","s","c","N","P","pred_GPP","sig_p")))
+#PM3_medpar <- mechN_extract_medians(rstan::extract(PM3_DataOutput, c("alpha","gamma","s","c","N","P","pred_GPP","sig_p")))
 
 
 ## Simulate data for each growth model
@@ -121,7 +124,7 @@ sim_viz <- function(x, col){
 }
 
 plot_grid(
-  #sim_viz(df$simGPP_PM1, "red"),
+  sim_viz(df$simGPP_PM1, "red"),
   sim_viz(df$simGPP_PM2, "purple"),
   #sim_viz(df$simGPP_PM3, "blue"),
 ncol=1)
@@ -135,37 +138,26 @@ apply(df[,c("GPP","simGPP_PM1","simGPP_PM2","simGPP_PM3")], 2, function(x) rmse(
 #######################
 ## Stan data prep v2 ##
 #######################
-PM1_DataOutput <- readRDS("PM1_DataOutput.rds")
-PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
-
-## PM1 Simulation
-pars1<-rstan::extract(PM1_DataOutput, c("phi","alpha","beta","sig_p"))
-simmat1<-matrix(NA,length(df[,1]),length(unlist(pars1$phi)))
-for (i in 1:length(pars1$phi)){
-  simmat1[,i]<-PM1(pars1$phi[i],pars1$alpha[i],pars1$beta[i],pars1$sig_p,df)
-}
-## For every day extract mean and sd
-mean_simmat1 <- apply(simmat1, 1, function(x) mean(x))
-sd_simmat1 <- apply(simmat1, 1, function(x) sd(x))
-
-## PM2 Simulation
-pars2<-rstan::extract(PM2_DataOutput, c("r","K","s","c","B","P","pred_GPP","sig_p"))
-simmat2<-matrix(NA,length(df[,1]),length(unlist(pars2$r)))
-for (i in 1:length(pars2$r)){
-  simmat2[,i]<-PM2(pars2$r[i],pars2$K[i],pars2$s[i],pars2$c[i],pars2$sig_p,df)
-}
-## For every day extract mean and sd
-mean_simmat2 <- apply(simmat2, 1, function(x) mean(x))
-sd_simmat2 <- apply(simmat2, 1, function(x) sd(x))
+med_simGPP_PM1 <- PM1(phi=PM1_medpar$par$phi,
+                  alpha=PM1_medpar$par$alpha,
+                  beta=PM1_medpar$par$beta,
+                  sig_p=PM1_medpar$par$sig_p,
+                  df=df)
+med_simGPP_PM2 <- PM2(r=PM2_medpar$par$r,
+                  K=PM2_medpar$par$K,
+                  s=PM2_medpar$par$s,
+                  c=PM2_medpar$par$c,
+                  sig_p=PM2_medpar$par$sig_p,
+                  df=df)
 
 ## Compile Stan data
-stan_simdat_compile <- function(x, mean_simGPP, sd_simGPP){
-  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = mean_simGPP, tQ = x$tQ, GPP_sd = sd_simGPP)
+stan_simdat_compile <- function(x, med_simGPP){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = med_simGPP, tQ = x$tQ, GPP_sd = x$GPP_sd)
   return(data)
 }
 
-stan_simdat1 <- stan_simdat_compile(df, mean_simmat1, sd_simmat1)
-stan_simdat2 <- stan_simdat_compile(df, mean_simmat2, sd_simmat2)
+stan_simdat1 <- stan_simdat_compile(df, med_simGPP_PM1)
+stan_simdat2 <- stan_simdat_compile(df, med_simGPP_PM2)
 
 ###############################
 ## Run Stan to get estimates ##
@@ -176,7 +168,7 @@ options(mc.cores=parallel::detectCores())
 simPM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_simdat1, chains=3, iter=5000, control=list(max_treedepth=12) )
 simPM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_simdat2, chains=3, iter=5000, control=list(max_treedepth=12) )
 
-launch_shinystan(simPM1_DataOutput)
+launch_shinystan(simPM2_DataOutput)
 
 # Save Output
 saveRDS(simPM1_DataOutput,"simPM1_DataOutput.rds")
@@ -192,16 +184,32 @@ PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
 simPM1_DataOutput <- readRDS("simPM1_DataOutput.rds")
 simPM2_DataOutput <- readRDS("simPM2_DataOutput.rds")
 
-## Source parameter recovery functions
+## Source parameter extraction and recovery functions
+source("StanParameterExtraction_Source.R")
 source("PM_Evaluation_Functions.R")
 
-PM1_par_IN <- c()
-PM2_par_IN <- c()
+## Input parameters
+PM1_medpar <- phenom_extract_medians(rstan::extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
+PM2_medpar <- mechB_extract_medians(rstan::extract(PM2_DataOutput,c("r","K","s","c","B","P","pred_GPP","sig_p")))
 
+PM1_par_IN <- c("phi"=PM1_medpar$par$phi,
+                "alpha"=PM1_medpar$par$alpha,
+                "beta"=PM1_medpar$par$beta,
+                "sig_p"=PM1_medpar$par$sig_p)
+PM2_par_IN <- c("r"=PM2_medpar$par$r,
+                "K"=PM2_medpar$par$K,
+                "s"=PM2_medpar$par$s,
+                "c"=PM2_medpar$par$c,
+                "sig_p"=PM2_medpar$par$sig_p)
+
+## Output parameters
 PM1_par_OUT <- CI_par_PM1(rstan::extract(simPM1_DataOutput))
 PM2_par_OUT <- CI_par_PM2(rstan::extract(simPM2_DataOutput))
 
-in_vs_out()
+## Comparison
+plot_grid(in_vs_out(PM1_par_IN, PM1_par_OUT),
+          in_vs_out(PM2_par_IN, PM2_par_OUT),
+          ncol = 2)
 ```
 
 
