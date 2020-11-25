@@ -1,24 +1,55 @@
+PM1.col <- "#d95f02"
+PM2.col <- "#7570b3"
+
 ##################
 ## Model 1 Output
 ##################
+PM1_DataOutput <- readRDS("PM1_DataOutput.rds")
 
 pars1<-extract(PM1_DataOutput, c("phi","alpha","beta","sig_p"))
 
-simmat1<-matrix(NA,length(df[,1]),length(unlist(pars1$r)))
+simmat1<-matrix(NA,length(df[,1]),length(unlist(pars1$phi)))
 rmsemat1<-matrix(NA,length(df[,1]),1)
 
-for (i in 1:length(pars1$r)){
+for (i in 1:length(pars1$phi)){
   
   simmat1[,i]<-PM1(pars1$phi[i],pars1$alpha[i],pars1$beta[i],pars1$sig_p,df)
   rmsemat1[i]<-sqrt(sum((simmat1[,i]-df$GPP)^2)/length(df$GPP))
   
 }
 
-hist(rmsemat1)
+## View RMSE distribution
+hist(rmsemat1, xlim = c(0,20))
+
+## For every day extract median and CI
+mean_simmat1 <- apply(simmat1, 1, function(x) mean(x))
+lower_simmat1 <- apply(simmat1, 1, function(x) quantile(x, probs = 0.025))
+upper_simmat1 <- apply(simmat1, 1, function(x) quantile(x, probs = 0.975))
+
+## Plot simulated GPP
+df_sim1 <- as.data.frame(cbind(as.character(df$date), df$GPP, mean_simmat1, lower_simmat1, upper_simmat1))
+colnames(df_sim1) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+df_sim1$Date <- as.POSIXct(as.character(df_sim1$Date), format="%Y-%m-%d")
+df_sim1[,2:5] <- apply(df_sim1[,2:5],2,function(x) as.numeric(as.character(x)))
+
+df_sim1_plot <- ggplot(df_sim1, aes(Date, GPP))+
+  geom_point(size=2, color="black")+
+  geom_line(aes(Date, sim_GPP), color=PM1.col, size=1.2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM1.col, alpha=0.3, show.legend = FALSE)+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15))+
+  scale_y_continuous(limits=c(0,30))
+df_sim1_plot
+
 
 ##################
 ## Model 2 Output
 ##################
+PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
 
 pars2<-extract(PM2_DataOutput, c("r","K","s","c","B","P","pred_GPP","sig_p"))
    
@@ -32,7 +63,92 @@ for (i in 1:length(pars2$r)){
   
 }
 
+## View RMSE distribution
 hist(rmsemat2)
+
+## For every day extract median and CI
+mean_simmat2 <- apply(simmat2, 1, function(x) mean(x))
+lower_simmat2 <- apply(simmat2, 1, function(x) quantile(x, probs = 0.025))
+upper_simmat2 <- apply(simmat2, 1, function(x) quantile(x, probs = 0.975))
+
+## Plot simulated GPP
+df_sim2 <- as.data.frame(cbind(as.character(df$date), df$GPP, mean_simmat2, lower_simmat2, upper_simmat2))
+colnames(df_sim2) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+df_sim2$Date <- as.POSIXct(as.character(df_sim2$Date), format="%Y-%m-%d")
+df_sim2[,2:5] <- apply(df_sim2[,2:5],2,function(x) as.numeric(as.character(x)))
+
+df_sim2_plot <- ggplot(df_sim2, aes(Date, GPP))+
+  geom_point(size=2, color="black")+
+  geom_line(aes(Date, sim_GPP), color=PM2.col, size=1.2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM2.col, alpha=0.2, show.legend = FALSE)+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15))+
+  scale_y_continuous(limits=c(0,30))
+df_sim2_plot
+
+
+## Plot latent B
+df_modB2 <- as.data.frame(cbind(as.character(df$date), PM2_medpar$B, PM2_medpar$B_Q.025, PM2_medpar$B_Q.975))
+colnames(df_modB2) <- c("Date","B","B_lower","B_upper")
+df_modB2$Date <- as.POSIXct(as.character(df_modB2$Date), format="%Y-%m-%d")
+df_modB2[,2:4] <- apply(df_modB2[,2:4],2,function(x) as.numeric(as.character(x)))
+
+df_modB2_plot <- ggplot(df_modB2, aes(Date, exp(B)))+
+  geom_line(size=1.2, color="chartreuse4")+
+  labs(y="Latent Biomass")+
+  geom_ribbon(aes(ymin=exp(B_lower),ymax=exp(B_upper)),
+              fill="chartreuse4", alpha=0.3, show.legend = FALSE)+
+  scale_y_continuous(limits=c(0,35))+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15))
+df_modB2_plot
+
+
+##################################################
+## Compare simulations and RMSE of PM1 and PM2
+###################################################
+## simulation comparison
+plot_grid(
+  df_sim1_plot,
+  df_sim2_plot,
+  ncol=1
+)
+
+## RMSE comparison
+rmse_comp <- as.data.frame(as.matrix(cbind(rmsemat1, rmsemat2)))
+colnames(rmse_comp) <- c("PM1 RMSE","PM2 RMSE")
+rmse_comp_long <- gather(rmse_comp)
+
+rmse_comp_mean <- rmse_comp_long %>%
+  group_by(key) %>%
+  summarise(rating.mean = mean(value))
+
+ggplot(rmse_comp_long, aes(value, fill=key))+
+  geom_density(alpha=0.3)+
+  scale_fill_manual("",values=c("PM1 RMSE" = PM1.col,"PM2 RMSE" = PM2.col))+
+  scale_x_continuous(trans="log", breaks = c(0.5,3,5,10,30,100), expand = c(0,0))+
+  scale_y_continuous(expand = c(0,0))+
+  theme(panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15),
+        legend.position = c(.95, .95),
+        legend.justification = c("right", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6),
+        legend.text = element_text(size=14))+
+  labs(y="Density","RMSE")+
+  geom_vline(xintercept = rmse_comp_mean$rating.mean[1],
+             color=PM1.col, linetype = "dashed", size = 1)+
+  geom_vline(xintercept = rmse_comp_mean$rating.mean[2],
+             color=PM2.col, linetype = "dashed", size = 1)
+
+
 
 ##################
 ## Model 3 Output

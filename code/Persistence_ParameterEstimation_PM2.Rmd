@@ -1,0 +1,131 @@
+---
+title: "Persistence Simulations - PM2 only for now"
+author: "JRB"
+date: "11/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# load packages
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
+         "tidyverse","gridExtra",
+         "rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
+
+## Source data
+source("Persistence_10rivers_DataSource.R")
+df <- dat
+
+# source simulation models
+# input variables: GPP, GPP_sd, light, tQ
+source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
+```
+
+```{r}
+####################
+## Stan data prep ##
+####################
+rstan_options(auto_write=TRUE)
+options(mc.cores=parallel::detectCores())
+
+stan_data_compile <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+
+stan_data_l <- lapply(dat, function(x) stan_data_compile(x))
+
+###############################
+## Run Stan to get estimates ##
+###############################
+PM2_l_1to5 <- lapply(stan_data_l[1:5], function(x) stan("Stan_ProductivityModel2_Logistic.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+
+PM2_l_6to10 <- lapply(stan_data_l[6:10], function(x) stan("Stan_ProductivityModel2_Logistic.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+
+
+# View on shiny
+launch_shinystan(PM2_DataOutput) ## Click explore tab when new window opens
+# Save Output
+saveRDS(PM2_l_1to5,"PM2_l_1to5.rds")
+saveRDS(PM2_l_6to10,"PM2_l_6to10.rds")
+
+```
+
+```{r}
+###############################
+## Plot persistence curves
+##############################
+PM2_l_1to5 <- readRDS("PM2_l_1to5.rds")
+PM2_l_6to10 <- readRDS("PM2_l_6to10.rds")
+
+## Extract and summarize parameters
+LG_params <- c("r","K","s","c","B","P","pred_GPP","sig_p")
+LG_mult_site_par_1 <- lapply(PM2_l_1to5, function(x) extract(x, LG_params))
+LG_mult_site_par_2 <- lapply(PM2_l_6to10, function(x) extract(x, LG_params))
+LG_mult_site_par <- append(LG_mult_site_par_1,LG_mult_site_par_2)
+
+par_mean_LG <- function(par) {
+  ## Find the mean
+  mean_par <- lapply(par, function(x) mean(x))
+  
+  mean_pred_GPP_ts <- apply(par$pred_GPP,2,mean)
+  mean_P_ts <- apply(par$P,2,mean)
+  mean_B_ts <- apply(par$B,2,mean)
+  
+  ## Compile in list and return
+  mean_par_ts <- list(mean_par, mean_pred_GPP_ts, mean_P_ts, mean_B_ts)
+  names(mean_par_ts) <- c("par","pred_GPP","P","B")
+  return(mean_par_ts)
+}
+LG_mult_site_meanpar <- lapply(LG_mult_site_par, function(x) par_mean_LG(x))
+
+
+## Plot persistence
+Ppars <- list()
+for(i in 1:length(LG_mult_site_par)){
+    df <- LG_mult_site_par[[i]]
+    dat <- stan_data_l[[i]]
+    
+    Ppars[[i]] <- list("tQ"=dat$tQ,"range"=range(dat$tQ),"c"=df$c,"s"=df$s)
+}
+names(Ppars) <- names(stan_data_l)    
+
+
+
+plotting_P <- function(x){
+  pq <- seq(x$range[1],x$range[2], length=length(x$s))
+  p_mean <- numeric()
+  p_up <- numeric()
+  p_down <- numeric()
+  name <- substring(deparse(substitute(x)),7)
+  for(i in 1:length(pq)){
+    temp <- exp(-exp(x$s*(pq[i]-x$c)))
+    p_mean[i] <- mean(temp)
+    p_up[i] <- quantile(temp, probs = 0.975)
+    p_down[i] <- quantile(temp, probs = 0.025)
+    }
+  df <- as.data.frame(as.matrix(cbind(pq,p_mean, p_up, p_down)))
+
+  plot <- ggplot(df, aes(pq, p_mean))+
+    geom_line(size=1)+
+    geom_line(aes(pq, p_up), linetype="dashed",size=1)+
+    geom_line(aes(pq, p_down), linetype="dashed",size=1)+
+    theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title = element_blank(), axis.text = element_text(size=13),
+        panel.grid = element_line(color="gray90"))+
+    ggtitle(label = name)
+    #scale_y_continuous(limits=c(0,1))+
+    #annotate(geom="text", label = name, x=0.8*max(pq),y=0.8)
+  return(plot)
+}
+
+plotting_P(Ppars$nwis_01608500)
+
+### Visualize all together
+P_plots <- lapply(Ppars, function(x) plotting_P(x))
+n <- length(P_plots)
+nCol <- floor(sqrt(n))
+do.call("grid.arrange", c(P_plots, ncol=nCol))
+
+```
+

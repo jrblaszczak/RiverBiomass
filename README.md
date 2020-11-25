@@ -1,5 +1,13 @@
 # River Productivity Modeling
 
+## 2020-11-16 update
+
+1. Issues with PM1 and PM2 were resolved with help from Bob S. (but I do want to claim the idea of using a rayleigh distribution for c which I think has helped constrain it considerably).
+
+2. Where I need help from Bob H. is taking a second look at PM3 and the priors.
+
+
+
 ## 2020-11-13 Update
 
 1. Currently working from "./code/Productivity_Model_Simulations - Oregon Test.Rmd" to simulate data

@@ -9,13 +9,13 @@
     
     parameters {
     // Disturbance (persistence) parameters
-    real<lower=0, upper=1> c; // estimate of Qcrit
-    real<lower=0, upper=50> s; // steepness of the transition from P=1 to P=0
+    real<lower=0> c; // estimate of Qcrit
+    real<lower=0> s; // steepness of the transition from P=1 to P=0
     
     // Logistic growth parameters  
-    real<lower=0> B [Ndays]; // Biomass; g m-2
-    real<lower=0> r; // growth rate; d-1
-    real<lower=0> K; // carrying capacity; g m-2
+    real B [Ndays]; // Biomass; g m-2
+    real r; // growth rate; d-1
+    real K; // carrying capacity; g m-2
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
@@ -36,21 +36,22 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ lognormal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
+    B[j] ~ normal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
     }
  
     // Observation model
     for (j in 2:(Ndays)) {
-        GPP[j] ~ normal(exp(pred_GPP[j]), GPP_sd[j])T[0,];
+        GPP[j] ~ normal(pred_GPP[j], GPP_sd[j])T[0,];
     }
  
     // Error priors
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    K ~ normal(0,30);
-    r ~ normal(0,15);
-    c ~ beta(10,1);
+    K ~ normal(3,1)T[0,];
+    r ~ normal(0,1);
+    c ~ rayleigh(0.5);
+    s ~ normal(0,50);
     
     }
     
