@@ -5,7 +5,7 @@ K <- 6
 s <- 10
 c <- 0.5
 sig_p <- 0.3
-
+#why is gere no alpha with this model? I guess tha it is wrapped up in B?  ok if so
 
   ## Data
   Ndays<-length(df$GPP)
@@ -27,7 +27,7 @@ sig_p <- 0.3
   plot(P)
   
   B<-numeric(Ndays)
-  B[1] <- 0
+  B[1] <- 0  #which is to say biomass =1
   pred_GPP<-numeric(Ndays)
   pred_GPP[1] <- light[1]*exp(B[1])
   
@@ -46,6 +46,26 @@ sig_p <- 0.3
   plot(pred_GPP)
   lines(GPP)
  
+plot(exp(pred_GPP))
+
+
+
+###Ricker model.  B is logged here, hnce the +
+
+for (j in 2:Ndays){
+  B[j] = rnorm(1, mean = (B[j-1] + r*(1-exp(B[j-1])/K))*P[j], sd = sig_p)
+}
+
+plot(B)
+plot(exp(B))
+
+
+for (i in 2:Ndays){
+  pred_GPP[i] <- rnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i]*0.2)
+}
+plot(pred_GPP)
+lines(GPP)
+
 plot(exp(pred_GPP))
    
 #return(exp(pred_GPP))
