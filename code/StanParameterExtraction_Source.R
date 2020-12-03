@@ -68,7 +68,7 @@ mechB_extract_medians <- function(PM_par){
   PM_medpar <- med_par_PM(PM_par)
 }
 
-## For mechanistic model 3 with latent biomass relative to the carrying capacity (N)
+## For mechanistic model 3 - Ricker
 
 mechN_extract_medians <- function(PM_par){
   

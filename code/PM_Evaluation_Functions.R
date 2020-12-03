@@ -49,9 +49,8 @@ CI_par_PM3 <- function(par) {
 
 ## Plot comparison of input versus output parameters
 require(RColorBrewer)
-ygb <- brewer.pal(10, "Paired")
 
-in_vs_out <- function(par_IN, par_OUT){
+in_vs_out <- function(par_IN, par_OUT,plot.title){
 
   #Inputs
   inputvaluestring <- par_IN
@@ -73,26 +72,31 @@ in_vs_out <- function(par_IN, par_OUT){
   
   #Merge and plot
   in_out <- merge(PM_inputs, CI_df, by="Param")
-  #in_out$Param <- factor(in_out$Param, levels(c("phi","alpha","beta","r","K","s","c","sig_p")))
+  ygb <- brewer.pal(10, "Paired")
   
-  ggplot(in_out, aes(log(abs(ParInput)), log(abs(ParOutput_med)), color=Param))+
+  scaleFUN <- function(x) sprintf("%.1f", x)
+  
+  ggplot(in_out, aes(abs(ParInput), abs(ParOutput_med), color=Param))+
     geom_abline(slope = 1, intercept = 0, color="grey", size=1)+
-    geom_linerange(aes(ymin = log(abs(ParOutput_low)), ymax= log(abs(ParOutput_up))), color="black",size=1)+
+    geom_linerange(aes(ymin = abs(ParOutput_low), ymax= abs(ParOutput_up)), color="black",size=1)+
     geom_point(size=4)+
-    labs(x = "Input Parameter Values", y="Median Posterior Values")+
+    labs(x = "Input Parameter Values", y="Median Posterior Values",title=plot.title)+
     theme(axis.text.x = element_text(angle = 45, hjust=1),
           axis.text = element_text(size=15),
           axis.title = element_text(size=20),
           legend.text = element_text(hjust = 0, size=15),
           panel.background = element_rect(color = "black", fill=NA, size=1),
           panel.grid = element_line(color="gray90"))+
+    scale_x_continuous(trans="log",limits=c(exp(-5),exp(5)),labels=scaleFUN)+
+    scale_y_continuous(trans="log",limits=c(exp(-5),exp(5)),labels=scaleFUN)+
     scale_color_manual(name="",values=c('alpha'=ygb[1], 'beta'=ygb[2],'phi'=ygb[3],
-    's'=ygb[4], 'c'=ygb[5],'r'=ygb[6],'sig_p'=ygb[7],'K'=ygb[8]),
-    labels=c('alpha'=expression(alpha), 'beta'=expression(beta),
-             'phi'=expression(phi),'s'="s",'c'="c", 'r'="r",'K'="K",
-             'sig_p'=expression(sigma[p])))+
-    scale_x_continuous(limits=c(-2.5,3.5))+
-    scale_y_continuous(limits=c(-5,5))
+                                        's'=ygb[4], 'c'=ygb[5],'r'=ygb[6],'sig_p'=ygb[7],
+                                        'beta_0'=ygb[9],'K'=ygb[8]),
+                       labels=c('alpha'=expression(alpha), 'beta'=expression(beta),
+                                'phi'=expression(phi),'s'="s",'c'="c", 'r'="r",'K'="K",
+                                'sig_p'=expression(sigma[p]),'beta_0'=expression(beta[0])))
   
 }
+
+
 

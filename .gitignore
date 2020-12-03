@@ -11,8 +11,10 @@
 # Stan outputs
 *code/PM1_DataOutput.rds
 *code/PM2_DataOutput.rds
+*code/PM3_DataOutput.rds
 *code/simPM1_DataOutput.rds
 *code/simPM2_DataOutput.rds
+*code/simPM3_DataOutput.rds
 *code/PM2_l_1to5.rds
 *code/PM2_l_6to10.rds
 

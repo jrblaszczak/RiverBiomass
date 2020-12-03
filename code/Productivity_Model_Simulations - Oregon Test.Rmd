@@ -19,7 +19,7 @@ df <- df[which(df$year == "2010"),] ## Subset to 2010
 # input variables: GPP, GPP_sd, light, tQ
 source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
 source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
-source("Simulated_ProductivityModel3_ThinFilm.R") # estimated parameters: alpha, gamma, s, c, sig_p
+source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, beta_0, s, c, sig_p
 ```
 
 
@@ -77,13 +77,14 @@ stan_data <- stan_data_compile(df)
 ###############################
 PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
 PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
-#PM3_DataOutput <- stan("Stan_ProductivityModel3_ThinFilm.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
+PM3_DataOutput <- stan("Stan_ProductivityModel3_Ricker.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
 
 # View on shiny
-launch_shinystan(PM2_DataOutput) ## Click explore tab when new window opens
+launch_shinystan(PM3_DataOutput) ## Click explore tab when new window opens
 # Save Output
 saveRDS(PM1_DataOutput,"PM1_DataOutput.rds")
 saveRDS(PM2_DataOutput,"PM2_DataOutput.rds")
+saveRDS(PM3_DataOutput,"PM3_DataOutput.rds")
 
 ```
 
@@ -92,12 +93,13 @@ saveRDS(PM2_DataOutput,"PM2_DataOutput.rds")
 ```{r, warning=FALSE}
 PM1_DataOutput <- readRDS("PM1_DataOutput.rds")
 PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
+PM3_DataOutput <- readRDS("PM3_DataOutput.rds")
 
 source("StanParameterExtraction_Source.R")
 
 PM1_medpar <- phenom_extract_medians(rstan::extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
 PM2_medpar <- mechB_extract_medians(rstan::extract(PM2_DataOutput,c("r","K","s","c","B","P","pred_GPP","sig_p")))
-#PM3_medpar <- mechN_extract_medians(rstan::extract(PM3_DataOutput, c("alpha","gamma","s","c","N","P","pred_GPP","sig_p")))
+PM3_medpar <- mechB_extract_medians(rstan::extract(PM3_DataOutput, c("r","beta_0","s","c","B","P","pred_GPP","sig_p")))
 
 
 ## Simulate data for each growth model
@@ -110,8 +112,8 @@ df$simGPP_PM2 <- PM2(r=PM2_medpar$par$r,
                      s=PM2_medpar$par$s,
                      c=PM2_medpar$par$c,
                      sig_p=PM2_medpar$par$sig_p, df=df)
-df$simGPP_PM3 <- PM3(alpha=PM3_medpar$par$alpha,
-                     gamma=PM3_medpar$par$gamma,
+df$simGPP_PM3 <- PM3(r=PM3_medpar$par$r,
+                     beta_0=PM3_medpar$par$beta_0,
                      s=PM3_medpar$par$s,
                      c=PM3_medpar$par$c,
                      sig_p=PM3_medpar$par$sig_p, df=df)
@@ -124,9 +126,9 @@ sim_viz <- function(x, col){
 }
 
 plot_grid(
-  sim_viz(df$simGPP_PM1, "red"),
-  sim_viz(df$simGPP_PM2, "purple"),
-  #sim_viz(df$simGPP_PM3, "blue"),
+  #sim_viz(df$simGPP_PM1, "red"),
+  #sim_viz(df$simGPP_PM2, "purple"),
+  sim_viz(df$simGPP_PM3, "blue"),
 ncol=1)
 
 apply(df[,c("GPP","simGPP_PM1","simGPP_PM2","simGPP_PM3")], 2, function(x) rmse(df$GPP, x))
@@ -149,6 +151,12 @@ med_simGPP_PM2 <- PM2(r=PM2_medpar$par$r,
                   c=PM2_medpar$par$c,
                   sig_p=PM2_medpar$par$sig_p,
                   df=df)
+med_simGPP_PM3 <- PM3(r=PM3_medpar$par$r,
+                  beta_0=PM3_medpar$par$beta_0,
+                  s=PM3_medpar$par$s,
+                  c=PM3_medpar$par$c,
+                  sig_p=PM3_medpar$par$sig_p,
+                  df=df)
 
 ## Compile Stan data
 stan_simdat_compile <- function(x, med_simGPP){
@@ -158,6 +166,7 @@ stan_simdat_compile <- function(x, med_simGPP){
 
 stan_simdat1 <- stan_simdat_compile(df, med_simGPP_PM1)
 stan_simdat2 <- stan_simdat_compile(df, med_simGPP_PM2)
+stan_simdat3 <- stan_simdat_compile(df, med_simGPP_PM3)
 
 ###############################
 ## Run Stan to get estimates ##
@@ -167,12 +176,14 @@ options(mc.cores=parallel::detectCores())
 
 simPM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_simdat1, chains=3, iter=5000, control=list(max_treedepth=12) )
 simPM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_simdat2, chains=3, iter=5000, control=list(max_treedepth=12) )
+simPM3_DataOutput <- stan("Stan_ProductivityModel3_Ricker.stan", data=stan_simdat3, chains=3, iter=5000, control=list(max_treedepth=12) )
 
-launch_shinystan(simPM2_DataOutput)
+launch_shinystan(simPM3_DataOutput)
 
 # Save Output
 saveRDS(simPM1_DataOutput,"simPM1_DataOutput.rds")
 saveRDS(simPM2_DataOutput,"simPM2_DataOutput.rds")
+saveRDS(simPM3_DataOutput,"simPM3_DataOutput.rds")
 ```
 
 
@@ -181,8 +192,10 @@ saveRDS(simPM2_DataOutput,"simPM2_DataOutput.rds")
 ## Import if needed
 PM1_DataOutput <- readRDS("PM1_DataOutput.rds")
 PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
+PM3_DataOutput <- readRDS("PM3_DataOutput.rds")
 simPM1_DataOutput <- readRDS("simPM1_DataOutput.rds")
 simPM2_DataOutput <- readRDS("simPM2_DataOutput.rds")
+simPM3_DataOutput <- readRDS("simPM3_DataOutput.rds")
 
 ## Source parameter extraction and recovery functions
 source("StanParameterExtraction_Source.R")
@@ -191,6 +204,7 @@ source("PM_Evaluation_Functions.R")
 ## Input parameters
 PM1_medpar <- phenom_extract_medians(rstan::extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
 PM2_medpar <- mechB_extract_medians(rstan::extract(PM2_DataOutput,c("r","K","s","c","B","P","pred_GPP","sig_p")))
+PM3_medpar <- mechB_extract_medians(rstan::extract(PM3_DataOutput,c("r","beta_0","s","c","B","P","pred_GPP","sig_p")))
 
 PM1_par_IN <- c("phi"=PM1_medpar$par$phi,
                 "alpha"=PM1_medpar$par$alpha,
@@ -201,15 +215,22 @@ PM2_par_IN <- c("r"=PM2_medpar$par$r,
                 "s"=PM2_medpar$par$s,
                 "c"=PM2_medpar$par$c,
                 "sig_p"=PM2_medpar$par$sig_p)
+PM3_par_IN <- c("r"=PM3_medpar$par$r,
+                "beta_0"=PM3_medpar$par$beta_0,
+                "s"=PM3_medpar$par$s,
+                "c"=PM3_medpar$par$c,
+                "sig_p"=PM3_medpar$par$sig_p)
 
 ## Output parameters
 PM1_par_OUT <- CI_par_PM1(rstan::extract(simPM1_DataOutput))
 PM2_par_OUT <- CI_par_PM2(rstan::extract(simPM2_DataOutput))
+PM3_par_OUT <- CI_par_PM3(rstan::extract(simPM3_DataOutput))
 
 ## Comparison
-plot_grid(in_vs_out(PM1_par_IN, PM1_par_OUT),
-          in_vs_out(PM2_par_IN, PM2_par_OUT),
-          ncol = 2)
+plot_grid(in_vs_out(PM1_par_IN, PM1_par_OUT,"PM1: GPP"),
+          in_vs_out(PM2_par_IN, PM2_par_OUT,"PM2: Logistic"),
+          in_vs_out(PM3_par_IN, PM3_par_OUT,"PM3: Ricker"),
+          ncol = 3)
 ```
 
 
