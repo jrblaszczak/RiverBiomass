@@ -213,6 +213,10 @@ plot_grid(
   ncol=1
 )
 
+plot_grid(
+  df_modB2_plot,
+  df_modB3_plot, ncol=1)
+
 ## RMSE comparison
 rmse_comp <- as.data.frame(as.matrix(cbind(rmsemat1, rmsemat2, rmsemat3)))
 colnames(rmse_comp) <- c("PM1 RMSE","PM2 RMSE", "PM3 RMSE")
