@@ -93,8 +93,8 @@ in_vs_out <- function(par_IN, par_OUT,plot.title){
                                         's'=ygb[4], 'c'=ygb[5],'r'=ygb[6],'sig_p'=ygb[7],
                                         'beta_0'=ygb[9],'K'=ygb[8]),
                        labels=c('alpha'=expression(alpha), 'beta'=expression(beta),
-                                'phi'=expression(phi),'s'="s",'c'="c", 'r'="r",'K'="K",
-                                'sig_p'=expression(sigma[p]),'beta_0'=expression(beta[0])))
+                                'phi'=expression(phi),'s'="s",'c'="c", 'r'=expression(r[max]),'K'="K",
+                                'sig_p'=expression(sigma[p]),'beta_0'=expression(lambda)))
   
 }
 

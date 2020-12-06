@@ -5,6 +5,8 @@ output: html_document
 ---
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE, include=FALSE}
+## See simulation_matrix_output.R for code to create figures
+
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "tidyverse",
@@ -228,9 +230,9 @@ PM3_par_OUT <- CI_par_PM3(rstan::extract(simPM3_DataOutput))
 
 ## Comparison
 plot_grid(in_vs_out(PM1_par_IN, PM1_par_OUT,"PM1: GPP"),
-          in_vs_out(PM2_par_IN, PM2_par_OUT,"PM2: Logistic"),
-          in_vs_out(PM3_par_IN, PM3_par_OUT,"PM3: Ricker"),
-          ncol = 3)
+          #in_vs_out(PM2_par_IN, PM2_par_OUT,"PM2: Logistic"),
+          in_vs_out(PM3_par_IN, PM3_par_OUT,"PM2: Ricker"),
+          ncol = 2)
 ```
 
 
