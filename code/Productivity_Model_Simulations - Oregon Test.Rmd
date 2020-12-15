@@ -8,14 +8,16 @@ output: html_document
 ## See simulation_matrix_output.R for code to create figures
 
 # load packages
-lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
-         "tidyverse",
-         "rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
+         "parallel","tidyverse","rstan",
+         "bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
 
 ## Source data
 source("Oregon_ClackamasData_Source.R")
 df <- dat$Clackamas_OR
 df <- df[which(df$year == "2010"),] ## Subset to 2010
+# gap fill days with missing turb
+df$light_turb <- na.approx(df$light_turb, maxgap = 2)
 
 # source simulation models
 # input variables: GPP, GPP_sd, light, tQ

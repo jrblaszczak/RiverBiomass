@@ -34,6 +34,13 @@ data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP
 data[which(data$GPP < 0 & data$GPP > -0.5),]$GPP <- sample(exp(-6):exp(-4), 1)
 data[which(data$GPP < -0.5),]$GPP <- sample(exp(-6):exp(-4), 1) ## eventually change to NA when figure out how to do so
 
+## Import turbidity data
+OR_turb <- read.csv("../data/Clackamas_daily_turb.csv") ## only for 2010 for now
+OR_turb$date <- as.POSIXct(as.character(OR_turb$date),format="%Y-%m-%d")
+OR_turb$mean_daily_turb <- as.numeric(as.character(OR_turb$mean_daily_turb))
+#merge with data
+data <- left_join(data, OR_turb, by="date")
+
 ## visualize
 ggplot(data, aes(date, GPP))+geom_point()+geom_line()
 
@@ -41,17 +48,22 @@ ggplot(data, aes(date, GPP))+geom_point()+geom_line()
 l <- split(data, data$ID)
 
 rel_LQT <- function(x){
+  # Relativize everything by the max
   x$light_rel <- x$light/max(x$light)
   x$temp_rel <- x$temp/max(x$temp)
   x$tQ <- x$Q/max(x$Q)
+  x$turb_rel <- x$mean_daily_turb/max(x$mean_daily_turb, na.rm = T)
   
-  #x$std_light <- (x$light-mean(x$light))/sd(x$light)
-  #x$std_temp <- (x$temp-mean(x$temp))/sd(x$temp)
-  #x$tQ <- (x$Q-mean(x$Q))/sd(x$Q)
+  # Adjust light by turbidity
+  x$light_turb <- x$light_rel - (x$light_rel*x$turb_rel)
+  
+  # Standardize light to mean
+  x$std_light <- (x$light-mean(x$light))/sd(x$light)
+
   x<-x[order(x$date),]
   return(x)
 }
 
 dat <- lapply(l, function(x) rel_LQT(x))
 
-rm(data,l)
+rm(data,l, OR_turb)
