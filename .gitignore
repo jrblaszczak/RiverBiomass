@@ -19,6 +19,8 @@
 *code/PM2_l_6to10.rds
 *code/PM.Ricker_l_1to5.rds
 *code/PM.Ricker_l_6to10.rds
+*code/PM.AR_l_1to5.rds
+*code/PM.AR_l_6to10.rds
 
 # Session Data files
 .RData

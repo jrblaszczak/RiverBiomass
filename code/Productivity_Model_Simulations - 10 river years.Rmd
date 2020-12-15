@@ -1,5 +1,5 @@
 ---
-title: "Productivity Model Simulations - Oregon Test"
+title: "Productivity Model Simulations - 10 river years"
 author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
 output: html_document
 ---
@@ -13,24 +13,21 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
 
 ## Source data
-source("Oregon_ClackamasData_Source.R")
-df <- dat$Clackamas_OR
-df <- df[which(df$year == "2010"),] ## Subset to 2010
+source("Persistence_10rivers_DataSource.R")
+df <- dat
 
 # source simulation models
 # input variables: GPP, GPP_sd, light, tQ
 source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
-source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
-source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, lambda, s, c, sig_p
-source("Simulated_ProductivityModel4_Ricker_lightadj.R") # estimated parameters: alpha, lambda, s, c, sig_p
-source("Simulated_ProductivityModel5_Gompertz.R") # estimated parameters: alpha, lambda, s, c, sig_p
+#source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
+source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, beta_0, s, c, sig_p
 ```
 
 
 #### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
-plot_grid(
- ggplot(df, aes(date, GPP, ymin = GPP-GPP_sd, ymax = GPP+GPP_sd))+
+lapply(df, function(x) plot_grid(
+ ggplot(x, aes(date, GPP, ymin = GPP-GPP_sd, ymax = GPP+GPP_sd))+
     geom_point(color="chartreuse4", size=2)+
     geom_errorbar(width=0.2)+
     labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
@@ -39,8 +36,8 @@ plot_grid(
           axis.title.x = element_blank(), axis.text = element_text(size=13),
           axis.title.y = element_text(size=15)),
   
-  ggplot(df, aes(date, tQ*1))+geom_line(size=1.5, color="deepskyblue4")+
-    geom_point(data=df, aes(date, light_rel), size=2, color="darkgoldenrod3")+
+  ggplot(x, aes(date, tQ*1))+geom_line(size=1.5, color="deepskyblue4")+
+    geom_point(data=x, aes(date, light_rel), size=2, color="darkgoldenrod3")+
     scale_y_continuous(sec.axis = sec_axis(~./1, name=expression("Relativized Q")))+
     labs(y="Relativized Light", x="Date (2012)")+
     theme(legend.position = "none",
@@ -49,15 +46,17 @@ plot_grid(
           axis.title = element_text(size=15)),
   
   align="hv",ncol=1)
+)
 
-
-ggplot(df, aes(light_rel, GPP))+
+## GPP vs light relationship
+lapply(df, function(x) ggplot(x, aes(light_rel, GPP))+
   geom_point(size=2)+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), x="Light (short-wave radiation) relative to annual max")+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),
           axis.text = element_text(size=13),
           axis.title = element_text(size=15))
+)
 
 ```
 
@@ -67,75 +66,102 @@ ggplot(df, aes(light_rel, GPP))+
 ## Stan data prep ##
 ####################
 rstan_options(auto_write=TRUE)
-options(mc.cores=parallel::detectCores())
+options(mc.cores=16)#parallel::detectCores())
 
 stan_data_compile <- function(x){
   data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, GPP_sd = x$GPP_sd, tQ = x$tQ)
   return(data)
 }
 
-stan_data <- stan_data_compile(df)
+stan_data_l <- lapply(dat, function(x) stan_data_compile(x))
 
 ###############################
 ## Run Stan to get estimates ##
 ###############################
-PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
-PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
-PM3_DataOutput <- stan("Stan_ProductivityModel3_Ricker.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
+## PM - Phenomenological
+PM.AR_l_1to5 <- lapply(stan_data_l[1:5], function(x) stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+PM.AR_l_6to10 <- lapply(stan_data_l[6:10], function(x) stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+# Save Output
+saveRDS(PM.AR_l_1to5,"PM.AR_l_1to5.rds")
+saveRDS(PM.AR_l_6to10,"PM.AR_l_6to10.rds")
+
+## PM - Ricker
+PM.Ricker_l_1to5 <- lapply(stan_data_l[1:5], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+PM.Ricker_l_6to10 <- lapply(stan_data_l[6:10], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+# Save Output
+saveRDS(PM.Ricker_l_1to5,"PM.Ricker_l_1to5.rds")
+saveRDS(PM.Ricker_l_6to10,"PM.Ricker_l_6to10.rds")
 
 # View on shiny
-launch_shinystan(PM3_DataOutput) ## Click explore tab when new window opens
-# Save Output
-saveRDS(PM1_DataOutput,"PM1_DataOutput.rds")
-saveRDS(PM2_DataOutput,"PM2_DataOutput.rds")
-saveRDS(PM3_DataOutput,"PM3_DataOutput.rds")
+#launch_shinystan(PM2_DataOutput) ## Click explore tab when new window opens
 
 ```
 
 
 #### Extract median estimate and simulate GPP data (despite poor parameter convergence)
 ```{r, warning=FALSE}
-PM1_DataOutput <- readRDS("PM1_DataOutput.rds")
-PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
-PM3_DataOutput <- readRDS("PM3_DataOutput.rds")
-
 source("StanParameterExtraction_Source.R")
 
-PM1_medpar <- phenom_extract_medians(rstan::extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
-PM2_medpar <- mechB_extract_medians(rstan::extract(PM2_DataOutput,c("r","K","s","c","B","P","pred_GPP","sig_p")))
-PM3_medpar <- mechB_extract_medians(rstan::extract(PM3_DataOutput, c("r","beta_0","s","c","B","P","pred_GPP","sig_p")))
-
+##############
+## GPP Model
+##############
+PM.AR_l_1to5 <- readRDS("PM.AR_l_1to5.rds")
+PM.AR_l_6to10 <- readRDS("PM.AR_l_6to10.rds")
+PM.AR_l_all <- append(PM.AR_l_1to5, PM.AR_l_6to10)
+#Extract median value of posterior parameter estimates
+PM.AR_medpar_l <- lapply(PM.AR_l_all, function(x) phenom_extract_medians(rstan::extract(x, c("phi","alpha","beta","l_pred_GPP","sig_p"))))
 
 ## Simulate data for each growth model
 df$simGPP_PM1 <- PM1(phi=PM1_medpar$par$phi,
                      alpha=PM1_medpar$par$alpha,
                      beta=PM1_medpar$par$beta,
                      sig_p=PM1_medpar$par$sig_p, df=df)
-df$simGPP_PM2 <- PM2(r=PM2_medpar$par$r,
-                     K=PM2_medpar$par$K,
-                     s=PM2_medpar$par$s,
-                     c=PM2_medpar$par$c,
-                     sig_p=PM2_medpar$par$sig_p, df=df)
-df$simGPP_PM3 <- PM3(r=PM3_medpar$par$r,
-                     beta_0=PM3_medpar$par$beta_0,
-                     s=PM3_medpar$par$s,
-                     c=PM3_medpar$par$c,
-                     sig_p=PM3_medpar$par$sig_p, df=df)
 
-sim_viz <- function(x, col){
-  ggplot(df, aes(date, GPP))+
+
+##################
+## Ricker Model
+##################
+PM.Ricker_l_1to5 <- readRDS("PM.Ricker_l_1to5.rds")
+PM.Ricker_l_6to10 <- readRDS("PM.Ricker_l_6to10.rds")
+PM.Ricker_l_all <- append(PM.Ricker_l_1to5, PM.Ricker_l_6to10)
+#Extract median value of posterior parameter estimates
+PM.Ricker_medpar_l <- lapply(PM.Ricker_l_all, function(x) mechB_extract_medians(rstan::extract(x, c("r","beta_0","s","c","B","P","pred_GPP","sig_p"))))
+
+## Simulate data
+df_Ricker_all <- Map(c, df, PM.Ricker_medpar_l)
+df_Ricker_simGPP <- lapply(df_Ricker_all, function(x) {x$simGPP_PM3 <- PM3(r=x$par$r,
+                                                              beta_0=x$par$beta_0,
+                                                              s=x$par$s,
+                                                              c=x$par$c,
+                                                              sig_p=x$par$sig_p, df=x);return(x)})
+
+#vis
+sim_viz <- function(x){
+sub <- as.data.frame(cbind(as.character(x$date), x$GPP, x$simGPP_PM3))
+  colnames(sub) <- c("date","GPP","simGPP_PM3")
+  sub$date <- as.POSIXct(as.character(sub$date), format="%Y-%m-%d")
+sub[2:3] <- apply(sub[2:3],2,function(x) as.numeric(as.character(x)))
+  
+  ggplot(sub, aes(date, GPP))+
     geom_point()+
-    geom_line(data=df, aes(date, x), color=col)
-    #scale_y_continuous(limits = c(0,15))
+    geom_line(data=sub, aes(date, simGPP_PM3))+
+    scale_y_continuous(limits = c(0,15))
+}
+lapply(df_Ricker_simGPP, function(x) sim_viz(x))
+
+#rmse
+rmse_calc <- function(x){
+  sub <- as.data.frame(cbind(as.character(x$date), x$GPP, x$simGPP_PM3))
+  colnames(sub) <- c("date","GPP","simGPP_PM3")
+  sub$date <- as.POSIXct(as.character(sub$date), format="%Y-%m-%d")
+sub[2:3] <- apply(sub[2:3],2,function(x) as.numeric(as.character(x)))
+  
+return(rmse(sub$GPP,sub$simGPP_PM3))
+  
 }
 
-plot_grid(
-  #sim_viz(df$simGPP_PM1, "red"),
-  #sim_viz(df$simGPP_PM2, "purple"),
-  sim_viz(df$simGPP_PM3, "blue"),
-ncol=1)
+lapply(df_Ricker_simGPP, function(x) rmse_calc(x))
 
-apply(df[,c("GPP","simGPP_PM1","simGPP_PM2","simGPP_PM3")], 2, function(x) rmse(df$GPP, x))
 
 ```
 
@@ -161,6 +187,23 @@ med_simGPP_PM3 <- PM3(r=PM3_medpar$par$r,
                   c=PM3_medpar$par$c,
                   sig_p=PM3_medpar$par$sig_p,
                   df=df)
+
+
+
+sim_viz <- function(x){
+sub <- as.data.frame(cbind(as.character(x$date), x$GPP, x$simGPP_PM3))
+  colnames(sub) <- c("date","GPP","simGPP_PM3")
+  sub$date <- as.POSIXct(as.character(sub$date), format="%Y-%m-%d")
+sub[2:3] <- apply(sub[2:3],2,function(x) as.numeric(as.character(x)))
+  
+  ggplot(sub, aes(date, GPP))+
+    geom_point()+
+    geom_line(data=sub, aes(date, simGPP_PM3))+
+    scale_y_continuous(limits = c(0,15))
+}
+lapply(df_Ricker_simGPP, function(x) sim_viz(x))
+
+
 
 ## Compile Stan data
 stan_simdat_compile <- function(x, med_simGPP){
