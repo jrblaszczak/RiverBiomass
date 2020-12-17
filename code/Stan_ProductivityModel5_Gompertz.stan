@@ -5,6 +5,8 @@
     vector [Ndays] GPP; // mean estimates from posterior probability distributions
     vector [Ndays] GPP_sd; // sd estimates from posterior probability distributions
     vector [Ndays] tQ; // standardized discharge
+    //vector [Ndays] depth; // depth estimate
+    //vector [Ndays] turb; // mean daily turbidity
     }
     
     parameters {
@@ -14,8 +16,12 @@
     
     // Logistic growth parameters  
     real B [Ndays]; // Biomass; g m-2
-    real r; // growth rate; d-1
-    real beta_0; // r/K
+    real beta_0; // r 
+    real beta_1; // r/K
+    real beta_2; // light coefficient
+    
+    // Light adjustment
+    //real a; // light attenuation coefficient to inform Kd
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
@@ -24,10 +30,12 @@
     transformed parameters {
     real pred_GPP [Ndays];
     real P [Ndays];
+    //real ben_light [Ndays];
     
     for(i in 1:Ndays){
     P[i]=exp(-exp(s*(tQ[i]-c)));
-    pred_GPP[i] =light[i]*exp(B[i]);
+    //ben_light[i]=light[i]*exp(-1*a*turb[i]*depth[i]);
+    pred_GPP[i] =exp(B[i]);
     }
     
     } 
@@ -48,9 +56,12 @@
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    r ~ normal(0,1);
     c ~ rayleigh(0.5);
     s ~ normal(0,50);
+    //a ~ normal(0,1);
+    beta_0 ~ normal(0,1);
+    beta_1 ~ normal(0,1); 
+    beta_2 ~ normal(0,1);
     
     }
     

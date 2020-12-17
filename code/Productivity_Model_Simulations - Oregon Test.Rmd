@@ -1,6 +1,6 @@
 ---
 title: "Productivity Model Simulations - Oregon Test"
-author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
+author: "J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr."
 output: html_document
 ---
 
@@ -16,25 +16,17 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 source("Oregon_ClackamasData_Source.R")
 df <- dat$Clackamas_OR
 df <- df[which(df$year == "2010"),] ## Subset to 2010
-# gap fill days with missing turb
-df$light_turb <- na.approx(df$light_turb, maxgap = 2)
-
-# source simulation models
-# input variables: GPP, GPP_sd, light, tQ
-source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
-source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
-source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, lambda, s, c, sig_p
-source("Simulated_ProductivityModel4_Ricker_lightadj.R") # estimated parameters: alpha, lambda, s, c, sig_p
-source("Simulated_ProductivityModel5_Gompertz.R") # estimated parameters: alpha, lambda, s, c, sig_p
+# temporary solution to turbidity data gaps
+df$mean_daily_turb <- na.approx(df$mean_daily_turb, maxgap = 3)
 ```
 
 
 #### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
 plot_grid(
- ggplot(df, aes(date, GPP, ymin = GPP-GPP_sd, ymax = GPP+GPP_sd))+
+ ggplot(df, aes(date, GPP))+#, ymin = GPP-GPP_sd, ymax = GPP+GPP_sd))+
     geom_point(color="chartreuse4", size=2)+
-    geom_errorbar(width=0.2)+
+    geom_errorbar(data=df, aes(date, GPP, ymin = GPP.lower, ymax = GPP.upper), width=0.2,color="darkolivegreen4")+
     labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),
@@ -69,10 +61,11 @@ ggplot(df, aes(light_rel, GPP))+
 ## Stan data prep ##
 ####################
 rstan_options(auto_write=TRUE)
-options(mc.cores=parallel::detectCores())
+options(mc.cores=16) #parallel::detectCores())
 
 stan_data_compile <- function(x){
-  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, GPP_sd = x$GPP_sd, tQ = x$tQ)
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, GPP_sd = x$GPP_sd,
+               tQ = x$tQ, turb = x$mean_daily_turb, depth = x$depth)
   return(data)
 }
 
@@ -81,25 +74,42 @@ stan_data <- stan_data_compile(df)
 ###############################
 ## Run Stan to get estimates ##
 ###############################
-PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
-PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
-PM3_DataOutput <- stan("Stan_ProductivityModel3_Ricker.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
+stan_model_list <- as.list(list.files(pattern = "*.stan"))
+
+stan_model_output_AR <- lapply(stan_model_list[1:2], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
+stan_model_output_Logistic <- lapply(stan_model_list[3:4], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
+stan_model_output_Ricker <- lapply(stan_model_list[5:6], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
+stan_model_output_Ricker_Ladj <- lapply(stan_model_list[7:8], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
+stan_model_output_Gompertz <- lapply(stan_model_list[9:10], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
+
 
 # View on shiny
-launch_shinystan(PM3_DataOutput) ## Click explore tab when new window opens
+launch_shinystan(stan_model_output) ## Click explore tab when new window opens
 # Save Output
-saveRDS(PM1_DataOutput,"PM1_DataOutput.rds")
-saveRDS(PM2_DataOutput,"PM2_DataOutput.rds")
-saveRDS(PM3_DataOutput,"PM3_DataOutput.rds")
-
+saveRDS(stan_model_output_AR,"stan_model_output_AR.rds")
+saveRDS(stan_model_output_Logistic,"stan_model_output_Logistic.rds")
+saveRDS(stan_model_output_Ricker,"stan_model_output_Ricker.rds")
+saveRDS(stan_model_output_Ricker_Ladj,"stan_model_output_Ricker_Ladj.rds")
+saveRDS(stan_model_output_Gompertz,"stan_model_output_Gompertz.rds")
 ```
 
 
 #### Extract median estimate and simulate GPP data (despite poor parameter convergence)
 ```{r, warning=FALSE}
-PM1_DataOutput <- readRDS("PM1_DataOutput.rds")
-PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
-PM3_DataOutput <- readRDS("PM3_DataOutput.rds")
+# source simulation models
+# input variables: GPP, GPP_sd, light, tQ
+source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
+source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
+source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, lambda, s, c, sig_p
+source("Simulated_ProductivityModel4_Ricker_lightadj.R") # estimated parameters: alpha, lambda, s, c, sig_p
+source("Simulated_ProductivityModel5_Gompertz.R") # estimated parameters: alpha, lambda, s, c, sig_p
+
+## Import fits from previous model outputs
+stan_model_output_AR <- readRDS("stan_model_output_AR.rds")
+stan_model_output_Logistic <- readRDS("stan_model_output_Logistic.rds")
+stan_model_output_Ricker <- readRDS("stan_model_output_Ricker.rds")
+stan_model_output_Ricker_Ladj <- readRDS("stan_model_output_Ricker_Ladj.rds")
+stan_model_output_Gompertz <- readRDS("stan_model_output_Gompertz.rds")
 
 source("StanParameterExtraction_Source.R")
 
@@ -244,6 +254,15 @@ plot_grid(in_vs_out(PM1_par_IN, PM1_par_OUT,"PM1: GPP"),
 
 
 
+```{r}
+## OLD CODE
 
 
 
+PM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_data, chains=3, iter=50, control=list(max_treedepth=12) )
+PM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
+PM3_DataOutput <- stan("Stan_ProductivityModel3_Ricker.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
+PM4_DataOutput <- stan("Stan_ProductivityModel4_Ricker_lightadj.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
+PM5_DataOutput <- stan("Stan_ProductivityModel5_Gompertz.stan", data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12) )
+
+```

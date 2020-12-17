@@ -1,4 +1,4 @@
-## WI Data source
+## OR Data source
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
@@ -48,14 +48,11 @@ ggplot(data, aes(date, GPP))+geom_point()+geom_line()
 l <- split(data, data$ID)
 
 rel_LQT <- function(x){
+
   # Relativize everything by the max
   x$light_rel <- x$light/max(x$light)
   x$temp_rel <- x$temp/max(x$temp)
   x$tQ <- x$Q/max(x$Q)
-  x$turb_rel <- x$mean_daily_turb/max(x$mean_daily_turb, na.rm = T)
-  
-  # Adjust light by turbidity
-  x$light_turb <- x$light_rel - (x$light_rel*x$turb_rel)
   
   # Standardize light to mean
   x$std_light <- (x$light-mean(x$light))/sd(x$light)

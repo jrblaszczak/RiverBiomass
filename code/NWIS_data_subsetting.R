@@ -16,10 +16,10 @@ head(NWIS)
 ## Subset columns and sites
 NWIS_sub <- NWIS[,c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.Rhat",
                     "ER","ER.lower","ER.upper","K600","K600.lower","K600.upper",
-                    "temp.water","discharge","shortwave","velocity")]
+                    "temp.water","discharge","shortwave","velocity","depth")]
 colnames(NWIS_sub) <- c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.Rhat",
                         "ER","ER.lower","ER.upper","K600","K600.lower","K600.upper",
-                        "temp","Q","light","velocity")
+                        "temp","Q","light","velocity","depth")
 
 ## Import site information
 NWIS_site_data <- read.csv("../data/site_data.csv", header = TRUE)

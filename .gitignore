@@ -8,6 +8,8 @@
 *data/NWIS_WI_sitedata.csv
 *data/site_data.csv
 *data/Clackamas_daily_turb.csv
+*data/NWIS_OR_data.csv
+*data/NWIS_Psim_data.csv
 
 # Stan outputs
 *code/PM1_DataOutput.rds
@@ -22,6 +24,11 @@
 *code/PM.Ricker_l_6to10.rds
 *code/PM.AR_l_1to5.rds
 *code/PM.AR_l_6to10.rds
+*code/stan_model_output_AR.rds
+*code/stan_model_output_Logistic.rds
+*code/stan_model_output_Ricker.rds
+*code/stan_model_output_Ricker_Ladj.rds
+*code/stan_model_output_Gompertz.rds
 
 # Session Data files
 .RData

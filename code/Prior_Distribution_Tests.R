@@ -32,3 +32,24 @@ more_than_one <- dweibull(x, shape = 1.5, scale = 1)
 tibble(less_than_one, one, more_than_one, x) %>% gather("k_parameter", "sample", 1:3) %>% ggplot(aes(x = x, y = sample, col = k_parameter))+
   geom_line(size = 1.4)+theme_classic()+
   scale_color_manual(values = c("#fec44f", "#999999", "#5ab4ac"))+ theme(legend.position = c(.2,.8))+facet_wrap(~k_parameter)
+
+# Rayleigh
+library(VGAM)
+
+x <- seq(0, 3, 0.1)
+ray_less_than_one <- drayleigh(x, scale = 0.5)
+ray_one <- drayleigh(x, scale = 1)
+ray_more_than_one <- drayleigh(x, scale = 1.5)
+
+tibble(ray_less_than_one, ray_one, ray_more_than_one, x) %>% 
+  gather("k_parameter", "sample", 1:3) %>% ggplot(aes(x = x, y = sample, col = k_parameter))+
+  geom_line(size = 1.4)+theme_classic()+
+  scale_color_manual(values = c("#fec44f", "#999999", "#5ab4ac"))+
+  theme(legend.position = c(.2,.8))+facet_wrap(~k_parameter)+
+  scale_x_continuous(limits=c(0,5))
+
+
+
+
+
+
