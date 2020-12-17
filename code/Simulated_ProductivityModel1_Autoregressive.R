@@ -20,7 +20,7 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   
   ## Process model
   for (j in 2:Ndays) {
-    l_pred_GPP[j] = rnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p)
+    l_pred_GPP[j] = rtnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p, upper=3.5)
   }
   
   for (i in 2:Ndays){

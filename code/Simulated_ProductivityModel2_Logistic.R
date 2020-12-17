@@ -10,12 +10,11 @@ PM2 <- function(r, K, s, c, sig_p, df) {
   tQ <- df$tQ # discharge standardized to max value
   
   ## Error
-  #proc_err <- rnorm(Ndays, mean = 0, sd = sig_p)
   obs_err <- GPP_sd
   
   ## Vectors for model output of P, B, pred_GPP
   P <- numeric(Ndays)
-  for(i in 2:length(tQ)){
+  for(i in 1:length(tQ)){
     P[i] = exp(-exp(s*(tQ[i] - c)))
   }
   
@@ -26,11 +25,11 @@ PM2 <- function(r, K, s, c, sig_p, df) {
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rnorm(1, mean = (B[j-1]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sd = sig_p)
+    B[j] = rtnorm(1, mean = (B[j-1]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sd = sig_p, upper=3.5)
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower = 0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower = 0)
   }
   
   return(pred_GPP)
@@ -75,7 +74,7 @@ PM2_BL <- function(r, K, s, c, a, sig_p, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower = 0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower = 0)
   }
   
   return(pred_GPP)

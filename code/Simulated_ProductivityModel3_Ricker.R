@@ -32,7 +32,7 @@ PM3 <- function(r, lambda, s, c, sig_p, df) {
   
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower = 0)
+    pred_GPP[i] <- rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower = 0.01)
   }
   
   return(pred_GPP)

@@ -14,6 +14,7 @@ PM5 <- function(beta_0, beta_1, beta_2, s, c, sig_p, df) {
   
   ## Vectors for model output of P, B, pred_GPP, r
   P <- numeric(Ndays)
+  P[1] <- 1
   for(i in 2:length(tQ)){
     P[i] = exp(-exp(s*(tQ[i] - c)))
   }
@@ -25,11 +26,11 @@ PM5 <- function(beta_0, beta_1, beta_2, s, c, sig_p, df) {
 
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rnorm(1, mean = (beta_0 + beta_1*exp(B[(j-1)])+beta_2*light[j])*P[j], sd = sig_p)
+    B[j] = rtnorm(1, mean = (beta_0 + beta_1*exp(B[(j-1)])+beta_2*light[j])*P[j], sd = sig_p, upper=3.5)
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- rtnorm(1, mean = exp(B[i]), sd = obs_err[i], lower = 0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = exp(B[i]), sd = obs_err[i], lower = 0)
   }
   
   return(pred_GPP)

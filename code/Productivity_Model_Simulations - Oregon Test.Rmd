@@ -105,14 +105,6 @@ source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, lambd
 source("Simulated_ProductivityModel4_Ricker_lightadj.R") # estimated parameters: alpha_0, alpha_1, lambda, s, c, sig_p
 source("Simulated_ProductivityModel5_Gompertz.R") # estimated parameters: beta_0, beta_1, beta_2, s, c, sig_p
 
-# source simulation models with benthic light
-source("Simulated_ProductivityModel1_Autoregressive_BenthicL.R") # parameters: phi, alpha, beta, sig_p
-source("Simulated_ProductivityModel2_Logistic_BenthicL.R") # parameters: r, K, s, c, sig_p
-source("Simulated_ProductivityModel3_Ricker_BenthicL.R") # parameters: r, lambda, s, c, sig_p
-source("Simulated_ProductivityModel4_Ricker_lightadj_BenthicL.R") # parameters: alpha_0, alpha_1, lambda, s, c, sig_p
-source("Simulated_ProductivityModel5_Gompertz_BenthicL.R") # parameters: beta_0, beta_1, beta_2, s, c, sig_p
-
-
 ## Import fits from previous model outputs
 stan_model_output_AR <- readRDS("stan_model_output_AR.rds")
 stan_model_output_Logistic <- readRDS("stan_model_output_Logistic.rds")

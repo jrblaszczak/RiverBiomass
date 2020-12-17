@@ -14,7 +14,7 @@ PM4 <- function(alpha_0, alpha_1, lambda, s, c, sig_p, df) {
   
   ## Vectors for model output of P, B, pred_GPP, r
   P <- numeric(Ndays)
-  for(i in 2:length(tQ)){
+  for(i in 1:length(tQ)){
     P[i] = exp(-exp(s*(tQ[i] - c)))
   }
   
@@ -24,7 +24,7 @@ PM4 <- function(alpha_0, alpha_1, lambda, s, c, sig_p, df) {
   pred_GPP[1] <- exp(B[1])
   
   r <- numeric(Ndays)
-  for(i in 2:length(light)){
+  for(i in 1:length(light)){
     r[i] = alpha_0 + alpha_1*light[i]
   }
   
@@ -36,7 +36,7 @@ PM4 <- function(alpha_0, alpha_1, lambda, s, c, sig_p, df) {
   
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- rtnorm(1, mean = exp(B[i]), sd = obs_err[i], lower = 0)
+    pred_GPP[i] <- rtnorm(n=1, mean = exp(B[i]), sd = obs_err[i], lower = 0.01)
   }
   
   return(pred_GPP)
