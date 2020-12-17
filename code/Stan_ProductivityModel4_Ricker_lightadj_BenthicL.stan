@@ -16,12 +16,12 @@
     
     // Logistic growth parameters  
     real B [Ndays]; // Biomass; g m-2
-    real alpha_0; // light
-    real alpha_1; // light
-    real lambda; // r/K
+    real alpha_0; // light intercept
+    real<lower=0> alpha_1; // light slope
+    real<upper=0> lambda; // r/K
     
     // Light adjustment
-    real a; // light attenuation coefficient to inform Kd
+    real<lower=0> a; // light attenuation coefficient to inform Kd
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
@@ -58,11 +58,11 @@
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    c ~ rayleigh(0.5);
-    s ~ normal(0,50);
-    a ~ normal(0,1);
+    c ~ rayleigh(0.5)T[0,];
+    s ~ normal(0,50)T[0,];
+    a ~ normal(0,1)T[0,];
     alpha_0 ~ normal(0,1);
-    alpha_1 ~ normal(0,1);
+    alpha_1 ~ normal(0,1)T[0,];
     
     }
     

@@ -18,10 +18,10 @@
     real B [Ndays]; // Biomass; g m-2
     real beta_0; // r 
     real beta_1; // r/K
-    real beta_2; // light coefficient
+    real<lower=0> beta_2; // light coefficient
     
     // Light adjustment
-    real a; // light attenuation coefficient to inform Kd
+    real<lower=0> a; // light attenuation coefficient to inform Kd
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
@@ -56,12 +56,12 @@
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    c ~ rayleigh(0.5);
-    s ~ normal(0,50);
-    a ~ normal(0,1);
+    c ~ rayleigh(0.5)T[0,];
+    s ~ normal(0,50)T[0,];
+    a ~ normal(0,1)T[0,];
     beta_0 ~ normal(0,1);
     beta_1 ~ normal(0,1); 
-    beta_2 ~ normal(0,1);
+    beta_2 ~ normal(0,1)T[0,];
     
     }
     

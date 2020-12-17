@@ -17,7 +17,7 @@
     real<upper=0> beta; // discharge to loss conversion term; g O2 m-2 d-1
     
     // Light adjustment
-    real a; // light attenuation coefficient to inform Kd
+    real<lower=0> a; // light attenuation coefficient to inform Kd
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
@@ -55,7 +55,7 @@
     phi ~ normal(0,1)T[0,];
     alpha ~ normal(0,1)T[0,];
     beta ~ normal(0,1)T[,0];
-    a ~ normal(0,1);
+    a ~ normal(0,1)T[0,];
     
     }
     

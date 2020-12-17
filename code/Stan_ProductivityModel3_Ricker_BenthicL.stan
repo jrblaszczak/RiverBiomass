@@ -15,12 +15,12 @@
     real<lower=0> s; // steepness of the transition from P=1 to P=0
     
     // Light adjustment
-    real a; // light attenuation coefficient to inform Kd
+    real<lower=0> a; // light attenuation coefficient to inform Kd
     
     // Logistic growth parameters  
     real B [Ndays]; // Biomass; g m-2
-    real r; // growth rate; d-1
-    real lambda; // r/K
+    real<lower=0> r; // growth rate; d-1
+    real<upper=0> lambda; // r/K
     
     // Error parameters
     real<lower=0> sig_p; // sigma processes error
@@ -55,11 +55,11 @@
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    r ~ normal(0,1);
-    lambda ~ normal(0,1);
-    c ~ rayleigh(0.5);
-    s ~ normal(0,50);
-    a ~ normal(0,1);
+    r ~ normal(0,1)T[0,];
+    lambda ~ normal(0,1)T[,0];
+    c ~ rayleigh(0.5)T[0,];
+    s ~ normal(0,50)T[0,];
+    a ~ normal(0,1)T[0,];
     
     }
     
