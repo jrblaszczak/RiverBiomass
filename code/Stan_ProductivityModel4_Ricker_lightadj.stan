@@ -16,8 +16,8 @@
     
     // Logistic growth parameters  
     real B [Ndays]; // Biomass; g m-2
-    real alpha_0; // light
-    real alpha_1; // light
+    real alpha_0; // light intercept
+    real alpha_1; // light coefficient
     real lambda; // r/K
     
     // Light adjustment
