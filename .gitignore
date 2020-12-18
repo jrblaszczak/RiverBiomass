@@ -29,6 +29,8 @@
 *code/stan_model_output_Ricker.rds
 *code/stan_model_output_Ricker_Ladj.rds
 *code/stan_model_output_Gompertz.rds
+*code/Sim_matrix_Logistic.rds
+*code/Sim_matrix_AR.rds
 
 # Session Data files
 .RData

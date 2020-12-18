@@ -70,12 +70,12 @@ lower_simmat1_BL <- apply(simmat1_BL, 1, function(x) quantile(x, probs = 0.025))
 upper_simmat1_BL <- apply(simmat1_BL, 1, function(x) quantile(x, probs = 0.975))
 
 ## Plot simulated GPP
-df_sim1 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat1,lower_simmat1, upper_simmat1))
-                               ##median_simmat1_BL,lower_simmat1_BL, upper_simmat1_BL))
-colnames(df_sim1) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
-                       ##"sim_GPP_BL","sim_GPP_BL_lower","sim_GPP_BL_upper")
+df_sim1 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat1,lower_simmat1, upper_simmat1,
+                               median_simmat1_BL,lower_simmat1_BL, upper_simmat1_BL))
+colnames(df_sim1) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper",
+                       "sim_GPP_BL","sim_GPP_BL_lower","sim_GPP_BL_upper")
 df_sim1$Date <- as.POSIXct(as.character(df_sim1$Date), format="%Y-%m-%d")
-df_sim1[,2:5] <- apply(df_sim1[,2:5],2,function(x) as.numeric(as.character(x)))
+df_sim1[,2:8] <- apply(df_sim1[,2:8],2,function(x) as.numeric(as.character(x)))
 
 df_sim1_plot <- ggplot(df_sim1, aes(Date, GPP))+
   geom_point(size=2, color="black")+
@@ -83,9 +83,9 @@ df_sim1_plot <- ggplot(df_sim1, aes(Date, GPP))+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM1: GPP")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM1.col, alpha=0.3, show.legend = FALSE)+
-  ##geom_line(aes(Date, sim_GPP_BL), color="red", size=1.2)+
-  ##geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
-  ##            fill="red", alpha=0.3, show.legend = FALSE)+
+  geom_line(aes(Date, sim_GPP_BL), color="red", size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+              fill="red", alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=13),
@@ -93,7 +93,10 @@ df_sim1_plot <- ggplot(df_sim1, aes(Date, GPP))+
   scale_y_continuous(limits=c(0,30))
 df_sim1_plot
 
+## Remove and save simulation
 rm(stan_model_output_AR)
+simmat1_list <- list(simmat1, simmat1_BL)
+saveRDS(simmat1_list, "Sim_matrix_AR.rds")
 ##############################
 ## Model 2 Output - Logistic
 ##############################
@@ -101,25 +104,38 @@ rm(stan_model_output_AR)
 pars2<-extract(stan_model_output_Logistic[[1]], c("r","K","s","c","B","P","pred_GPP","sig_p"))
 simmat2<-matrix(NA,length(df[,1]),length(unlist(pars2$sig_p)))
 rmsemat2<-matrix(NA,length(df[,1]),1)
-
+#Simulate
 for (i in 1:length(pars2$sig_p)){
   simmat2[,i]<-PM2(r=pars2$r[i],K=pars2$K[i],s=pars2$s[i],c=pars2$c[i],sig_p=pars2$sig_p[i],df)
   rmsemat2[i]<-sqrt(sum((simmat2[,i]-df$GPP)^2)/length(df$GPP))
 }
-
-## View RMSE distribution
-hist(rmsemat2)
 
 ## For every day extract median and CI
 median_simmat2 <- apply(simmat2, 1, function(x) median(x, na.rm = TRUE))
 lower_simmat2 <- apply(simmat2, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
 upper_simmat2 <- apply(simmat2, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
 
+## Benthic light modification ##
+pars2_BL<-extract(stan_model_output_Logistic[[2]], c("r","K","s","c","a","B","P","pred_GPP","sig_p"))
+simmat2_BL<-matrix(NA,length(df[,1]),length(unlist(pars2_BL$sig_p)))
+rmsemat2_BL<-matrix(NA,length(df[,1]),1)
+# Simulation
+for (i in 1:length(pars2_BL$sig_p)){
+  simmat2_BL[,i]<-PM2_BL(r=pars2_BL$r[i],K=pars2_BL$K[i],s=pars2_BL$s[i],c=pars2_BL$c[i],a=pars2_BL$a[i],sig_p=pars2_BL$sig_p[i],df)
+  rmsemat2_BL[i]<-sqrt(sum((simmat2_BL[,i]-df$GPP)^2)/length(df$GPP))
+}
+## For every day extract median and CI
+median_simmat2_BL <- apply(simmat2_BL, 1, function(x) median(x, na.rm = TRUE))
+lower_simmat2_BL <- apply(simmat2_BL, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+upper_simmat2_BL <- apply(simmat2_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
+
 ## Plot simulated GPP
-df_sim2 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat2, lower_simmat2, upper_simmat2))
-colnames(df_sim2) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+df_sim2 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat2, lower_simmat2, upper_simmat2,
+                               median_simmat2_BL, lower_simmat2_BL, upper_simmat2_BL))
+colnames(df_sim2) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper",
+                       "sim_GPP_BL","sim_GPP_BL_lower","sim_GPP_BL_upper")
 df_sim2$Date <- as.POSIXct(as.character(df_sim2$Date), format="%Y-%m-%d")
-df_sim2[,2:5] <- apply(df_sim2[,2:5],2,function(x) as.numeric(as.character(x)))
+df_sim2[,2:8] <- apply(df_sim2[,2:8],2,function(x) as.numeric(as.character(x)))
 
 df_sim2_plot <- ggplot(df_sim2, aes(Date, GPP))+
   geom_point(size=2, color="black")+
@@ -127,6 +143,9 @@ df_sim2_plot <- ggplot(df_sim2, aes(Date, GPP))+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM2: Logistic")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM2.col, alpha=0.2, show.legend = FALSE)+
+  geom_line(aes(Date, sim_GPP_BL), color="red", size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+              fill="red", alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=13),
@@ -136,17 +155,28 @@ df_sim2_plot
 
 
 ## Plot latent B
+## no light modification ##
 PM2_medpar <- mechB_extract_medians(rstan::extract(stan_model_output_Logistic[[1]],c("r","K","s","c","B","P","pred_GPP","sig_p")))
 df_modB2 <- as.data.frame(cbind(as.character(df$date), PM2_medpar$B, PM2_medpar$B_Q.025, PM2_medpar$B_Q.975))
 colnames(df_modB2) <- c("Date","B","B_lower","B_upper")
 df_modB2$Date <- as.POSIXct(as.character(df_modB2$Date), format="%Y-%m-%d")
 df_modB2[,2:4] <- apply(df_modB2[,2:4],2,function(x) as.numeric(as.character(x)))
 
+## benthic light ##
+PM2_BL_medpar <- mechB_extract_medians(rstan::extract(stan_model_output_Logistic[[2]],c("r","K","s","c","a","B","P","pred_GPP","sig_p")))
+df_modB2_BL <- as.data.frame(cbind(as.character(df$date), PM2_BL_medpar$B, PM2_BL_medpar$B_Q.025, PM2_BL_medpar$B_Q.975))
+colnames(df_modB2_BL) <- c("Date","B","B_lower","B_upper")
+df_modB2_BL$Date <- as.POSIXct(as.character(df_modB2_BL$Date), format="%Y-%m-%d")
+df_modB2_BL[,2:4] <- apply(df_modB2_BL[,2:4],2,function(x) as.numeric(as.character(x)))
+
 df_modB2_plot <- ggplot(df_modB2, aes(Date, exp(B)))+
   geom_line(size=1.2, color="chartreuse4")+
   labs(y="Latent Biomass",title="PM2: Logistic")+
   geom_ribbon(aes(ymin=exp(B_lower),ymax=exp(B_upper)),
               fill="chartreuse4", alpha=0.3, show.legend = FALSE)+
+  geom_line(data=df_modB2_BL, aes(Date, exp(B)), size=1.2, color="grey45")+
+  geom_ribbon(data=df_modB2_BL, aes(ymin=exp(B_lower),ymax=exp(B_upper)),
+              fill="grey45", alpha=0.3, show.legend = FALSE)+
   scale_y_continuous(limits=c(0,35))+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
@@ -154,9 +184,15 @@ df_modB2_plot <- ggplot(df_modB2, aes(Date, exp(B)))+
         axis.title.y = element_text(size=15))
 df_modB2_plot
 
+## Remove and save simulation
+rm(stan_model_output_Logistic)
+simmat2_list <- list(simmat2, simmat2_BL)
+saveRDS(simmat2_list, "Sim_matrix_Logistic.rds")
+
 ###############################
 ## Model 3 Output - Ricker
 ###############################
+## no light modification ##
 pars3<-extract(stan_model_output_Ricker[[1]], c("r","lambda","s","c","B","P","pred_GPP","sig_p"))
 simmat3<-matrix(NA,length(df[,1]),length(unlist(pars3$r)))
 rmsemat3<-matrix(NA,length(df[,1]),1)

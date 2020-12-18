@@ -19,7 +19,7 @@
     
     // Logistic growth parameters  
     real B [Ndays]; // Biomass; g m-2
-    real r; // growth rate; d-1
+    real<lower=0> r; // growth rate; d-1
     real K; // carrying capacity; g m-2
     
     // Error parameters
@@ -43,7 +43,7 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ normal((B[(j-1)] + exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
+    B[j] ~ normal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
     }
  
     // Observation model
@@ -56,10 +56,10 @@
     
     // Param priors
     K ~ normal(3,1)T[0,];
-    r ~ normal(0,1);
-    c ~ rayleigh(0.5);
-    s ~ normal(0,50);
-    //a ~ normal(0,1);
+    r ~ normal(0,1)T[0,];
+    c ~ rayleigh(0.5)T[0,];
+    s ~ normal(0,50)T[0,];
+    //a ~ normal(0,1)T[0,];
     
     
   }

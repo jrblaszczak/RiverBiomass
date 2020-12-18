@@ -43,7 +43,7 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ normal((B[(j-1)] + exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
+    B[j] ~ normal((B[(j-1)]*exp(r*B[(j-1)]*(1-(B[(j-1)]/K))))*P[j], sig_p);
     }
  
     // Observation model
@@ -55,7 +55,7 @@
     sig_p ~ normal(0,2)T[0,];
     
     // Param priors
-    K ~ normal(3,1);
+    K ~ normal(3,1)T[0,];
     r ~ normal(0,1)T[0,];
     c ~ rayleigh(0.5)T[0,];
     s ~ normal(0,50)T[0,];
