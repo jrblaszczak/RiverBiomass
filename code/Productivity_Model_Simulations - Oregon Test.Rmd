@@ -84,7 +84,7 @@ stan_model_output_Gompertz <- lapply(stan_model_list[9:10], function(x) stan(x, 
 
 
 # View on shiny
-launch_shinystan(stan_model_output) ## Click explore tab when new window opens
+launch_shinystan(stan_model_output_Ricker_Ladj[[1]]) ## Click explore tab when new window opens
 # Save Output
 saveRDS(stan_model_output_AR,"stan_model_output_AR.rds")
 saveRDS(stan_model_output_Logistic,"stan_model_output_Logistic.rds")

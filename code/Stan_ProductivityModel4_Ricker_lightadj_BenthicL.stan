@@ -16,7 +16,7 @@
     
     // Logistic growth parameters  
     real B [Ndays]; // Biomass; g m-2
-    real alpha_0; // light intercept
+    //real alpha_0; // light intercept
     real<lower=0> alpha_1; // light slope
     real<upper=0> lambda; // r/K
     
@@ -37,7 +37,7 @@
     P[i]=exp(-exp(s*(tQ[i]-c)));
     ben_light[i]=light[i]*exp(-1*a*turb[i]*depth[i]);
     pred_GPP[i]=exp(B[i]);
-    r[i] = alpha_0 + alpha_1*ben_light[i];
+    r[i] = alpha_1*ben_light[i]; //+alpha_0;
     }
     
     } 
@@ -61,8 +61,9 @@
     c ~ rayleigh(0.5)T[0,];
     s ~ normal(0,50)T[0,];
     a ~ normal(0,1)T[0,];
-    alpha_0 ~ normal(0,1);
+    //alpha_0 ~ normal(0,1);
     alpha_1 ~ normal(0,1)T[0,];
+    lambda ~ normal(0,1)T[,0];
     
     }
     
