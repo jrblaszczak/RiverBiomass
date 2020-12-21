@@ -32,6 +32,9 @@
 *code/Sim_matrix_Logistic.rds
 *code/Sim_matrix_AR.rds
 *code/Sim_matrix_Ricker.rds
+*code/PM.Ricker_ParRecov_l_1to5.rds
+*code/PM.Ricker_ParRecov_l_6to10.rds
+*code/Ricker_simGPP_10rivers.rds
 
 # Session Data files
 .RData

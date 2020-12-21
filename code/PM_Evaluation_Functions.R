@@ -91,12 +91,25 @@ in_vs_out <- function(par_IN, par_OUT,plot.title){
     scale_y_continuous(trans="log",limits=c(exp(-5),exp(5)),labels=scaleFUN)+
     scale_color_manual(name="",values=c('alpha'=ygb[1], 'beta'=ygb[2],'phi'=ygb[3],
                                         's'=ygb[4], 'c'=ygb[5],'r'=ygb[6],'sig_p'=ygb[7],
-                                        'beta_0'=ygb[9],'K'=ygb[8]),
+                                        'lambda'=ygb[9],'K'=ygb[8]),
                        labels=c('alpha'=expression(alpha), 'beta'=expression(beta),
                                 'phi'=expression(phi),'s'="s",'c'="c", 'r'=expression(r[max]),'K'="K",
-                                'sig_p'=expression(sigma[p]),'beta_0'=expression(lambda)))
+                                'sig_p'=expression(sigma[p]),'lambda'=expression(lambda)))
   
 }
 
 
-
+multriver_OUTpar_extract <- function(par_OUT){
+  #Outputs
+  plist <- par_OUT
+  lowCI <- ldply(plist$lowCI_par, data.frame)
+  medCI <- ldply(plist$medCI_par, data.frame)
+  upCI <- ldply(plist$upCI_par, data.frame)
+  CI_list <- list(lowCI, medCI, upCI)
+  CI_list <- lapply(CI_list, setNames, nm = c("Param","Value"))
+  
+  CI_df <- bind_cols(CI_list)
+  CI_df <- CI_df[,c("Param...1","Value...2","Value...4","Value...6")]
+  colnames(CI_df) <- c("Param","ParOutput_low","ParOutput_med","ParOutput_up")
+  return(CI_df)
+}

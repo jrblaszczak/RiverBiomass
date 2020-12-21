@@ -9,8 +9,8 @@ output: html_document
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
-         "tidyverse",
-         "rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
+         "tidyverse","rstan","bayesplot","shinystan",
+         "Metrics","MCMCglmm","wesanderson"), require, character.only=T)
 
 ## Source data
 source("Persistence_10rivers_DataSource.R")
@@ -125,15 +125,16 @@ PM.Ricker_l_1to5 <- readRDS("PM.Ricker_l_1to5.rds")
 PM.Ricker_l_6to10 <- readRDS("PM.Ricker_l_6to10.rds")
 PM.Ricker_l_all <- append(PM.Ricker_l_1to5, PM.Ricker_l_6to10)
 #Extract median value of posterior parameter estimates
-PM.Ricker_medpar_l <- lapply(PM.Ricker_l_all, function(x) mechB_extract_medians(rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p"))))
+PM.Ricker_randpar_l <- lapply(PM.Ricker_l_all, function(x) mechB_randpar(rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p"))))
 
 ## Simulate data
-df_Ricker_all <- Map(c, df, PM.Ricker_medpar_l)
-df_Ricker_simGPP <- lapply(df_Ricker_all, function(x) {x$simGPP_PM3 <- PM3(r=x$par$r,
-                                                              lambda=x$par$lamda,
-                                                              s=x$par$s,
-                                                              c=x$par$c,
-                                                              sig_p=x$par$sig_p, df=x);return(x)})
+df_Ricker_all <- Map(c, df, PM.Ricker_randpar_l)
+df_Ricker_simGPP <- lapply(df_Ricker_all, function(x) {x$simGPP_PM3 <- PM3(r=x$r,
+                                                              lambda=x$lambda,
+                                                              s=x$s,
+                                                              c=x$c,
+                                                              sig_p=x$sig_p, df=x);return(x)})
+saveRDS(df_Ricker_simGPP, "Ricker_simGPP_10rivers.rds")
 
 #vis
 sim_viz <- function(x){
@@ -162,7 +163,7 @@ return(rmse(sub$GPP,sub$simGPP_PM3))
 
 lapply(df_Ricker_simGPP, function(x) rmse_calc(x))
 
-
+rm(PM.Ricker_l_1to5, PM.Ricker_l_6to10)
 ```
 
 #### Recover parameter estimates from simulated data
@@ -170,114 +171,127 @@ lapply(df_Ricker_simGPP, function(x) rmse_calc(x))
 #######################
 ## Stan data prep v2 ##
 #######################
-med_simGPP_PM1 <- PM1(phi=PM1_medpar$par$phi,
-                  alpha=PM1_medpar$par$alpha,
-                  beta=PM1_medpar$par$beta,
-                  sig_p=PM1_medpar$par$sig_p,
-                  df=df)
-med_simGPP_PM2 <- PM2(r=PM2_medpar$par$r,
-                  K=PM2_medpar$par$K,
-                  s=PM2_medpar$par$s,
-                  c=PM2_medpar$par$c,
-                  sig_p=PM2_medpar$par$sig_p,
-                  df=df)
-med_simGPP_PM3 <- PM3(r=PM3_medpar$par$r,
-                  beta_0=PM3_medpar$par$beta_0,
-                  s=PM3_medpar$par$s,
-                  c=PM3_medpar$par$c,
-                  sig_p=PM3_medpar$par$sig_p,
-                  df=df)
-
-
-
-sim_viz <- function(x){
-sub <- as.data.frame(cbind(as.character(x$date), x$GPP, x$simGPP_PM3))
-  colnames(sub) <- c("date","GPP","simGPP_PM3")
-  sub$date <- as.POSIXct(as.character(sub$date), format="%Y-%m-%d")
-sub[2:3] <- apply(sub[2:3],2,function(x) as.numeric(as.character(x)))
-  
-  ggplot(sub, aes(date, GPP))+
-    geom_point()+
-    geom_line(data=sub, aes(date, simGPP_PM3))+
-    scale_y_continuous(limits = c(0,15))
-}
-lapply(df_Ricker_simGPP, function(x) sim_viz(x))
-
-
+## Use df_Ricker_simGPP from previous code chunk
 
 ## Compile Stan data
-stan_simdat_compile <- function(x, med_simGPP){
-  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = med_simGPP, tQ = x$tQ, GPP_sd = x$GPP_sd)
+stan_simdat_compile <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$simGPP_PM3, tQ = x$tQ, GPP_sd = x$GPP_sd)
   return(data)
 }
 
-stan_simdat1 <- stan_simdat_compile(df, med_simGPP_PM1)
-stan_simdat2 <- stan_simdat_compile(df, med_simGPP_PM2)
-stan_simdat3 <- stan_simdat_compile(df, med_simGPP_PM3)
+stan_simdat3_l <- lapply(df_Ricker_simGPP, function(x) stan_simdat_compile(x))
 
 ###############################
 ## Run Stan to get estimates ##
 ###############################
 rstan_options(auto_write=TRUE)
-options(mc.cores=parallel::detectCores())
+options(mc.cores= 16)#parallel::detectCores())
 
-simPM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_simdat1, chains=3, iter=5000, control=list(max_treedepth=12) )
-simPM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_simdat2, chains=3, iter=5000, control=list(max_treedepth=12) )
-simPM3_DataOutput <- stan("Stan_ProductivityModel3_Ricker.stan", data=stan_simdat3, chains=3, iter=5000, control=list(max_treedepth=12) )
+#simPM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_simdat1, chains=3, iter=5000, control=list(max_treedepth=12) )
+#simPM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_simdat2, chains=3, iter=5000, control=list(max_treedepth=12) )
+#simPM3_DataOutput <- stan("Stan_ProductivityModel3_Ricker.stan", data=stan_simdat3, chains=3, iter=5000, control=list(max_treedepth=12) )
 
-launch_shinystan(simPM3_DataOutput)
-
+## PM - Ricker - parameter recovery
+PM.Ricker_ParRecov_l_1to5 <- lapply(stan_simdat3_l[1:5], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+PM.Ricker_ParRecov_l_6to10 <- lapply(stan_simdat3_l[6:10], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
 # Save Output
-saveRDS(simPM1_DataOutput,"simPM1_DataOutput.rds")
-saveRDS(simPM2_DataOutput,"simPM2_DataOutput.rds")
-saveRDS(simPM3_DataOutput,"simPM3_DataOutput.rds")
+saveRDS(PM.Ricker_ParRecov_l_1to5,"PM.Ricker_ParRecov_l_1to5.rds")
+saveRDS(PM.Ricker_ParRecov_l_6to10,"PM.Ricker_ParRecov_l_6to10.rds")
+
+
+#launch_shinystan(simPM3_DataOutput)
+# Save Output
+#saveRDS(simPM1_DataOutput,"simPM1_DataOutput.rds")
+#saveRDS(simPM2_DataOutput,"simPM2_DataOutput.rds")
+#saveRDS(simPM3_DataOutput,"simPM3_DataOutput_10Rivers.rds")
 ```
 
 
 ## Compare the Input versus Output
 ```{r}
-## Import if needed
-PM1_DataOutput <- readRDS("PM1_DataOutput.rds")
-PM2_DataOutput <- readRDS("PM2_DataOutput.rds")
-PM3_DataOutput <- readRDS("PM3_DataOutput.rds")
-simPM1_DataOutput <- readRDS("simPM1_DataOutput.rds")
-simPM2_DataOutput <- readRDS("simPM2_DataOutput.rds")
-simPM3_DataOutput <- readRDS("simPM3_DataOutput.rds")
-
 ## Source parameter extraction and recovery functions
 source("StanParameterExtraction_Source.R")
 source("PM_Evaluation_Functions.R")
 
-## Input parameters
-PM1_medpar <- phenom_extract_medians(rstan::extract(PM1_DataOutput, c("phi","alpha","beta","l_pred_GPP","sig_p")))
-PM2_medpar <- mechB_extract_medians(rstan::extract(PM2_DataOutput,c("r","K","s","c","B","P","pred_GPP","sig_p")))
-PM3_medpar <- mechB_extract_medians(rstan::extract(PM3_DataOutput,c("r","beta_0","s","c","B","P","pred_GPP","sig_p")))
+## Import if needed
+df_Ricker_simGPP <- readRDS("Ricker_simGPP_10rivers.rds")
+## Par out
+PM.Ricker_ParRecov_l_1to5 <- readRDS("PM.Ricker_ParRecov_l_1to5.rds")
+PM.Ricker_ParRecov_l_6to10 <- readRDS("PM.Ricker_ParRecov_l_6to10.rds")
+PM.Ricker_ParRecov_l_all <- append(PM.Ricker_ParRecov_l_1to5, PM.Ricker_ParRecov_l_6to10)
+rm(PM.Ricker_ParRecov_l_1to5, PM.Ricker_ParRecov_l_6to10)
+#Extract median value of posterior parameter estimates
+PM.Ricker_ParRecov_randpar_l <- lapply(PM.Ricker_ParRecov_l_all, function(x) mechB_randpar(rstan::extract(x, c("r","lambda","s","c","sig_p"))))
 
-PM1_par_IN <- c("phi"=PM1_medpar$par$phi,
-                "alpha"=PM1_medpar$par$alpha,
-                "beta"=PM1_medpar$par$beta,
-                "sig_p"=PM1_medpar$par$sig_p)
-PM2_par_IN <- c("r"=PM2_medpar$par$r,
-                "K"=PM2_medpar$par$K,
-                "s"=PM2_medpar$par$s,
-                "c"=PM2_medpar$par$c,
-                "sig_p"=PM2_medpar$par$sig_p)
-PM3_par_IN <- c("r"=PM3_medpar$par$r,
-                "beta_0"=PM3_medpar$par$beta_0,
-                "s"=PM3_medpar$par$s,
-                "c"=PM3_medpar$par$c,
-                "sig_p"=PM3_medpar$par$sig_p)
 
-## Output parameters
-PM1_par_OUT <- CI_par_PM1(rstan::extract(simPM1_DataOutput))
-PM2_par_OUT <- CI_par_PM2(rstan::extract(simPM2_DataOutput))
-PM3_par_OUT <- CI_par_PM3(rstan::extract(simPM3_DataOutput))
+
+## Compile input parameters
+PM3_par_IN <- ldply(lapply(df_Ricker_simGPP, function(x) return(c("r"=x$r,"lambda"=x$lambda,
+                                                            "s"=x$s,"c"=x$c,"sig_p"=x$sig_p))), data.frame)
+colnames(PM3_par_IN) <- c(".id","input_value")
+PM3_par_IN$Param <- rep(c("r","lambda","s","c","sig_p"), times=10)
+
+## Output parameter recovery
+PM3_par_OUT <- lapply(PM.Ricker_ParRecov_l_all, function(x) CI_par_PM3(rstan::extract(x)))
+PM3_par_OUT_df <- ldply(lapply(PM3_par_OUT, function(x) multriver_OUTpar_extract(x)), data.frame)
 
 ## Comparison
-plot_grid(in_vs_out(PM1_par_IN, PM1_par_OUT,"PM1: GPP"),
-          #in_vs_out(PM2_par_IN, PM2_par_OUT,"PM2: Logistic"),
-          in_vs_out(PM3_par_IN, PM3_par_OUT,"PM2: Ricker"),
-          ncol = 2)
+PM3_IN_OUT <- left_join(PM3_par_IN, PM3_par_OUT_df, by=c(".id","Param"))
+scaleFUN <- function(x) sprintf("%.1f", x)
+ygb <- brewer.pal(10, "Paired")
+
+PM3_IN_OUT$Param <- factor(PM3_IN_OUT$Param, levels=c("r","lambda","s","c","sig_p"))
+
+## Add site info
+colnames(PM3_IN_OUT)[which(colnames(PM3_IN_OUT) == ".id")] <- "site_name"
+PM3_IN_OUT <- left_join(PM3_IN_OUT, site_info, by="site_name")
+
+PM3_IN_OUT$short_name <- revalue(PM3_IN_OUT$site_name, replace = c("nwis_01608500"="Potomac River, WV",
+                                                                   "nwis_02156500"="Broad River, SC",
+                                                                   "nwis_02168504"="Saluda River, SC",
+                                                                   "nwis_03298150"="Chenoweth Run, KY",
+                                                                   "nwis_04121944"="Little Muskegon River, MI",
+                                                                   "nwis_04136000"="Au Sable River, MI",
+                                                                   "nwis_05435950"="Sugar River, MI",
+                                                                   "nwis_06711565"="South Platte River, CO",
+                                                                   "nwis_08181500"="Medina River, TX",
+                                                                   "nwis_14211010"="Clackamas River, OR"))
+
+## Get rid of Au Sable River, MI for now
+PM3_IN_OUT <- PM3_IN_OUT[-which(PM3_IN_OUT == "nwis_04136000"),]
+
+
+# Plot
+theme_set(theme_bw())
+
+# c("s","c",expression(r[max]),expression(sigma[p]),expression(lambda))
+param_labs <-c('s'="s",'c'="c",'r'=expression(r[max]),'sig_p'=expression(sigma[p]),'lambda'=expression(lambda))
+pal <- wes_palette(name="Zissou1",n=9, type="discrete")
+
+ggplot(PM3_IN_OUT, aes(input_value, ParOutput_med, color=short_name))+
+    geom_abline(slope = 1, intercept = 0, color="grey", size=1)+
+    geom_linerange(data=PM3_IN_OUT[-which(PM3_IN_OUT$Param == "lambda"),], aes(ymin = ParOutput_low, ymax= ParOutput_up), color="black",size=1)+
+    geom_linerange(data=PM3_IN_OUT[which(PM3_IN_OUT$Param == "lambda"),], aes(ymin = ParOutput_up, ymax= ParOutput_low), color="black",size=1)+
+    geom_point(size=4)+
+    labs(x = "Input Parameter Values", y="Median Posterior Values",title="PM3: Ricker")+
+    facet_wrap(.~Param, ncol=1, scales = "free",labeller = labeller(Param = param_labs))+ #, scales = "free", ncol = 2)+
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          axis.text = element_text(size=15),
+          axis.title = element_text(size=20),
+          legend.text = element_text(hjust = 0, size=12),
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          panel.grid = element_line(color="gray90"),
+          legend.position = "bottom")+
+    scale_x_continuous(labels=scaleFUN)+#, limits=c(exp(-6),exp(6)))+
+    scale_y_continuous(labels=scaleFUN)
+    #scale_color_discrete()
+    #scale_size_manual(name="",values=c('s'=2, 'c'=2,'r'=2,'sig_p'=2,'lambda'=2),
+    #                   labels=)
+  
+
+
+
+
 ```
 
 
