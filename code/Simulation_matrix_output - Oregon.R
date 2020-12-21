@@ -129,6 +129,13 @@ median_simmat2_BL <- apply(simmat2_BL, 1, function(x) median(x, na.rm = TRUE))
 lower_simmat2_BL <- apply(simmat2_BL, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
 upper_simmat2_BL <- apply(simmat2_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
 
+## Save simulation
+simmat2_list <- list(simmat2, simmat2_BL)
+saveRDS(simmat2_list, "Sim_matrix_Logistic.rds")
+# If already previously simulated
+#simmat2_list <- readRDS("Sim_matrix_Logistic.rds")
+
+
 ## Plot simulated GPP
 df_sim2 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat2, lower_simmat2, upper_simmat2,
                                median_simmat2_BL, lower_simmat2_BL, upper_simmat2_BL))
@@ -184,10 +191,7 @@ df_modB2_plot <- ggplot(df_modB2, aes(Date, exp(B)))+
         axis.title.y = element_text(size=15))
 df_modB2_plot
 
-## Remove and save simulation
 rm(stan_model_output_Logistic)
-simmat2_list <- list(simmat2, simmat2_BL)
-saveRDS(simmat2_list, "Sim_matrix_Logistic.rds")
 
 ###############################
 ## Model 3 Output - Ricker
@@ -196,27 +200,45 @@ saveRDS(simmat2_list, "Sim_matrix_Logistic.rds")
 pars3<-extract(stan_model_output_Ricker[[1]], c("r","lambda","s","c","B","P","pred_GPP","sig_p"))
 simmat3<-matrix(NA,length(df[,1]),length(unlist(pars3$r)))
 rmsemat3<-matrix(NA,length(df[,1]),1)
-
+#Simulated
 for (i in 1:length(pars3$r)){
-  
   simmat3[,i]<-PM3(pars3$r[i],pars3$lambda[i],pars3$s[i],pars3$c[i],pars3$sig_p[i],df)
   rmsemat3[i]<-sqrt(sum((simmat3[,i]-df$GPP)^2)/length(df$GPP))
-  
 }
-
-## View RMSE distribution
-hist(rmsemat3)
-
 ## For every day extract median and CI
 median_simmat3 <- apply(simmat3, 1, function(x) median(x))
 lower_simmat3 <- apply(simmat3, 1, function(x) quantile(x, probs = 0.025))
 upper_simmat3 <- apply(simmat3, 1, function(x) quantile(x, probs = 0.975))
 
+## benthic light modification ##
+pars3_BL<-extract(stan_model_output_Ricker[[2]], c("r","lambda","s","c","a","B","P","pred_GPP","sig_p"))
+simmat3_BL<-matrix(NA,length(df[,1]),length(unlist(pars3_BL$sig_p)))
+rmsemat3_BL<-matrix(NA,length(df[,1]),1)
+# Simulation
+for (i in 1:length(pars3_BL$sig_p)){
+  simmat3_BL[,i]<-PM3_BL(r=pars3_BL$r[i],lambda=pars3_BL$lambda[i],s=pars3_BL$s[i],c=pars3_BL$c[i],a=pars3_BL$a[i],sig_p=pars3_BL$sig_p[i],df)
+  rmsemat3_BL[i]<-sqrt(sum((simmat3_BL[,i]-df$GPP)^2)/length(df$GPP))
+}
+# For every day extract median and CI
+median_simmat3_BL <- apply(simmat3_BL, 1, function(x) median(x, na.rm = TRUE))
+lower_simmat3_BL <- apply(simmat3_BL, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+upper_simmat3_BL <- apply(simmat3_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
+
+
+## Save simulation
+simmat3_list <- list(simmat3, simmat3_BL)
+saveRDS(simmat3_list, "Sim_matrix_Ricker.rds")
+# If already previously simulated
+#simmat3_list <- readRDS("Sim_matrix_Ricker.rds")
+
+
 ## Plot simulated GPP
-df_sim3 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat3, lower_simmat3, upper_simmat3))
-colnames(df_sim3) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+df_sim3 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat3, lower_simmat3, upper_simmat3,
+                               median_simmat3_BL, lower_simmat3_BL, upper_simmat3_BL))
+colnames(df_sim3) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper",
+                       "sim_GPP_BL","sim_GPP_BL_lower","sim_GPP_BL_upper")
 df_sim3$Date <- as.POSIXct(as.character(df_sim3$Date), format="%Y-%m-%d")
-df_sim3[,2:5] <- apply(df_sim3[,2:5],2,function(x) as.numeric(as.character(x)))
+df_sim3[,2:8] <- apply(df_sim3[,2:8],2,function(x) as.numeric(as.character(x)))
 
 df_sim3_plot <- ggplot(df_sim3, aes(Date, GPP))+
   geom_point(size=2, color="black")+
@@ -224,11 +246,14 @@ df_sim3_plot <- ggplot(df_sim3, aes(Date, GPP))+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM3: Ricker")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM3.col, alpha=0.4, show.legend = FALSE)+
+  #geom_line(aes(Date, sim_GPP_BL), color="#480711", size=1.2)+
+  #geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+  #            fill="#480711", alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=13),
         axis.title.y = element_text(size=15))+
-  scale_y_continuous(limits=c(0,30))
+  scale_y_continuous(limits=c(0,20))
 df_sim3_plot
 
 
@@ -256,6 +281,7 @@ df_modB3_plot
 ############################################
 ## Model 4 Output - Ricker, adjusted light
 #############################################
+## no light modifications ##
 pars4<-extract(stan_model_output_Ricker_Ladj[[1]], c("alpha_0","alpha_1","lambda","s","c","r","B","P","pred_GPP","sig_p"))
 simmat4<-matrix(NA,length(df[,1]),length(unlist(pars4$alpha_0)))
 rmsemat4<-matrix(NA,length(df[,1]),1)

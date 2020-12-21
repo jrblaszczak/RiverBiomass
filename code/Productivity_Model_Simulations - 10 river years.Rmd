@@ -1,6 +1,6 @@
 ---
 title: "Productivity Model Simulations - 10 river years"
-author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
+author: "J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr."
 output: html_document
 ---
 
@@ -125,12 +125,12 @@ PM.Ricker_l_1to5 <- readRDS("PM.Ricker_l_1to5.rds")
 PM.Ricker_l_6to10 <- readRDS("PM.Ricker_l_6to10.rds")
 PM.Ricker_l_all <- append(PM.Ricker_l_1to5, PM.Ricker_l_6to10)
 #Extract median value of posterior parameter estimates
-PM.Ricker_medpar_l <- lapply(PM.Ricker_l_all, function(x) mechB_extract_medians(rstan::extract(x, c("r","beta_0","s","c","B","P","pred_GPP","sig_p"))))
+PM.Ricker_medpar_l <- lapply(PM.Ricker_l_all, function(x) mechB_extract_medians(rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p"))))
 
 ## Simulate data
 df_Ricker_all <- Map(c, df, PM.Ricker_medpar_l)
 df_Ricker_simGPP <- lapply(df_Ricker_all, function(x) {x$simGPP_PM3 <- PM3(r=x$par$r,
-                                                              beta_0=x$par$beta_0,
+                                                              lambda=x$par$lamda,
                                                               s=x$par$s,
                                                               c=x$par$c,
                                                               sig_p=x$par$sig_p, df=x);return(x)})

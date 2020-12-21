@@ -15,7 +15,7 @@ PM3 <- function(r, lambda, s, c, sig_p, df) {
   
   ## Vectors for model output of P, B, pred_GPP
   P <- numeric(Ndays)
-  for(i in 2:length(tQ)){
+  for(i in 1:length(tQ)){
     P[i] = exp(-exp(s*(tQ[i] - c)))
   }
   
@@ -26,7 +26,7 @@ PM3 <- function(r, lambda, s, c, sig_p, df) {
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p)
+    B[j] = rtnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p, upper=3.5)
   }
   
   

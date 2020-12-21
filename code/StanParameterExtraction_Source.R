@@ -68,7 +68,26 @@ mechB_extract_medians <- function(PM_par){
   PM_medpar <- med_par_PM(PM_par)
 }
 
-## For mechanistic model 3 - Ricker
+## For mechanistic model 2 with latent biomass
+# random parameter set to simulate data
+
+mechB_randpar <- function(PM_par){
+  
+  ## Summarize parameters
+  rand_par_PM <- function(par) {
+    i <- sample(size=1, x=1:length(par))
+    randpar <- lapply(par, function(x) return(x[i]))
+    return(randpar)
+  }
+  
+  PM_randpar <- rand_par_PM(PM_par)
+  return(PM_randpar)
+}
+
+
+
+
+## For mechanistic model 3 - Ricker - OLD
 
 mechN_extract_medians <- function(PM_par){
   

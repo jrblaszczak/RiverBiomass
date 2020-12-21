@@ -31,6 +31,7 @@
 *code/stan_model_output_Gompertz.rds
 *code/Sim_matrix_Logistic.rds
 *code/Sim_matrix_AR.rds
+*code/Sim_matrix_Ricker.rds
 
 # Session Data files
 .RData
