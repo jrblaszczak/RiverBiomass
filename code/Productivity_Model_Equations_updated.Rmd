@@ -4,25 +4,33 @@ author: "J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr."
 output: html_document
 ---
 
+This document is an overview of the progress thus far on modeling productivity dynamics in rivers. All code and data is available at this Github page: https://github.com/jrblaszczak/RiverBiomass
+
+##### Methods Overview
 We estimated productivity dynamics in rivers through time with five stochastic state-space models that account for process and observation error. We fit each model to annual time series of oxygen-derived daily gross primary productivity (GPP) rates. The first model is phenomenological, meaning it does not infer causality, but instead approximates lags through an autoregressive parameter, a positive correlative relationship between GPP and light indicative of autotrophic biomass growth, and a negative relationship between GPP and discharge indicative of autotrophic biomass loss. The next four models are semi-mechanistic, meaning they are meant to represent the mechanisms by which productivity rates may increase or decrease through time through the growth and detachment of autotrophic biomass. Therefore, these four models include a latent variable "biomass" meant to represent the amount of autotrophic biomass contributing to the diel variation in the dissolved oxygen signal from which daily GPP is estimated. The semi-mechanistic models differ in the structure of the equation meant to represent biomass growth dynamics, but share a similar disturbance component, both of which are described below.
 
-We selected a subset of river metabolism time series from 356 rivers with daily estimates of metabolism generated using the streamMetabolizer package in R by the US Geological Survey Powell Center (Appling et al. 2018a,b). Daily metabolism estimates were generated using a hierarchical state-space inverse modeling approach with partial-pooling of piece-wise $K_{600}$ relationships with mean daily discharge ($Q$) to reduce issues of equifinality and uncertainty (Appling et al. 2018). Daily metabolism and gas exchange estimates were generated from sub-daily time series of dissolved oxygen (units: $mg$ $L^{-1}$), light (photosynthetic photon flux density (PPFD); units: $\mu mol\ m^{-2}\ s^{-1}$), water temperature ($^\circ$ C), and reach averaged depth (m). A Bayesian Markov chain Monte Carlo (MCMC) fitting procedure was used to determine the mean and standard deviation of the posterior probability distributions of daily gross primary productivity (GPP; $g\ O_{2}\ m^{-2}\ d^{-1}$),  ecosystem respiration (ER; $g\ O_{2}\ m^{-2}\ d^{-1}$), and gas exchange ($K_{600}$; $d^{-1}$). In this study, we treat the mean and standard deviation of the daily GPP estimates from each river as "data" in the state-space models described below.
+We selected a subset of river metabolism time series from 356 rivers with daily estimates of metabolism generated using the streamMetabolizer package in R by the US Geological Survey Powell Center (Appling et al. 2018b). Daily metabolism estimates were generated using a hierarchical state-space inverse modeling approach with partial-pooling of piece-wise $K_{600}$ relationships with mean daily discharge ($Q$) to reduce issues of equifinality and uncertainty (Appling et al. 2018a). Daily metabolism and gas exchange estimates were generated from sub-daily time series of dissolved oxygen (units: $mg$ $L^{-1}$), light (photosynthetic photon flux density (PPFD); units: $\mu mol\ m^{-2}\ s^{-1}$), water temperature ($^\circ$ C), and reach averaged depth (m). A Bayesian Markov chain Monte Carlo (MCMC) fitting procedure was used to determine the mean and standard deviation of the posterior probability distributions of daily gross primary productivity (GPP; $g\ O_{2}\ m^{-2}\ d^{-1}$),  ecosystem respiration (ER; $g\ O_{2}\ m^{-2}\ d^{-1}$), and gas exchange ($K_{600}$; $d^{-1}$). In this study, we treat the mean and standard deviation of the daily GPP estimates from each river as "data" in the state-space models described below.
 
 There are three sections to this document:
-\itemize{
-a
-b
-}
+
+1. Written descriptions of each model.
+
+2. Figures comparing model simulations using the posterior predictives from each model using incoming light, and a second version of the same model which has another parameter to attempt estmation of benthic light after accounting for attenuation from turbidity. All models are fit to GPP time series from 2010 in the Clackamas River, Oregon. Links to each stan file and each simulation function are included. This section also includes a comparison of the daily RMSE among models (DIC comparison forthcoming).
+
+3. Simulations from posteriors and parameter recovery for the Ricker Model without benthic light adjustments across nine rivers. The selection of rivers was a relatively random subset to this point (sites with >350 with clear visual decline in GPP in response to a storm), but I think a more interesting comparison will be to choose ~10 river years with different flow regimes to demonstrate where and when the models work best.
+
+##### References
+
+Appling, A.P., Hall, R.O., Yackulic, C.B. & Arroita, M. (2018a). Overcoming equifinality: Leveraging long time series for stream metabolism estimation. J. Geophys. Res. Biogeosciences, 123, 624-645.
+
+Appling, A.P., Read, J.S., Winslow, L.A., Arroita, M., Bernhardt, E.S., Griffiths, N.A., et al. (2018b). The metabolic regimes of 356 rivers in the United States. Sci. Data, 5, 180292.
 
 
-
-
-
-
+## 1. Model descriptions
 
 ### Productivity Model 1: Linear autoregressive model
 
-We first predict the temporal dynamics of daily estimates of GPP ($g$) using a linear autoregressive model without latent biomass dynamics. We fit the model to the $g$ times series from Appling et al. (2018) to estimate the parameters described below:
+We first predict the temporal dynamics of daily estimates of GPP ($g$) using a linear autoregressive model without latent biomass dynamics. We fit the model to the $g$ times series from Appling et al. (2018a) to estimate the parameters described below:
 
 \begin{equation} 
 G_{t} \sim N(\phi G_{(t-\Delta t)}+\alpha L_{t}+\beta Q_{t}, \sigma_{proc})
@@ -35,12 +43,12 @@ g_{t} \sim N(e^{G_{t}},\sigma_{obs})
 where input data includes the daily mean of the posterior probability distribution of previously modeled daily GPP time series ($GPP_{mod,t}$; $g\ O_{2}\ m^{-2}\ d^{-1}$), $L$ which is daily light at time $t$ relativized to the annual maximum daily light (unitless; 0<$L$<1), and $Q_t$ which is daily discharge at time $t$ normalized by subtracting the mean and dividing by the standard deviation ($m^{3} s^{-1}$). Estimated parameters include $G_{pred,t}$ which is the predicted daily GPP (g $O_2$ $m^{-2}$ $d^{-1}$) at time $t$ (in days) on a natural log scale, $\phi$ which is the estimated autoregressive parameter (unitless; 0<$\phi$<1), $\alpha$ which is a GPP increase as a function of light parameter (g $O_2$ $m^{-2}$ $d^{-1}$), $\beta$ which is a GPP reduction per unit discharge parameter ($\frac{g\ O_{2}\ m^{-2}\ d^{-1}}{m^{3} s^{-1}}$), $\sigma_{obs}$ which is the observation error set to the standard deviation of the posterior probability distribution of the previously modeled daily GPP estimates, $\sigma_{proc}$ which is the process error.
 
 ### Productivity Model 2: Latent biomass logistic growth
-We predict the temporal dynamics of mean daily estimates of GPP ($g$) by incorporating biomass as a latent variable and modeling its dynamics using a logistic growth model. We fit the model to the $g$ times series from Appling et al. (2018) to estimate the model parameters. We incorporated the effects of disturbance by modeling the persistence ($P$) of biomass using a complementary log-log link function of the form:
+We predict the temporal dynamics of mean daily estimates of GPP ($g$) by incorporating biomass as a latent variable and modeling its dynamics using a logistic growth model. We fit the model to the $g$ times series from Appling et al. (2018b) to estimate the model parameters. We incorporated the effects of disturbance by modeling the persistence ($P$) of biomass using a complementary log-log link function of the form:
 \begin{equation}
     P_{t} = e^{-e^{s*(Q_{t} - c)}}
 \end{equation}
 
-where input data includes $Q_t$ which is daily discharge at time $t$ normalized by subtracting the mean and dividing by the standard deviation ($m^{3} s^{-1}$). Estimated parameters include $s$ which is a parameter that characterizes the steepness of the persistence transition and $c$ is an estimated parameter which approximates the critical discharge at which autotrophic biomass is disturbed. The log-log link function constrains values between 0 and 1, where 0 is no persistence and 1 is complete persistence.
+where input data includes $Q_t$ which is daily discharge at time $t$ relativized to the annual maximum. Estimated parameters include $s$ which is a parameter that characterizes the steepness of the persistence transition and $c$ is an estimated parameter which approximates the critical discharge at which autotrophic biomass is disturbed. The log-log link function constrains values between 0 and 1, where 0 is no persistence and 1 is complete persistence.
 
 Together, the full model took the form:
 
@@ -53,7 +61,7 @@ Together, the full model took the form:
 \end{equation}
 
 
-where estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a natural log scale and daily time step, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $K$ which is the estimated carrying capacity of a river, $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_{proc}$ which is the process error.
+where estimated parameters include $B_{t}$ which is a latent variable representative of photosynthetically-active biomass on a log scale and daily time step, $P_{t}$ which is the daily persistence of biomass dependent on hydrologic disturbance and removal detailed above, $K$ which is the estimated carrying capacity of a river, $r_{max}$ is the maximum per capita growth rate when $\frac {B_t}{K}$ approaches zero following a disturbance, $\alpha$ which is a light growth efficiency parameter (units: g $O_2$ $m^{-2}$ $d^{-1}$), and $\sigma_{proc}$ which is the process error.
 
 ### Productivity Model 3: Latent biomass Ricker model
 We predict the temporal dynamics of mean daily estimates of GPP ($g$) by incorporating biomass as a latent variable and modeling its dynamics using a Ricker growth model. We fit the model to the $g$ times series from Appling et al. (2018) to estimate the model parameters. We incorporated the effects of disturbance by modeling the persistence ($P$) of biomass using a complementary log-log link function of the same form as above.
