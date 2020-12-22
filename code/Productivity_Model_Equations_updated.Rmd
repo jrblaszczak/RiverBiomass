@@ -1,8 +1,23 @@
 ---
 title: "Productivity Model Equations"
-author: "J.R. Blaszczak, C.B. Yackulic, R.O. Hall, Jr."
+author: "J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr."
 output: html_document
 ---
+
+We estimated productivity dynamics in rivers through time with five stochastic state-space models that account for process and observation error. We fit each model to annual time series of oxygen-derived daily gross primary productivity (GPP) rates. The first model is phenomenological, meaning it does not infer causality, but instead approximates lags through an autoregressive parameter, a positive correlative relationship between GPP and light indicative of autotrophic biomass growth, and a negative relationship between GPP and discharge indicative of autotrophic biomass loss. The next four models are semi-mechanistic, meaning they are meant to represent the mechanisms by which productivity rates may increase or decrease through time through the growth and detachment of autotrophic biomass. Therefore, these four models include a latent variable "biomass" meant to represent the amount of autotrophic biomass contributing to the diel variation in the dissolved oxygen signal from which daily GPP is estimated. The semi-mechanistic models differ in the structure of the equation meant to represent biomass growth dynamics, but share a similar disturbance component, both of which are described below.
+
+We selected a subset of river metabolism time series from 356 rivers with daily estimates of metabolism generated using the streamMetabolizer package in R by the US Geological Survey Powell Center (Appling et al. 2018a,b). Daily metabolism estimates were generated using a hierarchical state-space inverse modeling approach with partial-pooling of piece-wise $K_{600}$ relationships with mean daily discharge ($Q$) to reduce issues of equifinality and uncertainty (Appling et al. 2018). Daily metabolism and gas exchange estimates were generated from sub-daily time series of dissolved oxygen (units: $mg$ $L^{-1}$), light (photosynthetic photon flux density (PPFD); units: $\mu mol\ m^{-2}\ s^{-1}$), water temperature ($^\circ$ C), and reach averaged depth (m). A Bayesian Markov chain Monte Carlo (MCMC) fitting procedure was used to determine the mean and standard deviation of the posterior probability distributions of daily gross primary productivity (GPP; $g\ O_{2}\ m^{-2}\ d^{-1}$),  ecosystem respiration (ER; $g\ O_{2}\ m^{-2}\ d^{-1}$), and gas exchange ($K_{600}$; $d^{-1}$). In this study, we treat the mean and standard deviation of the daily GPP estimates from each river as "data" in the state-space models described below.
+
+There are three sections to this document:
+\itemize{
+a
+b
+}
+
+
+
+
+
 
 
 ### Productivity Model 1: Linear autoregressive model
