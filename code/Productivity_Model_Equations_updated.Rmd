@@ -181,23 +181,59 @@ Simulation code (surface and benthic light): https://github.com/jrblaszczak/Rive
 
 ## 2. Model simulation comparisons
 
-```{r image-ref-for-in-text, echo = FALSE, message=FALSE, fig.align='center', fig.cap='Some cool caption', out.width='0.75\\linewidth', fig.pos='H'}
+Model simulations using matrices of the posterior predictives for the Clackamas River, Oregon in 2010
+
+```{r}
 knitr::include_graphics("../figures/InputData.png")
 knitr::include_graphics("../figures/PM1_simulations.png")
 knitr::include_graphics("../figures/PM2_simulations.png")
 knitr::include_graphics("../figures/PM3_simulations.png")
 knitr::include_graphics("../figures/PM4_simulations.png")
-#knitr::include_graphics("../figures/PM5_simulations.png")
+knitr::include_graphics("../figures/PM5_simulations.png")
+```
+
+Below is a comparison of the distributions of daily RMSE values across models without the additional benthic light parameter.
+
+```{r}
+knitr::include_graphics("../figures/OR_dailyRMSE_comparison.png")
 ```
 
 
-
-
-
-
-
-
 ## 3. Model comparison across 9 rivers
+
+The Ricker model without any light modification appeared to perform the best, despite the slightly lower daily RMSE for the light adjusted Ricker model. I applied this model across 10 rivers, but removed one from the following figures because of what appeared to be data issues. However, in future comparisons among rivers, I'm going to try choosing a couple of rivers across a range of flow regimes. I don't want to go too crazy with that though, because I think it should be another paper to really expand beyond the initial set chosen for this paper.
+
+Map of chosen rivers
+```{r}
+knitr::include_graphics("../figures/10river_parameter_recovery.png")
+```
+
+Parameter recovery
+```{r}
+knitr::include_graphics("../figures/10river_parameter_recovery.png")
+```
+
+Persistence across discharge for the nine rivers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

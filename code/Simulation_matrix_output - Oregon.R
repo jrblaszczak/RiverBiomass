@@ -60,6 +60,13 @@ for (i in 1:length(pars1_BL$phi)){
   rmsemat1_BL[i]<-sqrt(sum((simmat1_BL[,i]-df$GPP)^2)/length(df$GPP))
 }
 
+
+## Remove and save simulation
+rm(stan_model_output_AR)
+simmat1_list <- list(simmat1, simmat1_BL)
+saveRDS(simmat1_list, "Sim_matrix_AR.rds")
+saveRDS(rmsemat1, "RMSE_matrix_AR.rds")
+
 ## If previously simulated
 simmat1_list <- readRDS("Sim_matrix_AR.rds")
 simmat1 <- simmat1_list[[1]]
@@ -123,10 +130,7 @@ plot_grid(df_sim1_plot,
 ## Save image
 
 
-## Remove and save simulation
-rm(stan_model_output_AR)
-simmat1_list <- list(simmat1, simmat1_BL)
-saveRDS(simmat1_list, "Sim_matrix_AR.rds")
+
 ##############################
 ## Model 2 Output - Logistic
 ##############################
@@ -153,6 +157,7 @@ for (i in 1:length(pars2_BL$sig_p)){
 ## Save simulation
 simmat2_list <- list(simmat2, simmat2_BL)
 saveRDS(simmat2_list, "Sim_matrix_Logistic.rds")
+saveRDS(rmsemat2, "RMSE_matrix_Logistic.rds")
 # If already previously simulated
 simmat2_list <- readRDS("Sim_matrix_Logistic.rds")
 simmat2 <- simmat2_list[[1]]
@@ -276,6 +281,7 @@ for (i in 1:length(pars3_BL$sig_p)){
 ## Save simulation
 simmat3_list <- list(simmat3, simmat3_BL)
 saveRDS(simmat3_list, "Sim_matrix_Ricker.rds")
+saveRDS(rmsemat3, "RMSE_matrix_Ricker.rds")
 # If already previously simulated
 simmat3_list <- readRDS("Sim_matrix_Ricker.rds")
 simmat3 <- simmat3_list[[1]]
@@ -392,6 +398,17 @@ lower_simmat4_BL <- apply(simmat4_BL, 1, function(x) quantile(x, probs = 0.025, 
 upper_simmat4_BL <- apply(simmat4_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
 
 
+## Save simulation
+simmat4_list <- list(simmat4, simmat4_BL)
+saveRDS(simmat4_list, "Sim_matrix_Ricker_lightadj.rds")
+saveRDS(rmsemat4, "RMSE_matrix_Ricker_lightadj.rds")
+# If already previously simulated
+simmat4_list <- readRDS("Sim_matrix_Ricker_lightadj.rds")
+simmat4 <- simmat4_list[[1]]
+simmat4_BL <- simmat4_list[[2]]
+
+
+
 ## Plot simulated GPP
 df_sim4 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat4, lower_simmat4, upper_simmat4,
                                median_simmat4_BL, lower_simmat4_BL, upper_simmat4_BL))
@@ -470,27 +487,42 @@ for (i in 1:length(pars5$beta_0)){
 }
 
 ## benthic light modification ##
-pars5<-extract(stan_model_output_Gompertz[[1]], c("beta_0","beta_1","beta_2","s","c","B","P","pred_GPP","sig_p"))
-simmat5<-matrix(NA,length(df[,1]),length(unlist(pars5$beta_0)))
-rmsemat5<-matrix(NA,length(df[,1]),1)
+pars5_BL<-extract(stan_model_output_Gompertz[[2]], c("beta_0","beta_1","beta_2","s","c","a","B","P","pred_GPP","sig_p"))
+simmat5_BL<-matrix(NA,length(df[,1]),length(unlist(pars5_BL$beta_0)))
+rmsemat5_BL<-matrix(NA,length(df[,1]),1)
 #Simulate
-for (i in 1:length(pars5$beta_0)){
-  simmat5[,i]<-PM5(pars5$beta_0[i],pars5$beta_1[i],pars5$beta_2[i],pars5$s[i],pars5$c[i],pars5$sig_p[i],df)
-  rmsemat5[i]<-sqrt(sum((simmat5[,i]-df$GPP)^2)/length(df$GPP))
+for (i in 1:length(pars5_BL$beta_0)){
+  simmat5_BL[,i]<-PM5_BL(pars5_BL$beta_0[i],pars5_BL$beta_1[i],pars5_BL$beta_2[i],pars5_BL$s[i],pars5_BL$c[i],pars5_BL$a[i],pars5_BL$sig_p[i],df)
+  rmsemat5_BL[i]<-sqrt(sum((simmat5_BL[,i]-df$GPP)^2)/length(df$GPP))
 }
 
-
+## Save simulation
+simmat5_list <- list(simmat5, simmat5_BL)
+saveRDS(simmat5_list, "Sim_matrix_Gompertz.rds")
+saveRDS(rmsemat5, "RMSE_matrix_Gompertz.rds")
+# If already previously simulated
+simmat5_list <- readRDS("Sim_matrix_Gompertz.rds")
+simmat5 <- simmat5_list[[1]]
+simmat5_BL <- simmat5_list[[2]]
 
 ## For every day extract median and CI
 median_simmat5 <- apply(simmat5, 1, function(x) median(x, na.rm=TRUE))
 lower_simmat5 <- apply(simmat5, 1, function(x) quantile(x, probs = 0.025, na.rm=TRUE))
 upper_simmat5 <- apply(simmat5, 1, function(x) quantile(x, probs = 0.975, na.rm=TRUE))
+## For every day extract median and CI
+median_simmat5_BL <- apply(simmat5_BL, 1, function(x) median(x, na.rm=TRUE))
+lower_simmat5_BL <- apply(simmat5_BL, 1, function(x) quantile(x, probs = 0.025, na.rm=TRUE))
+upper_simmat5_BL <- apply(simmat5_BL, 1, function(x) quantile(x, probs = 0.975, na.rm=TRUE))
+
 
 ## Plot simulated GPP
-df_sim5 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat5, lower_simmat5, upper_simmat5))
-colnames(df_sim5) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+df_sim5 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat5, lower_simmat5, upper_simmat5,
+                               median_simmat5_BL, lower_simmat5_BL, upper_simmat5_BL))
+colnames(df_sim5) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper",
+                       "sim_GPP_BL","sim_GPP_BL_lower","sim_GPP_BL_upper")
 df_sim5$Date <- as.POSIXct(as.character(df_sim5$Date), format="%Y-%m-%d")
-df_sim5[,2:5] <- apply(df_sim5[,2:5],2,function(x) as.numeric(as.character(x)))
+df_sim5[,2:8] <- apply(df_sim5[,2:8],2,function(x) as.numeric(as.character(x)))
+
 
 df_sim5_plot <- ggplot(df_sim5, aes(Date, GPP))+
   geom_point(size=2, color="black")+
@@ -502,8 +534,30 @@ df_sim5_plot <- ggplot(df_sim5, aes(Date, GPP))+
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=13),
         axis.title.y = element_text(size=15))+
-  scale_y_continuous(limits=c(0,40))
+  scale_y_continuous(limits=c(0,35))
 df_sim5_plot
+
+df_sim5_BL_plot <- ggplot(df_sim5, aes(Date, GPP))+
+  geom_point(size=2, color="black")+
+  geom_line(aes(Date, sim_GPP), color=PM5.col, size=1.2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM5: Gompertz benthic light in blue")+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM5.col, alpha=0.4, show.legend = FALSE)+
+  geom_line(aes(Date, sim_GPP_BL), color="blue", size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+              fill="blue", alpha=0.3, show.legend = FALSE)+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15))+
+  scale_y_continuous(limits=c(0,35))
+df_sim5_BL_plot
+
+plot_grid(df_sim5_plot,
+          df_sim5_BL_plot,
+          ncol=1)
+
+
 
 
 ## Plot latent B
@@ -558,6 +612,7 @@ plot_grid(
   df_modB3_plot, ncol=1)
 
 ## RMSE comparison
+#rmsemat_list <- readRDS("rmsemat_list.rds")
 rmse_comp <- as.data.frame(as.matrix(cbind(rmsemat1, rmsemat2, rmsemat3, rmsemat4, rmsemat5)))
 colnames(rmse_comp) <- c("PM1: GPP RMSE","PM2: Logistic RMSE",
                          "PM3: Ricker RMSE","PM4: Ricker Light Adj. RMSE","PM5: Gompertz RMSE")
@@ -575,20 +630,24 @@ ggplot(rmse_comp_long, aes(value, fill=key))+
   scale_x_continuous(trans="log", limits=c(1,40), breaks = c(1,3,5,10,30), expand = c(0.01,0.01))+
   scale_y_continuous(expand = c(0,0.01))+
   theme(panel.background = element_rect(color = "black", fill=NA, size=1),
-        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.x = element_text(size=15), axis.text = element_text(size=13),
         axis.title.y = element_text(size=15),
-        legend.position = c(.95, .95),
+        legend.position = c(.5, .95),
         legend.justification = c("right", "top"),
         legend.box.just = "right",
         legend.margin = margin(6, 6, 6, 6),
         legend.text = element_text(size=14))+
-  labs(y="Density","RMSE")
-  #geom_vline(xintercept = rmse_comp_mean$rating.mean[1],
-  #           color=PM1.col, linetype = "dashed", size = 1)+
-  #geom_vline(xintercept = rmse_comp_mean$rating.mean[2],
-  #           color=PM3.col, linetype = "dashed", size = 1)
-  #geom_vline(xintercept = rmse_comp_median$rating.median[3],
-  #           color=PM3.col, linetype = "dashed", size = 1)
+  labs(y="Density",x="Daily RMSE")+
+  geom_vline(xintercept = rmse_comp_mean$rating.mean[1],
+             color=PM1.col, linetype = "dashed", size = 1)+
+  geom_vline(xintercept = rmse_comp_mean$rating.mean[2],
+             color=PM2.col, linetype = "dashed", size = 1)+
+  geom_vline(xintercept = rmse_comp_mean$rating.mean[3],
+             color=PM3.col, linetype = "dashed", size = 1)+
+  geom_vline(xintercept = rmse_comp_mean$rating.mean[4],
+             color=PM4.col, linetype = "dashed", size = 1)+
+  geom_vline(xintercept = rmse_comp_mean$rating.mean[5],
+             color=PM5.col, linetype = "dashed", size = 1)
 
 
 

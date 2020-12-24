@@ -32,6 +32,13 @@
 *code/Sim_matrix_Logistic.rds
 *code/Sim_matrix_AR.rds
 *code/Sim_matrix_Ricker.rds
+*code/Sim_matrix_Ricker_lightadj.rds
+*code/Sim_matrix_Gompertz.rds
+*code/RMSE_matrix_Logistic.rds
+*code/RMSE_matrix_AR.rds
+*code/RMSE_matrix_Ricker.rds
+*code/RMSE_matrix_Ricker_lightadj.rds
+*code/RMSE_matrix_Gompertz.rds
 *code/PM.Ricker_ParRecov_l_1to5.rds
 *code/PM.Ricker_ParRecov_l_6to10.rds
 *code/Ricker_simGPP_10rivers.rds

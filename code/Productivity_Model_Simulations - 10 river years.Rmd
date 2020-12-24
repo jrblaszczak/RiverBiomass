@@ -238,7 +238,7 @@ PM3_par_OUT_df <- ldply(lapply(PM3_par_OUT, function(x) multriver_OUTpar_extract
 ## Comparison
 PM3_IN_OUT <- left_join(PM3_par_IN, PM3_par_OUT_df, by=c(".id","Param"))
 scaleFUN <- function(x) sprintf("%.1f", x)
-ygb <- brewer.pal(10, "Paired")
+#ygb <- brewer.pal(10, "Paired")
 
 PM3_IN_OUT$Param <- factor(PM3_IN_OUT$Param, levels=c("r","lambda","s","c","sig_p"))
 
@@ -263,30 +263,37 @@ PM3_IN_OUT <- PM3_IN_OUT[-which(PM3_IN_OUT == "nwis_04136000"),]
 
 # Plot
 theme_set(theme_bw())
+col <- wes_palette("Zissou1", 9, type = "continuous")
 
 # c("s","c",expression(r[max]),expression(sigma[p]),expression(lambda))
 param_labs <-c('s'="s",'c'="c",'r'=expression(r[max]),'sig_p'=expression(sigma[p]),'lambda'=expression(lambda))
-pal <- wes_palette(name="Zissou1",n=9, type="discrete")
 
 ggplot(PM3_IN_OUT, aes(input_value, ParOutput_med, color=short_name))+
     geom_abline(slope = 1, intercept = 0, color="grey", size=1)+
     geom_linerange(data=PM3_IN_OUT[-which(PM3_IN_OUT$Param == "lambda"),], aes(ymin = ParOutput_low, ymax= ParOutput_up), color="black",size=1)+
     geom_linerange(data=PM3_IN_OUT[which(PM3_IN_OUT$Param == "lambda"),], aes(ymin = ParOutput_up, ymax= ParOutput_low), color="black",size=1)+
     geom_point(size=4)+
-    labs(x = "Input Parameter Values", y="Median Posterior Values",title="PM3: Ricker")+
+    labs(x = "Input Parameter Values", y="Median Posterior Values (CI in black)",title="PM3: Ricker")+
     facet_wrap(.~Param, ncol=1, scales = "free",labeller = labeller(Param = param_labs))+ #, scales = "free", ncol = 2)+
     theme(axis.text.x = element_text(angle = 45, hjust=1),
           axis.text = element_text(size=15),
           axis.title = element_text(size=20),
+          strip.text = element_text(size=15),
           legend.text = element_text(hjust = 0, size=12),
           panel.background = element_rect(color = "black", fill=NA, size=1),
           panel.grid = element_line(color="gray90"),
           legend.position = "bottom")+
     scale_x_continuous(labels=scaleFUN)+#, limits=c(exp(-6),exp(6)))+
-    scale_y_continuous(labels=scaleFUN)
-    #scale_color_discrete()
-    #scale_size_manual(name="",values=c('s'=2, 'c'=2,'r'=2,'sig_p'=2,'lambda'=2),
-    #                   labels=)
+    scale_y_continuous(labels=scaleFUN)+
+    scale_color_manual("", values=c("Potomac River, WV"=col[1],
+                               "Broad River, SC"=col[2],
+                               "Saluda River, SC"=col[3],
+                               "Chenoweth Run, KY"=col[4],
+                               "Little Muskegon River, MI"=col[5],
+                               "Sugar River, MI"=col[6],
+                               "South Platte River, CO"=col[7],
+                               "Medina River, TX"=col[8],
+                               "Clackamas River, OR"=col[9]))
   
 
 

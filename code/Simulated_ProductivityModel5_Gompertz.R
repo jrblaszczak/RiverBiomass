@@ -71,7 +71,7 @@ PM5_BL <- function(beta_0, beta_1, beta_2, s, c, a, sig_p, df) {
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rnorm(1, mean = (beta_0 + beta_1*exp(B[(j-1)])+beta_2*ben_light[j])*P[j], sd = sig_p)
+    B[j] = rtnorm(1, mean = (beta_0 + beta_1*exp(B[(j-1)])+beta_2*ben_light[j])*P[j], sd = sig_p, upper=3.5)
   }
   
   for (i in 2:Ndays){
