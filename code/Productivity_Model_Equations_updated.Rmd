@@ -2,8 +2,8 @@
 title: "Productivity Model Equations"
 author: "J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr."
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 This document is an overview of the progress thus far on modeling productivity dynamics in rivers. All code and data is available at this Github page: https://github.com/jrblaszczak/RiverBiomass
@@ -181,8 +181,14 @@ Simulation code (surface and benthic light): https://github.com/jrblaszczak/Rive
 
 ## 2. Model simulation comparisons
 
-
-
+```{r image-ref-for-in-text, echo = FALSE, message=FALSE, fig.align='center', fig.cap='Some cool caption', out.width='0.75\\linewidth', fig.pos='H'}
+knitr::include_graphics("../figures/InputData.png")
+knitr::include_graphics("../figures/PM1_simulations.png")
+knitr::include_graphics("../figures/PM2_simulations.png")
+knitr::include_graphics("../figures/PM3_simulations.png")
+knitr::include_graphics("../figures/PM4_simulations.png")
+#knitr::include_graphics("../figures/PM5_simulations.png")
+```
 
 
 

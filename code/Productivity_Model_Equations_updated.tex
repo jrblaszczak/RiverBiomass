@@ -1,34 +1,46 @@
-\documentclass[]{article}
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
-\usepackage{fixltx2e} % provides \textsubscript
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
   \usepackage[T1]{fontenc}
   \usepackage[utf8]{inputenc}
-\else % if luatex or xelatex
-  \ifxetex
-    \usepackage{mathspec}
-  \else
-    \usepackage{fontspec}
-  \fi
-  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
 \fi
-% use upquote if available, for straight quotes in verbatim environments
+% Use upquote if available, for straight quotes in verbatim environments
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
-% use microtype if available
-\IfFileExists{microtype.sty}{%
-\usepackage[]{microtype}
-\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
 }{}
-\PassOptionsToPackage{hyphens}{url} % url is loaded by hyperref
-\usepackage[unicode=true]{hyperref}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \hypersetup{
-            pdftitle={Productivity Model Equations},
-            pdfauthor={J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr.},
-            pdfborder={0 0 0},
-            breaklinks=true}
-\urlstyle{same}  % don't use monospace font for urls
+  pdftitle={Productivity Model Equations},
+  pdfauthor={J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr.},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx,grffile}
 \makeatletter
@@ -39,31 +51,14 @@
 % margins by default, and it is still possible to overwrite the defaults
 % using explicit options in \includegraphics[width, height, ...]{}
 \setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
-\IfFileExists{parskip.sty}{%
-\usepackage{parskip}
-}{% else
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{6pt plus 2pt minus 1pt}
-}
-\setlength{\emergencystretch}{3em}  % prevent overfull lines
-\providecommand{\tightlist}{%
-  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\setcounter{secnumdepth}{0}
-% Redefines (sub)paragraphs to behave more like sections
-\ifx\paragraph\undefined\else
-\let\oldparagraph\paragraph
-\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
-\fi
-\ifx\subparagraph\undefined\else
-\let\oldsubparagraph\subparagraph
-\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
-\fi
-
-% set default figure placement to htbp
+% Set default figure placement to htbp
 \makeatletter
 \def\fps@figure{htbp}
 \makeatother
-
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
 
 \title{Productivity Model Equations}
 \author{J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr.}
@@ -76,7 +71,8 @@ This document is an overview of the progress thus far on modeling
 productivity dynamics in rivers. All code and data is available at this
 Github page: \url{https://github.com/jrblaszczak/RiverBiomass}
 
-\subparagraph{Methods Overview}\label{methods-overview}
+\hypertarget{methods-overview}{%
+\subparagraph{Methods Overview}\label{methods-overview}}
 
 We estimated productivity dynamics in rivers through time with five
 stochastic state-space models that account for process and observation
@@ -99,14 +95,14 @@ component, both of which are described below.
 
 We selected a subset of river metabolism time series from 356 rivers
 with daily estimates of metabolism generated using the streamMetabolizer
-package in R by the US Geological Survey Powell Center (Appling et al.
-2018b). Daily metabolism estimates were generated using a hierarchical
-state-space inverse modeling approach with partial-pooling of piece-wise
-\(K_{600}\) relationships with mean daily discharge (\(Q\)) to reduce
-issues of equifinality and uncertainty (Appling et al. 2018a). Daily
-metabolism and gas exchange estimates were generated from sub-daily time
-series of dissolved oxygen (units: \(mg\) \(L^{-1}\)), light
-(photosynthetic photon flux density (PPFD); units:
+package in R by the US Geological Survey Powell Center (Appling et
+al.~2018b). Daily metabolism estimates were generated using a
+hierarchical state-space inverse modeling approach with partial-pooling
+of piece-wise \(K_{600}\) relationships with mean daily discharge
+(\(Q\)) to reduce issues of equifinality and uncertainty (Appling et
+al.~2018a). Daily metabolism and gas exchange estimates were generated
+from sub-daily time series of dissolved oxygen (units: \(mg\)
+\(L^{-1}\)), light (photosynthetic photon flux density (PPFD); units:
 \(\mu mol\ m^{-2}\ s^{-1}\)), water temperature (\(^\circ\) C), and
 reach averaged depth (m). A Bayesian Markov chain Monte Carlo (MCMC)
 fitting procedure was used to determine the mean and standard deviation
@@ -136,30 +132,33 @@ models described below.
   Simulations from posteriors and parameter recovery for the Ricker
   Model without benthic light adjustments across nine rivers. The
   selection of rivers was a relatively random subset to this point
-  (sites with \textgreater{}350 with clear visual decline in GPP in
+  (sites with \textgreater350 with clear visual decline in GPP in
   response to a storm), but I think a more interesting comparison will
-  be to choose \textasciitilde{}10 river years with different flow
-  regimes to demonstrate where and when the models work best.
+  be to choose \textasciitilde10 river years with different flow regimes
+  to demonstrate where and when the models work best.
 \end{enumerate}
 
-\subparagraph{References}\label{references}
+\hypertarget{references}{%
+\subparagraph{References}\label{references}}
 
 Appling, A.P., Hall, R.O., Yackulic, C.B. \& Arroita, M. (2018a).
 Overcoming equifinality: Leveraging long time series for stream
 metabolism estimation. J. Geophys. Res. Biogeosciences, 123, 624-645.
 
 Appling, A.P., Read, J.S., Winslow, L.A., Arroita, M., Bernhardt, E.S.,
-Griffiths, N.A., et al. (2018b). The metabolic regimes of 356 rivers in
+Griffiths, N.A., et al.~(2018b). The metabolic regimes of 356 rivers in
 the United States. Sci. Data, 5, 180292.
 
-\subsection{1. Model descriptions}\label{model-descriptions}
+\hypertarget{model-descriptions}{%
+\subsection{1. Model descriptions}\label{model-descriptions}}
 
+\hypertarget{productivity-model-1-linear-autoregressive-model}{%
 \subsubsection{Productivity Model 1: Linear autoregressive
-model}\label{productivity-model-1-linear-autoregressive-model}
+model}\label{productivity-model-1-linear-autoregressive-model}}
 
 We first predict the temporal dynamics of daily estimates of GPP (\(g\))
 using a linear autoregressive model without latent biomass dynamics. We
-fit the model to the \(g\) times series from Appling et al. (2018a) to
+fit the model to the \(g\) times series from Appling et al.~(2018a) to
 estimate the parameters described below:
 
 \begin{equation} 
@@ -174,15 +173,15 @@ where input data includes the daily mean of the posterior probability
 distribution of previously modeled daily GPP time series
 (\(GPP_{mod,t}\); \(g\ O_{2}\ m^{-2}\ d^{-1}\)), \(L\) which is daily
 light at time \(t\) relativized to the annual maximum daily light
-(unitless; 0\textless{}\(L\)\textless{}1), and \(Q_t\) which is daily
+(unitless; 0\textless{}\(L\)\textless1), and \(Q_t\) which is daily
 discharge at time \(t\) relativized to the annual maximum daily
-discharge (unitless; 0\textless{}\(Q\)\textless{}1). Light and discharge
+discharge (unitless; 0\textless{}\(Q\)\textless1). Light and discharge
 were relativized to the annual maximum as opposed to zero to avoid
 switching between positive and negative values. Estimated parameters
 include \(G_{t}\) which is the predicted daily GPP (g \(O_2\) \(m^{-2}\)
 \(d^{-1}\)) at time \(t\) (in days) on a log scale, \(\phi\) which is
 the estimated autoregressive parameter (unitless;
-0\textless{}\(\phi\)\textless{}1), \(\alpha\) which is a light use
+0\textless{}\(\phi\)\textless1), \(\alpha\) which is a light use
 efficiency parameter of log GPP growth per unit relativized light,
 \(\beta\) which is a loss parameter of log GPP loss per unit relativized
 discharge, \(\sigma_{obs}\) which is the observation error set to the
@@ -199,8 +198,8 @@ benL_{t} = L_{t}e^{(-1 \times a \times T_{t} D_{t})}
 
 where \(a\) is an esimated parameter to estimate the downwelling light
 attenuation coefficient (\(K_d = a \times T_{t}\)), \(T_t\) is daily
-turbidity (NTU), and \(D_t\) is daily depth (m) from Appling et al.
-(2018b).
+turbidity (NTU), and \(D_t\) is daily depth (m) from Appling et
+al.~(2018b).
 
 Stan code (surface light):
 \url{https://github.com/jrblaszczak/RiverBiomass/blob/main/code/Stan_ProductivityModel1_Autoregressive.stan}
@@ -211,13 +210,14 @@ Stan code (benthic light):
 Simulation code (surface and benthic light):
 \url{https://github.com/jrblaszczak/RiverBiomass/blob/main/code/Simulated_ProductivityModel1_Autoregressive.R}
 
+\hypertarget{productivity-model-2-latent-biomass-logistic-growth}{%
 \subsubsection{Productivity Model 2: Latent biomass logistic
-growth}\label{productivity-model-2-latent-biomass-logistic-growth}
+growth}\label{productivity-model-2-latent-biomass-logistic-growth}}
 
 We predict the temporal dynamics of mean daily estimates of GPP (\(g\))
 by incorporating biomass as a latent variable and modeling its dynamics
 using a logistic growth model. We fit the model to the \(g\) times
-series from Appling et al. (2018b) to estimate the model parameters. We
+series from Appling et al.~(2018b) to estimate the model parameters. We
 incorporated the effects of disturbance by modeling the persistence
 (\(P\)) of biomass using a complementary log-log link function of the
 form:
@@ -264,13 +264,14 @@ Stan code (benthic light):
 Simulation code (surface and benthic light):
 \url{https://github.com/jrblaszczak/RiverBiomass/blob/main/code/Simulated_ProductivityModel2_Logistic.R}
 
+\hypertarget{productivity-model-3-latent-biomass-ricker-model}{%
 \subsubsection{Productivity Model 3: Latent biomass Ricker
-model}\label{productivity-model-3-latent-biomass-ricker-model}
+model}\label{productivity-model-3-latent-biomass-ricker-model}}
 
 We predict the temporal dynamics of mean daily estimates of GPP (\(g\))
 by incorporating biomass as a latent variable and modeling its dynamics
 using a Ricker growth model. We fit the model to the \(g\) times series
-from Appling et al. (2018) to estimate the model parameters. We
+from Appling et al.~(2018) to estimate the model parameters. We
 incorporated the effects of disturbance by modeling the persistence
 (\(P\)) of log biomass using a complementary log-log link function of
 the same form as above.
@@ -323,9 +324,10 @@ Stan code (benthic light):
 Simulation code (surface and benthic light):
 \url{https://github.com/jrblaszczak/RiverBiomass/blob/main/code/Simulated_ProductivityModel3_Ricker.R}
 
+\hypertarget{productivity-model-4-latent-biomass-ricker-model-with-light-adjustment}{%
 \subsubsection{Productivity Model 4: Latent biomass Ricker model with
 light
-adjustment}\label{productivity-model-4-latent-biomass-ricker-model-with-light-adjustment}
+adjustment}\label{productivity-model-4-latent-biomass-ricker-model-with-light-adjustment}}
 
 We test a modification of the Ricker model (PM3) in which light is
 incorporated into the estimation of maximum growth rate \(r_{max}\):
@@ -355,13 +357,14 @@ Stan code (benthic light):
 Simulation code (surface and benthic light):
 \url{https://github.com/jrblaszczak/RiverBiomass/blob/main/code/Simulated_ProductivityModel4_Ricker_lightadj.R}
 
+\hypertarget{productivity-model-5-gompertz}{%
 \subsubsection{Productivity Model 5:
-Gompertz}\label{productivity-model-5-gompertz}
+Gompertz}\label{productivity-model-5-gompertz}}
 
 We predict the temporal dynamics of mean daily estimates of GPP (\(g\))
 by incorporating biomass as a latent variable and modeling its dynamics
 using a Gompertz growth model. We fit the model to the \(g\) times
-series from Appling et al. (2018) to estimate the model parameters. We
+series from Appling et al.~(2018) to estimate the model parameters. We
 incorporated the effects of disturbance by modeling the persistence
 (\(P\)) of biomass using a complementary log-log link function of the
 same form as above.
@@ -404,10 +407,14 @@ Stan code (benthic light):
 Simulation code (surface and benthic light):
 \url{https://github.com/jrblaszczak/RiverBiomass/blob/main/code/Simulated_ProductivityModel5_Gompertz.R}
 
+\hypertarget{model-simulation-comparisons}{%
 \subsection{2. Model simulation
-comparisons}\label{model-simulation-comparisons}
+comparisons}\label{model-simulation-comparisons}}
 
+df\_sim1\_plot
+
+\hypertarget{model-comparison-across-9-rivers}{%
 \subsection{3. Model comparison across 9
-rivers}\label{model-comparison-across-9-rivers}
+rivers}\label{model-comparison-across-9-rivers}}
 
 \end{document}

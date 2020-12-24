@@ -16,7 +16,7 @@ colnames(df)[which(colnames(df) == "mean_daily_turb")] <- "turb"
 source("Simulated_ProductivityModel1_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
 source("Simulated_ProductivityModel2_Logistic.R") # parameters: r, K, s, c, sig_p
 source("Simulated_ProductivityModel3_Ricker.R") # parameters: r, lambda, s, c, sig_p
-source("Simulated_ProductivityModel4_Ricker_lightadj.R") # parameters: alpha_0, alpha_1, lambda, s, c, sig_p
+source("Simulated_ProductivityModel4_Ricker_lightadj.R") # parameters: alpha_1, lambda, s, c, sig_p
 source("Simulated_ProductivityModel5_Gompertz.R") # parameters: beta_0, beta_1, beta_2, s, c, sig_p
 
 # for parameter extraction
@@ -49,11 +49,6 @@ for (i in 1:length(pars1$phi)){
   simmat1[,i]<-PM1(pars1$phi[i],pars1$alpha[i],pars1$beta[i],pars1$sig_p[i],df)
   rmsemat1[i]<-sqrt(sum((simmat1[,i]-df$GPP)^2)/length(df$GPP))
 }
-# For every day extract median and CI
-median_simmat1 <- apply(simmat1, 1, function(x) median(x))
-lower_simmat1 <- apply(simmat1, 1, function(x) quantile(x, probs = 0.025))
-upper_simmat1 <- apply(simmat1, 1, function(x) quantile(x, probs = 0.975))
-
 
 ## Benthic light modification ##
 pars1_BL <- extract(stan_model_output_AR[[2]], c("phi","alpha","beta","sig_p","a"))
@@ -64,6 +59,17 @@ for (i in 1:length(pars1_BL$phi)){
   simmat1_BL[,i]<-PM1_BL(pars1_BL$phi[i],pars1_BL$alpha[i],pars1_BL$beta[i],pars1_BL$a[i],pars1_BL$sig_p,df)
   rmsemat1_BL[i]<-sqrt(sum((simmat1_BL[,i]-df$GPP)^2)/length(df$GPP))
 }
+
+## If previously simulated
+simmat1_list <- readRDS("Sim_matrix_AR.rds")
+simmat1 <- simmat1_list[[1]]
+simmat1_BL <- simmat1_list[[2]]
+
+# For every day extract median and CI
+median_simmat1 <- apply(simmat1, 1, function(x) median(x))
+lower_simmat1 <- apply(simmat1, 1, function(x) quantile(x, probs = 0.025))
+upper_simmat1 <- apply(simmat1, 1, function(x) quantile(x, probs = 0.975))
+
 # For every day extract median and CI
 median_simmat1_BL <- apply(simmat1_BL, 1, function(x) median(x))
 lower_simmat1_BL <- apply(simmat1_BL, 1, function(x) quantile(x, probs = 0.025))
@@ -83,15 +89,39 @@ df_sim1_plot <- ggplot(df_sim1, aes(Date, GPP))+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM1: GPP")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM1.col, alpha=0.3, show.legend = FALSE)+
-  geom_line(aes(Date, sim_GPP_BL), color="red", size=1.2)+
-  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
-              fill="red", alpha=0.3, show.legend = FALSE)+
+  #geom_line(aes(Date, sim_GPP_BL), color="blue", size=1.2)+
+  #geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+  #            fill="blue", alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=13),
         axis.title.y = element_text(size=15))+
   scale_y_continuous(limits=c(0,30))
 df_sim1_plot
+
+
+df_sim1_BL_plot <- ggplot(df_sim1, aes(Date, GPP))+
+  geom_point(size=2, color="black")+
+  geom_line(aes(Date, sim_GPP), color=PM1.col, size=1.2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM1: GPP with benthic light in blue")+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM1.col, alpha=0.3, show.legend = FALSE)+
+  geom_line(aes(Date, sim_GPP_BL), color="blue", size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+              fill="blue", alpha=0.3, show.legend = FALSE)+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15))+
+  scale_y_continuous(limits=c(0,30))
+df_sim1_BL_plot
+
+plot_grid(df_sim1_plot,
+          df_sim1_BL_plot,
+          ncol = 1)
+
+## Save image
+
 
 ## Remove and save simulation
 rm(stan_model_output_AR)
@@ -110,11 +140,6 @@ for (i in 1:length(pars2$sig_p)){
   rmsemat2[i]<-sqrt(sum((simmat2[,i]-df$GPP)^2)/length(df$GPP))
 }
 
-## For every day extract median and CI
-median_simmat2 <- apply(simmat2, 1, function(x) median(x, na.rm = TRUE))
-lower_simmat2 <- apply(simmat2, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
-upper_simmat2 <- apply(simmat2, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
-
 ## Benthic light modification ##
 pars2_BL<-extract(stan_model_output_Logistic[[2]], c("r","K","s","c","a","B","P","pred_GPP","sig_p"))
 simmat2_BL<-matrix(NA,length(df[,1]),length(unlist(pars2_BL$sig_p)))
@@ -124,16 +149,26 @@ for (i in 1:length(pars2_BL$sig_p)){
   simmat2_BL[,i]<-PM2_BL(r=pars2_BL$r[i],K=pars2_BL$K[i],s=pars2_BL$s[i],c=pars2_BL$c[i],a=pars2_BL$a[i],sig_p=pars2_BL$sig_p[i],df)
   rmsemat2_BL[i]<-sqrt(sum((simmat2_BL[,i]-df$GPP)^2)/length(df$GPP))
 }
-## For every day extract median and CI
-median_simmat2_BL <- apply(simmat2_BL, 1, function(x) median(x, na.rm = TRUE))
-lower_simmat2_BL <- apply(simmat2_BL, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
-upper_simmat2_BL <- apply(simmat2_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
 
 ## Save simulation
 simmat2_list <- list(simmat2, simmat2_BL)
 saveRDS(simmat2_list, "Sim_matrix_Logistic.rds")
 # If already previously simulated
-#simmat2_list <- readRDS("Sim_matrix_Logistic.rds")
+simmat2_list <- readRDS("Sim_matrix_Logistic.rds")
+simmat2 <- simmat2_list[[1]]
+simmat2_BL <- simmat2_list[[2]]
+
+## For every day extract median and CI
+median_simmat2 <- apply(simmat2, 1, function(x) median(x, na.rm = TRUE))
+lower_simmat2 <- apply(simmat2, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+upper_simmat2 <- apply(simmat2, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
+
+## For every day extract median and CI
+median_simmat2_BL <- apply(simmat2_BL, 1, function(x) median(x, na.rm = TRUE))
+lower_simmat2_BL <- apply(simmat2_BL, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+upper_simmat2_BL <- apply(simmat2_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
+
+
 
 
 ## Plot simulated GPP
@@ -150,15 +185,36 @@ df_sim2_plot <- ggplot(df_sim2, aes(Date, GPP))+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM2: Logistic")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM2.col, alpha=0.2, show.legend = FALSE)+
-  geom_line(aes(Date, sim_GPP_BL), color="red", size=1.2)+
-  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
-              fill="red", alpha=0.3, show.legend = FALSE)+
+  #geom_line(aes(Date, sim_GPP_BL), color="blue", size=1.2)+
+  #geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+  #            fill="blue", alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=13),
         axis.title.y = element_text(size=15))+
-  scale_y_continuous(limits=c(0,30))
+  scale_y_continuous(limits=c(0,20))
 df_sim2_plot
+
+
+df_sim2_BL_plot <- ggplot(df_sim2, aes(Date, GPP))+
+  geom_point(size=2, color="black")+
+  geom_line(aes(Date, sim_GPP), color=PM2.col, size=1.2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM2: Logistic with benthic light in blue")+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM2.col, alpha=0.2, show.legend = FALSE)+
+  geom_line(aes(Date, sim_GPP_BL), color="blue", size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+              fill="blue", alpha=0.3, show.legend = FALSE)+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15))+
+  scale_y_continuous(limits=c(0,20))
+df_sim2_BL_plot
+
+plot_grid(df_sim2_plot,
+          df_sim2_BL_plot,
+          ncol = 1)
 
 
 ## Plot latent B
@@ -205,10 +261,6 @@ for (i in 1:length(pars3$r)){
   simmat3[,i]<-PM3(pars3$r[i],pars3$lambda[i],pars3$s[i],pars3$c[i],pars3$sig_p[i],df)
   rmsemat3[i]<-sqrt(sum((simmat3[,i]-df$GPP)^2)/length(df$GPP))
 }
-## For every day extract median and CI
-median_simmat3 <- apply(simmat3, 1, function(x) median(x))
-lower_simmat3 <- apply(simmat3, 1, function(x) quantile(x, probs = 0.025))
-upper_simmat3 <- apply(simmat3, 1, function(x) quantile(x, probs = 0.975))
 
 ## benthic light modification ##
 pars3_BL<-extract(stan_model_output_Ricker[[2]], c("r","lambda","s","c","a","B","P","pred_GPP","sig_p"))
@@ -219,18 +271,25 @@ for (i in 1:length(pars3_BL$sig_p)){
   simmat3_BL[,i]<-PM3_BL(r=pars3_BL$r[i],lambda=pars3_BL$lambda[i],s=pars3_BL$s[i],c=pars3_BL$c[i],a=pars3_BL$a[i],sig_p=pars3_BL$sig_p[i],df)
   rmsemat3_BL[i]<-sqrt(sum((simmat3_BL[,i]-df$GPP)^2)/length(df$GPP))
 }
-# For every day extract median and CI
-median_simmat3_BL <- apply(simmat3_BL, 1, function(x) median(x, na.rm = TRUE))
-lower_simmat3_BL <- apply(simmat3_BL, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
-upper_simmat3_BL <- apply(simmat3_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
 
 
 ## Save simulation
 simmat3_list <- list(simmat3, simmat3_BL)
 saveRDS(simmat3_list, "Sim_matrix_Ricker.rds")
 # If already previously simulated
-#simmat3_list <- readRDS("Sim_matrix_Ricker.rds")
+simmat3_list <- readRDS("Sim_matrix_Ricker.rds")
+simmat3 <- simmat3_list[[1]]
+simmat3_BL <- simmat3_list[[2]]
 
+## For every day extract median and CI
+median_simmat3 <- apply(simmat3, 1, function(x) median(x))
+lower_simmat3 <- apply(simmat3, 1, function(x) quantile(x, probs = 0.025))
+upper_simmat3 <- apply(simmat3, 1, function(x) quantile(x, probs = 0.975))
+
+# For every day extract median and CI
+median_simmat3_BL <- apply(simmat3_BL, 1, function(x) median(x, na.rm = TRUE))
+lower_simmat3_BL <- apply(simmat3_BL, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+upper_simmat3_BL <- apply(simmat3_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
 
 ## Plot simulated GPP
 df_sim3 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat3, lower_simmat3, upper_simmat3,
@@ -255,6 +314,26 @@ df_sim3_plot <- ggplot(df_sim3, aes(Date, GPP))+
         axis.title.y = element_text(size=15))+
   scale_y_continuous(limits=c(0,20))
 df_sim3_plot
+
+df_sim3_BL_plot <- ggplot(df_sim3, aes(Date, GPP))+
+  geom_point(size=2, color="black")+
+  geom_line(aes(Date, sim_GPP), color=PM3.col, size=1.2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM3: Ricker with benthic light in blue")+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM3.col, alpha=0.4, show.legend = FALSE)+
+  geom_line(aes(Date, sim_GPP_BL), color="blue", size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+              fill="blue", alpha=0.3, show.legend = FALSE)+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15))+
+  scale_y_continuous(limits=c(0,20))
+df_sim3_BL_plot
+
+plot_grid(df_sim3_plot,
+          df_sim3_BL_plot,
+          ncol=1)
 
 
 ## Plot latent B
@@ -282,28 +361,44 @@ df_modB3_plot
 ## Model 4 Output - Ricker, adjusted light
 #############################################
 ## no light modifications ##
-pars4<-extract(stan_model_output_Ricker_Ladj[[1]], c("alpha_0","alpha_1","lambda","s","c","r","B","P","pred_GPP","sig_p"))
-simmat4<-matrix(NA,length(df[,1]),length(unlist(pars4$alpha_0)))
+pars4<-extract(stan_model_output_Ricker_Ladj[[1]], c("alpha_1","lambda","s","c","r","B","P","pred_GPP","sig_p"))
+simmat4<-matrix(NA,length(df[,1]),length(unlist(pars4$alpha_1)))
 rmsemat4<-matrix(NA,length(df[,1]),1)
 #Simulate
-for (i in 1:length(pars4$alpha_0)){
-  simmat4[,i]<-PM4(pars4$alpha_0[i],pars4$alpha_1[i],pars4$lambda[i],pars4$s[i],pars4$c[i],pars4$sig_p[i],df)
+for (i in 1:length(pars4$alpha_1)){
+  simmat4[,i]<-PM4(pars4$alpha_1[i],pars4$lambda[i],pars4$s[i],pars4$c[i],pars4$sig_p[i],df)
   rmsemat4[i]<-sqrt(sum((simmat4[,i]-df$GPP)^2)/length(df$GPP))
 }
 
-## View RMSE distribution
-hist(rmsemat4)
+## benthiclight modifications ##
+pars4_BL<-extract(stan_model_output_Ricker_Ladj[[2]], c("alpha_1","lambda","s","c","r","a","B","P","pred_GPP","sig_p"))
+simmat4_BL<-matrix(NA,length(df[,1]),length(unlist(pars4_BL$alpha_1)))
+rmsemat4_BL<-matrix(NA,length(df[,1]),1)
+#Simulate
+for (i in 1:length(pars4_BL$alpha_1)){
+  simmat4_BL[,i]<-PM4_BL(pars4_BL$alpha_1[i],pars4_BL$lambda[i],pars4_BL$s[i],pars4_BL$c[i],pars4_BL$a[i],pars4_BL$sig_p[i],df)
+  rmsemat4_BL[i]<-sqrt(sum((simmat4_BL[,i]-df$GPP)^2)/length(df$GPP))
+}
+
 
 ## For every day extract median and CI
 median_simmat4 <- apply(simmat4, 1, function(x) median(x, na.rm = TRUE))
 lower_simmat4 <- apply(simmat4, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
 upper_simmat4 <- apply(simmat4, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
 
+## For every day extract median and CI
+median_simmat4_BL <- apply(simmat4_BL, 1, function(x) median(x, na.rm = TRUE))
+lower_simmat4_BL <- apply(simmat4_BL, 1, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+upper_simmat4_BL <- apply(simmat4_BL, 1, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
+
+
 ## Plot simulated GPP
-df_sim4 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat4, lower_simmat4, upper_simmat4))
-colnames(df_sim4) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+df_sim4 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat4, lower_simmat4, upper_simmat4,
+                               median_simmat4_BL, lower_simmat4_BL, upper_simmat4_BL))
+colnames(df_sim4) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper",
+                       "sim_GPP_BL","sim_GPP_BL_lower","sim_GPP_BL_upper")
 df_sim4$Date <- as.POSIXct(as.character(df_sim4$Date), format="%Y-%m-%d")
-df_sim4[,2:5] <- apply(df_sim4[,2:5],2,function(x) as.numeric(as.character(x)))
+df_sim4[,2:8] <- apply(df_sim4[,2:8],2,function(x) as.numeric(as.character(x)))
 
 df_sim4_plot <- ggplot(df_sim4, aes(Date, GPP))+
   geom_point(size=2, color="black")+
@@ -315,8 +410,29 @@ df_sim4_plot <- ggplot(df_sim4, aes(Date, GPP))+
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=13),
         axis.title.y = element_text(size=15))+
-  scale_y_continuous(limits=c(0,30))
+  scale_y_continuous(limits=c(0,20))
 df_sim4_plot
+
+
+df_sim4_BL_plot <- ggplot(df_sim4, aes(Date, GPP))+
+  geom_point(size=2, color="black")+
+  geom_line(aes(Date, sim_GPP), color=PM4.col, size=1.2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM4: Ricker with light adjustment and benthic light in blue")+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM4.col, alpha=0.4, show.legend = FALSE)+
+  geom_line(aes(Date, sim_GPP_BL), color="blue", size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_BL_lower,ymax=sim_GPP_BL_upper),
+              fill="blue", alpha=0.3, show.legend = FALSE)+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=13),
+        axis.title.y = element_text(size=15))+
+  scale_y_continuous(limits=c(0,20))
+df_sim4_BL_plot
+
+plot_grid(df_sim4_plot,
+          df_sim4_BL_plot,
+          ncol=1)
 
 
 ## Plot latent B
@@ -343,6 +459,7 @@ df_modB4_plot
 ###############################
 ## Model 5 Output - Gompertz
 ###############################
+## no light modification ##
 pars5<-extract(stan_model_output_Gompertz[[1]], c("beta_0","beta_1","beta_2","s","c","B","P","pred_GPP","sig_p"))
 simmat5<-matrix(NA,length(df[,1]),length(unlist(pars5$beta_0)))
 rmsemat5<-matrix(NA,length(df[,1]),1)
@@ -352,8 +469,17 @@ for (i in 1:length(pars5$beta_0)){
   rmsemat5[i]<-sqrt(sum((simmat5[,i]-df$GPP)^2)/length(df$GPP))
 }
 
-## View RMSE distribution
-hist(rmsemat5)
+## benthic light modification ##
+pars5<-extract(stan_model_output_Gompertz[[1]], c("beta_0","beta_1","beta_2","s","c","B","P","pred_GPP","sig_p"))
+simmat5<-matrix(NA,length(df[,1]),length(unlist(pars5$beta_0)))
+rmsemat5<-matrix(NA,length(df[,1]),1)
+#Simulate
+for (i in 1:length(pars5$beta_0)){
+  simmat5[,i]<-PM5(pars5$beta_0[i],pars5$beta_1[i],pars5$beta_2[i],pars5$s[i],pars5$c[i],pars5$sig_p[i],df)
+  rmsemat5[i]<-sqrt(sum((simmat5[,i]-df$GPP)^2)/length(df$GPP))
+}
+
+
 
 ## For every day extract median and CI
 median_simmat5 <- apply(simmat5, 1, function(x) median(x, na.rm=TRUE))

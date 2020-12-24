@@ -1,6 +1,6 @@
 ## Growth Model 4 - Data simulation
 
-PM4 <- function(alpha_0, alpha_1, lambda, s, c, sig_p, df) {
+PM4 <- function(alpha_1, lambda, s, c, sig_p, df) {
   
   ## Data
   Ndays<-length(df$GPP)
@@ -25,7 +25,7 @@ PM4 <- function(alpha_0, alpha_1, lambda, s, c, sig_p, df) {
   
   r <- numeric(Ndays)
   for(i in 1:length(light)){
-    r[i] = alpha_0 + alpha_1*light[i]
+    r[i] = alpha_1*light[i]
   }
   
   ## Process Model
@@ -45,7 +45,7 @@ PM4 <- function(alpha_0, alpha_1, lambda, s, c, sig_p, df) {
 
 
 
-PM4_BL <- function(alpha_0, alpha_1, lambda, s, c, sig_p, df) {
+PM4_BL <- function(alpha_1, lambda, s, c, a, sig_p, df) {
   
   ## Data
   Ndays<-length(df$GPP)
@@ -78,7 +78,7 @@ PM4_BL <- function(alpha_0, alpha_1, lambda, s, c, sig_p, df) {
   
   r <- numeric(Ndays)
   for(i in 2:length(light)){
-    r[i] = alpha_0 + alpha_1*ben_light[i]
+    r[i] = alpha_1*ben_light[i]
   }
   
   ## Process Model

@@ -36,12 +36,18 @@ plot_grid(
   ggplot(df, aes(date, tQ*1))+geom_line(size=1.5, color="deepskyblue4")+
     geom_point(data=df, aes(date, light_rel), size=2, color="darkgoldenrod3")+
     scale_y_continuous(sec.axis = sec_axis(~./1, name=expression("Relativized Q")))+
-    labs(y="Relativized Light", x="Date (2012)")+
+    labs(y="Relativized Light", x="Date (2010)")+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),
           axis.text = element_text(size=13),
           axis.title = element_text(size=15)),
-  
+ 
+  ggplot(df, aes(date, mean_daily_turb))+geom_line(size=1.5, color="brown")+
+    labs(y="Daily Turbidity (NTU)", x="Date (2010)")+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.text = element_text(size=13),
+          axis.title = element_text(size=15)),
   align="hv",ncol=1)
 
 
