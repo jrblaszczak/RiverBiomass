@@ -203,18 +203,20 @@ knitr::include_graphics("../figures/OR_dailyRMSE_comparison.png")
 
 The Ricker model without any light modification appeared to perform the best, despite the slightly lower daily RMSE for the light adjusted Ricker model. I applied this model across 10 rivers, but removed one from the following figures because of what appeared to be data issues. However, in future comparisons among rivers, I'm going to try choosing a couple of rivers across a range of flow regimes. I don't want to go too crazy with that though, because I think it should be another paper to really expand beyond the initial set chosen for this paper.
 
-Map of chosen rivers
+#### Map of chosen rivers
 ```{r}
-knitr::include_graphics("../figures/10river_parameter_recovery.png")
+knitr::include_graphics("../figures/9rivers_map.png")
 ```
 
-Parameter recovery
+#### Parameter recovery
 ```{r}
-knitr::include_graphics("../figures/10river_parameter_recovery.png")
+knitr::include_graphics("../figures/9river_parameter_recovery.png")
 ```
 
-Persistence across discharge for the nine rivers
-
+#### Persistence across discharge for the nine rivers
+```{r}
+knitr::include_graphics("../figures/9river_persistence_curves.png")
+```
 
 
 

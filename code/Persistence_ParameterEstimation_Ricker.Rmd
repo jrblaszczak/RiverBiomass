@@ -8,8 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
-         "tidyverse","gridExtra",
-         "rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
+         "tidyverse","gridExtra","rstan","bayesplot",
+         "shinystan","Metrics","MCMCglmm"), require, character.only=T)
 
 ## Source data
 source("Persistence_10rivers_DataSource.R")
@@ -58,9 +58,9 @@ PM.Ricker_l_1to5 <- readRDS("PM.Ricker_l_1to5.rds")
 PM.Ricker_l_6to10 <- readRDS("PM.Ricker_l_6to10.rds")
 
 ## Extract and summarize parameters
-LG_params <- c("r","beta_0","s","c","B","P","pred_GPP","sig_p")
-LG_mult_site_par_1 <- lapply(PM.Ricker_l_1to5, function(x) extract(x, LG_params))
-LG_mult_site_par_2 <- lapply(PM.Ricker_l_6to10, function(x) extract(x, LG_params))
+LG_params <- c("r","lambda","s","c","B","P","pred_GPP","sig_p")
+LG_mult_site_par_1 <- lapply(PM.Ricker_l_1to5, function(x) rstan::extract(x, LG_params))
+LG_mult_site_par_2 <- lapply(PM.Ricker_l_6to10, function(x) rstan::extract(x, LG_params))
 LG_mult_site_par <- append(LG_mult_site_par_1,LG_mult_site_par_2)
 
 par_mean_LG <- function(par) {
@@ -80,18 +80,21 @@ LG_mult_site_meanpar <- lapply(LG_mult_site_par, function(x) par_mean_LG(x))
 
 
 ## Plot persistence
+# first run stan_data_l above
 Ppars <- list()
 for(i in 1:length(LG_mult_site_par)){
     df <- LG_mult_site_par[[i]]
     dat <- stan_data_l[[i]]
     
-    Ppars[[i]] <- list("tQ"=dat$tQ,"range"=range(dat$tQ),"c"=df$c,"s"=df$s)
+    Ppars[[i]] <- list("tQ"=dat$tQ,"range"=range(dat$tQ),"c"=df$c,"s"=df$s, "site_name"=names(stan_data_l)[i])
 }
-names(Ppars) <- names(stan_data_l)    
+names(Ppars) <- names(stan_data_l)
 
+# remove "nwis_04136000"
+Ppars <- within(Ppars, rm(nwis_04136000))
 
-
-plotting_P <- function(x){
+## plot
+plotting_P_dat <- function(x){
   pq <- seq(x$range[1],x$range[2], length=length(x$s))
   p_mean <- numeric()
   p_up <- numeric()
@@ -104,27 +107,61 @@ plotting_P <- function(x){
     p_down[i] <- quantile(temp, probs = 0.025)
     }
   df <- as.data.frame(as.matrix(cbind(pq,p_mean, p_up, p_down)))
+  df$site_name <- x$site_name
+  
+  return(df)
+}
 
-  plot <- ggplot(df, aes(pq, p_mean))+
-    geom_line(size=1)+
-    geom_line(aes(pq, p_up), linetype="dashed",size=1)+
-    geom_line(aes(pq, p_down), linetype="dashed",size=1)+
+P_plots_dat <- lapply(Ppars, function(x) plotting_P_dat(x))
+P_plots_df <- ldply(P_plots_dat, data.frame)
+
+# revalue
+P_plots_df$short_name <- revalue(P_plots_df$site_name, replace = c("nwis_01608500"="Potomac River, WV",
+                                                                   "nwis_02156500"="Broad River, SC",
+                                                                   "nwis_02168504"="Saluda River, SC",
+                                                                   "nwis_03298150"="Chenoweth Run, KY",
+                                                                   "nwis_04121944"="Little Muskegon River, MI",
+                                                                   #"nwis_04136000"="Au Sable River, MI",
+                                                                   "nwis_05435950"="Sugar River, MI",
+                                                                   "nwis_06711565"="South Platte River, CO",
+                                                                   "nwis_08181500"="Medina River, TX",
+                                                                   "nwis_14211010"="Clackamas River, OR"))
+
+
+# Plot
+theme_set(theme_bw())
+col <- brewer.pal(9, "Paired")
+
+ggplot(P_plots_df, aes(pq, p_mean, color=short_name, fill=short_name))+
+    geom_line(size=1.5)+
+    geom_ribbon(aes(ymin=p_down, ymax=p_up, fill=short_name), alpha=0.5)+
+    #geom_line(aes(pq, p_down), linetype="dashed",size=1)+
     theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
-        axis.title = element_blank(), axis.text = element_text(size=13),
-        panel.grid = element_line(color="gray90"))+
-    ggtitle(label = name)+
-    scale_y_continuous(limits=c(0,1))+scale_x_continuous(limits = c(0,1))
-    #annotate(geom="text", label = name, x=0.8*max(pq),y=0.8)
-  return(plot)
-}
-plotting_P(Ppars$nwis_01608500)
-
-### Visualize all together
-P_plots <- lapply(Ppars, function(x) plotting_P(x))
-n <- length(P_plots)
-nCol <- floor(sqrt(n))
-do.call("grid.arrange", c(P_plots, ncol=nCol))
+        axis.title = element_text(size=16), axis.text = element_text(size=13),
+        panel.grid = element_line(color="gray90"), strip.text = element_text(size=14))+
+    scale_y_continuous(limits=c(0,1))+scale_x_continuous(limits = c(0,1))+
+    scale_color_manual("", values=c("Potomac River, WV"=col[1],
+                               "Broad River, SC"=col[2],
+                               "Saluda River, SC"=col[3],
+                               "Chenoweth Run, KY"=col[4],
+                               "Little Muskegon River, MI"=col[5],
+                               "Sugar River, MI"=col[6],
+                               "South Platte River, CO"=col[7],
+                               "Medina River, TX"=col[8],
+                               "Clackamas River, OR"=col[9]))+
+      scale_fill_manual("", values=c("Potomac River, WV"=col[1],
+                               "Broad River, SC"=col[2],
+                               "Saluda River, SC"=col[3],
+                               "Chenoweth Run, KY"=col[4],
+                               "Little Muskegon River, MI"=col[5],
+                               "Sugar River, MI"=col[6],
+                               "South Platte River, CO"=col[7],
+                               "Medina River, TX"=col[8],
+                               "Clackamas River, OR"=col[9]))+
+  guides(fill=guide_legend(nrow=3))+
+  facet_wrap(~short_name)+
+  labs(x="Range of Standardized Discharge",y="Persistence")
 
 ```
 

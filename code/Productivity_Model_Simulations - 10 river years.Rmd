@@ -10,7 +10,7 @@ output: html_document
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "tidyverse","rstan","bayesplot","shinystan",
-         "Metrics","MCMCglmm","wesanderson"), require, character.only=T)
+         "Metrics","MCMCglmm","wesanderson","gridExtra","usmap"), require, character.only=T)
 
 ## Source data
 source("Persistence_10rivers_DataSource.R")
@@ -27,9 +27,9 @@ source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, beta_
 #### Visualize data
 ```{r, warning=FALSE, echo=FALSE}
 lapply(df, function(x) plot_grid(
- ggplot(x, aes(date, GPP, ymin = GPP-GPP_sd, ymax = GPP+GPP_sd))+
+ ggplot(x, aes(date, GPP, ymin = GPP.lower, ymax = GPP.upper))+
     geom_point(color="chartreuse4", size=2)+
-    geom_errorbar(width=0.2)+
+    geom_errorbar(width=0.2,color="chartreuse4")+
     labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),
@@ -134,7 +134,7 @@ df_Ricker_simGPP <- lapply(df_Ricker_all, function(x) {x$simGPP_PM3 <- PM3(r=x$r
                                                               s=x$s,
                                                               c=x$c,
                                                               sig_p=x$sig_p, df=x);return(x)})
-saveRDS(df_Ricker_simGPP, "Ricker_simGPP_10rivers.rds")
+#saveRDS(df_Ricker_simGPP, "Ricker_simGPP_10rivers.rds")
 
 #vis
 sim_viz <- function(x){
@@ -263,29 +263,30 @@ PM3_IN_OUT <- PM3_IN_OUT[-which(PM3_IN_OUT == "nwis_04136000"),]
 
 # Plot
 theme_set(theme_bw())
-col <- wes_palette("Zissou1", 9, type = "continuous")
+#col <- wes_palette("Zissou1", 9, type = "continuous")
+col <- brewer.pal(9, "Paired")
 
 # c("s","c",expression(r[max]),expression(sigma[p]),expression(lambda))
 param_labs <-c('s'="s",'c'="c",'r'=expression(r[max]),'sig_p'=expression(sigma[p]),'lambda'=expression(lambda))
 
-ggplot(PM3_IN_OUT, aes(input_value, ParOutput_med, color=short_name))+
+ggplot(PM3_IN_OUT, aes(input_value, ParOutput_med, fill=short_name))+
     geom_abline(slope = 1, intercept = 0, color="grey", size=1)+
     geom_linerange(data=PM3_IN_OUT[-which(PM3_IN_OUT$Param == "lambda"),], aes(ymin = ParOutput_low, ymax= ParOutput_up), color="black",size=1)+
     geom_linerange(data=PM3_IN_OUT[which(PM3_IN_OUT$Param == "lambda"),], aes(ymin = ParOutput_up, ymax= ParOutput_low), color="black",size=1)+
-    geom_point(size=4)+
+    geom_point(size=4, shape=21, aes(fill=short_name))+
     labs(x = "Input Parameter Values", y="Median Posterior Values (CI in black)",title="PM3: Ricker")+
     facet_wrap(.~Param, ncol=1, scales = "free",labeller = labeller(Param = param_labs))+ #, scales = "free", ncol = 2)+
     theme(axis.text.x = element_text(angle = 45, hjust=1),
           axis.text = element_text(size=15),
           axis.title = element_text(size=20),
           strip.text = element_text(size=15),
-          legend.text = element_text(hjust = 0, size=12),
+          legend.text = element_text(size=14),
           panel.background = element_rect(color = "black", fill=NA, size=1),
           panel.grid = element_line(color="gray90"),
           legend.position = "bottom")+
     scale_x_continuous(labels=scaleFUN)+#, limits=c(exp(-6),exp(6)))+
     scale_y_continuous(labels=scaleFUN)+
-    scale_color_manual("", values=c("Potomac River, WV"=col[1],
+    scale_fill_manual("", values=c("Potomac River, WV"=col[1],
                                "Broad River, SC"=col[2],
                                "Saluda River, SC"=col[3],
                                "Chenoweth Run, KY"=col[4],
@@ -293,13 +294,59 @@ ggplot(PM3_IN_OUT, aes(input_value, ParOutput_med, color=short_name))+
                                "Sugar River, MI"=col[6],
                                "South Platte River, CO"=col[7],
                                "Medina River, TX"=col[8],
-                               "Clackamas River, OR"=col[9]))
+                               "Clackamas River, OR"=col[9]))+
+  guides(fill=guide_legend(nrow=3))
   
 
 
 
 
 ```
+
+```{r}
+## Map of sites
+
+# subset
+site_info_map <- site_info[,c("lon","lat","nwis_id")]
+site_info_map <- site_info_map[-which(site_info_map$nwis_id == "4136000"),]
+# revalue
+site_info_map$short_name <- revalue(as.character(site_info_map$nwis_id), replace = c("1608500"="Potomac River, WV",
+                                                                   "2156500"="Broad River, SC",
+                                                                   "2168504"="Saluda River, SC",
+                                                                   "3298150"="Chenoweth Run, KY",
+                                                                   "4121944"="Little Muskegon River, MI",
+                                                                   "5435950"="Sugar River, MI",
+                                                                   "6711565"="South Platte River, CO",
+                                                                   "8181500"="Medina River, TX",
+                                                                   "14211010"="Clackamas River, OR"))
+# transform to map
+sp_transformed <- usmap_transform(site_info_map)
+
+#plot
+#col <- wes_palette("IsleofDogs2", 9, type = "continuous")
+col <- brewer.pal(9, "Paired")
+
+plot_usmap() +
+  geom_point(data = sp_transformed, aes(x = lon.1, y = lat.1, fill=short_name),
+             size=4, shape=21)+
+    scale_fill_manual("", values=c("Potomac River, WV"=col[1],
+                               "Broad River, SC"=col[2],
+                               "Saluda River, SC"=col[3],
+                               "Chenoweth Run, KY"=col[4],
+                               "Little Muskegon River, MI"=col[5],
+                               "Sugar River, MI"=col[6],
+                               "South Platte River, CO"=col[7],
+                               "Medina River, TX"=col[8],
+                               "Clackamas River, OR"=col[9]))+
+  theme(legend.position = "right", legend.text = element_text(size=14))
+
+
+```
+
+
+
+
+
 
 
 
