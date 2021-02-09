@@ -48,12 +48,12 @@ mechB_extract_medians <- function(PM_par){
     med_P_ts <- apply(par$P,2,median)
     
     ## sd of ts parameters
-    Q.025_pred_GPP_ts <- apply(par$pred_GPP,2, function(x) quantile(x, probs = 0.025))
-    Q.975_pred_GPP_ts <- apply(par$pred_GPP,2, function(x) quantile(x, probs = 0.975))
-    Q.025_B_ts <- apply(par$B,2, function(x) quantile(x, probs = 0.025))
-    Q.975_B_ts <- apply(par$B,2, function(x) quantile(x, probs = 0.975))
-    Q.025_P_ts <- apply(par$P,2, function(x) quantile(x, probs = 0.025))
-    Q.975_P_ts <- apply(par$P,2, function(x) quantile(x, probs = 0.975))
+    Q.025_pred_GPP_ts <- apply(par$pred_GPP,2, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+    Q.975_pred_GPP_ts <- apply(par$pred_GPP,2, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
+    Q.025_B_ts <- apply(par$B,2, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+    Q.975_B_ts <- apply(par$B,2, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
+    Q.025_P_ts <- apply(par$P,2, function(x) quantile(x, probs = 0.025, na.rm = TRUE))
+    Q.975_P_ts <- apply(par$P,2, function(x) quantile(x, probs = 0.975, na.rm = TRUE))
     
     ## Compile in list and return
     med_par_ts <- list(med_par, med_pred_GPP_ts,med_B_ts, med_P_ts,

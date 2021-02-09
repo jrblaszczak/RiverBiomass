@@ -17,7 +17,7 @@ source("Simulated_ProductivityModel1_Autoregressive.R") # parameters: phi, alpha
 source("Simulated_ProductivityModel2_Logistic.R") # parameters: r, K, s, c, sig_p
 source("Simulated_ProductivityModel3_Ricker.R") # parameters: r, lambda, s, c, sig_p
 source("Simulated_ProductivityModel4_Ricker_lightadj.R") # parameters: alpha_1, lambda, s, c, sig_p
-source("Simulated_ProductivityModel5_Gompertz.R") # parameters: beta_0, beta_1, beta_2, s, c, sig_p
+source("Simulated_ProductivityModel5_Gompertz.R") # parameters: beta_0, beta_1, s, c, sig_p
 
 # for parameter extraction
 source("StanParameterExtraction_Source.R")
@@ -477,12 +477,12 @@ df_modB4_plot
 ## Model 5 Output - Gompertz
 ###############################
 ## no light modification ##
-pars5<-extract(stan_model_output_Gompertz[[1]], c("beta_0","beta_1","beta_2","s","c","B","P","pred_GPP","sig_p"))
+pars5<-extract(stan_model_output_Gompertz[[1]], c("beta_0","beta_1","s","c","B","P","pred_GPP","sig_p"))
 simmat5<-matrix(NA,length(df[,1]),length(unlist(pars5$beta_0)))
 rmsemat5<-matrix(NA,length(df[,1]),1)
 #Simulate
 for (i in 1:length(pars5$beta_0)){
-  simmat5[,i]<-PM5(pars5$beta_0[i],pars5$beta_1[i],pars5$beta_2[i],pars5$s[i],pars5$c[i],pars5$sig_p[i],df)
+  simmat5[,i]<-PM5(pars5$beta_0[i],pars5$beta_1[i],pars5$s[i],pars5$c[i],pars5$sig_p[i],df)
   rmsemat5[i]<-sqrt(sum((simmat5[,i]-df$GPP)^2)/length(df$GPP))
 }
 
@@ -498,7 +498,7 @@ for (i in 1:length(pars5_BL$beta_0)){
 
 ## Save simulation
 simmat5_list <- list(simmat5, simmat5_BL)
-saveRDS(simmat5_list, "Sim_matrix_Gompertz.rds")
+saveRDS(simmat5, "Sim_matrix_Gompertz.rds")
 saveRDS(rmsemat5, "RMSE_matrix_Gompertz.rds")
 # If already previously simulated
 simmat5_list <- readRDS("Sim_matrix_Gompertz.rds")
@@ -510,19 +510,17 @@ median_simmat5 <- apply(simmat5, 1, function(x) median(x, na.rm=TRUE))
 lower_simmat5 <- apply(simmat5, 1, function(x) quantile(x, probs = 0.025, na.rm=TRUE))
 upper_simmat5 <- apply(simmat5, 1, function(x) quantile(x, probs = 0.975, na.rm=TRUE))
 ## For every day extract median and CI
-median_simmat5_BL <- apply(simmat5_BL, 1, function(x) median(x, na.rm=TRUE))
-lower_simmat5_BL <- apply(simmat5_BL, 1, function(x) quantile(x, probs = 0.025, na.rm=TRUE))
-upper_simmat5_BL <- apply(simmat5_BL, 1, function(x) quantile(x, probs = 0.975, na.rm=TRUE))
-
+#median_simmat5_BL <- apply(simmat5_BL, 1, function(x) median(x, na.rm=TRUE))
+#lower_simmat5_BL <- apply(simmat5_BL, 1, function(x) quantile(x, probs = 0.025, na.rm=TRUE))
+#upper_simmat5_BL <- apply(simmat5_BL, 1, function(x) quantile(x, probs = 0.975, na.rm=TRUE))
 
 ## Plot simulated GPP
-df_sim5 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat5, lower_simmat5, upper_simmat5,
-                               median_simmat5_BL, lower_simmat5_BL, upper_simmat5_BL))
-colnames(df_sim5) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper",
-                       "sim_GPP_BL","sim_GPP_BL_lower","sim_GPP_BL_upper")
+df_sim5 <- as.data.frame(cbind(as.character(df$date), df$GPP, median_simmat5, lower_simmat5, upper_simmat5))
+                               #median_simmat5_BL, lower_simmat5_BL, upper_simmat5_BL))
+colnames(df_sim5) <- c("Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+                       #"sim_GPP_BL","sim_GPP_BL_lower","sim_GPP_BL_upper")
 df_sim5$Date <- as.POSIXct(as.character(df_sim5$Date), format="%Y-%m-%d")
-df_sim5[,2:8] <- apply(df_sim5[,2:8],2,function(x) as.numeric(as.character(x)))
-
+df_sim5[,2:5] <- apply(df_sim5[,2:5],2,function(x) as.numeric(as.character(x)))
 
 df_sim5_plot <- ggplot(df_sim5, aes(Date, GPP))+
   geom_point(size=2, color="black")+
@@ -561,7 +559,7 @@ plot_grid(df_sim5_plot,
 
 
 ## Plot latent B
-PM5_medpar <- mechB_extract_medians(rstan::extract(stan_model_output_Gompertz[[1]], c("beta_0","beta_1","beta_2","s","c","B","P","pred_GPP","sig_p")))
+PM5_medpar <- mechB_extract_medians(rstan::extract(stan_model_output_Gompertz[[1]], c("beta_0","beta_1","s","c","B","P","pred_GPP","sig_p")))
 
 df_modB5 <- as.data.frame(cbind(as.character(df$date), PM5_medpar$B, PM5_medpar$B_Q.025, PM5_medpar$B_Q.975))
 colnames(df_modB5) <- c("Date","B","B_lower","B_upper")
@@ -579,15 +577,6 @@ df_modB5_plot <- ggplot(df_modB5, aes(Date, exp(B)))+
         axis.title.x = element_blank(), axis.text = element_text(size=13),
         axis.title.y = element_text(size=15))
 df_modB5_plot
-
-
-
-
-
-
-
-
-
 
 
 

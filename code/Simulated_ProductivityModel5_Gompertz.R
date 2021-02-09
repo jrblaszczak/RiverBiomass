@@ -26,7 +26,7 @@ PM5 <- function(beta_0, beta_1, s, c, sig_p, df) {
 
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rtnorm(1, mean = (beta_0 + beta_1*log(B[(j-1)]))*P[j], sd = sig_p, upper=3.5)
+    B[j] = rtnorm(1, mean = (beta_0 + beta_1*B[(j-1)])*P[j], sd = sig_p, upper=3.5)
   }
   
   for (i in 2:Ndays){
@@ -71,7 +71,7 @@ PM5_BL <- function(beta_0, beta_1, s, c, a, sig_p, df) {
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rtnorm(1, mean = (beta_0 + beta_1*log(B[(j-1)]))*P[j], sd = sig_p, upper=3.5)
+    B[j] = rtnorm(1, mean = (beta_0 + beta_1*B[(j-1)])*P[j], sd = sig_p, upper=3.5)
   }
   
   for (i in 2:Ndays){
