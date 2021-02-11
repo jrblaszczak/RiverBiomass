@@ -18,7 +18,6 @@
     real B [Ndays]; // Biomass; g m-2
     real beta_0; // r 
     real beta_1; // r/K
-    real<lower=0> beta_2; // light coefficient
     
     // Light adjustment
     real<lower=0> a; // light attenuation coefficient to inform Kd
@@ -35,7 +34,7 @@
     for(i in 1:Ndays){
     P[i]=exp(-exp(s*(tQ[i]-c)));
     ben_light[i]=light[i]*exp(-1*a*turb[i]*depth[i]);
-    pred_GPP[i] =exp(B[i]);
+    pred_GPP[i] =ben_light[i]*exp(B[i]);
     }
     
     } 
@@ -44,7 +43,7 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ normal((beta_0 + beta_1*exp(B[(j-1)])+beta_2*ben_light[j])*P[j], sig_p);
+    B[j] ~ normal((beta_0 + beta_1*log(B[(j-1)]))*P[j], sig_p);
     }
  
     // Observation model
@@ -60,8 +59,7 @@
     s ~ normal(0,50)T[0,];
     a ~ normal(0,1)T[0,];
     beta_0 ~ normal(0,1);
-    beta_1 ~ normal(0,1); 
-    beta_2 ~ normal(0,1)T[0,];
+    beta_1 ~ normal(0,1);
     
     }
     

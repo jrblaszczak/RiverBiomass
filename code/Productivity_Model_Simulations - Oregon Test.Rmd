@@ -86,11 +86,11 @@ stan_model_output_AR <- lapply(stan_model_list[1:2], function(x) stan(x, data=st
 stan_model_output_Logistic <- lapply(stan_model_list[3:4], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
 stan_model_output_Ricker <- lapply(stan_model_list[5:6], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
 stan_model_output_Ricker_Ladj <- lapply(stan_model_list[7:8], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
-stan_model_output_Gompertz <- lapply(stan_model_list[9:10], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
+stan_model_output_Gompertz <- lapply(stan_model_list[9], function(x) stan(x, data=stan_data, chains=3, iter=5000, control=list(max_treedepth=12)))
 
 
 # View on shiny
-launch_shinystan(stan_model_output_Ricker_Ladj[[1]]) ## Click explore tab when new window opens
+launch_shinystan(stan_model_output_Gompertz[[1]]) ## Click explore tab when new window opens
 # Save Output
 saveRDS(stan_model_output_AR,"stan_model_output_AR.rds")
 saveRDS(stan_model_output_Logistic,"stan_model_output_Logistic.rds")
