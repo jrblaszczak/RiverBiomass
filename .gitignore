@@ -4,13 +4,6 @@
 
 # Large data files
 *data/
-*data/daily_predictions.tsv
-*data/NWIS_WI_data.csv
-*data/NWIS_WI_sitedata.csv
-*data/site_data.csv
-*data/Clackamas_daily_turb.csv
-*data/NWIS_OR_data.csv
-*data/NWIS_Psim_data.csv
 
 # Stan outputs
 *code/PM1_DataOutput.rds
