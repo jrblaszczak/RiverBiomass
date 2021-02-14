@@ -3,6 +3,7 @@
 .Rapp.history
 
 # Large data files
+*data/
 *data/daily_predictions.tsv
 *data/NWIS_WI_data.csv
 *data/NWIS_WI_sitedata.csv
@@ -42,8 +43,6 @@
 *code/RMSE_matrix_Logistic.rds
 *code/RMSE_matrix_Ricker.rds
 *code/RMSE_matrix_Ricker_lightadj.rds
-
-
 
 
 
