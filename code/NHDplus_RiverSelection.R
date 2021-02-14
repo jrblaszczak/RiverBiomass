@@ -1,25 +1,59 @@
-## Link Appling sites with NHDv2
+## Subset data from hypoxia database that is already linked to NHD
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
-         "tidyverse","data.table","sf","nhdplusTools"), require, character.only=T)
+         "tidyverse","data.table"), require, character.only=T)
 
-## Import site data
+## Import site data from Appling
 setwd("../data")
 site <- fread("site_data.csv")
 names(site)
 
-## Download NHD Plus data
-outdir <- "~/GitHub/RiverBiomass/data/NHDPlus"
-download_nhdplusv2(outdir,url = paste0("https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/",
-                          "Data/NationalData/NHDPlusV21_NationalData_Seamless",
-                          "_Geodatabase_Lower48_07.7zip"))
+## Import hypoxia dataset and subset to Appling
+hyp <- fread("GRDO_GEE_HA_NHD_2021_02_07.csv")
+PC <- hyp[which(hyp$DB_Source == "PC"),]
+names(PC)
 
-## Pair sites with NHDplus IDs
-test <- list(featureSource = "nwissite", featureID = "USGS-01021050")
-discover_nhdplus_id(nldi_feature = test)
+## Merge both based on siteID
+head(site$site_name); head(PC$SiteID)
+colnames(PC)[which(colnames(PC) == "SiteID")] <- "site_name"
 
-char <- discover_nldi_characteristics()
+df <- left_join(site, PC, by="site_name")
+
+## Export
+write.csv(df, "PC_site_attribs.csv")
+
+##########################################
+## Re-import for site selection
+##########################################
+setwd("../data")
+df <- fread("PC_site_attribs.csv")
+colnames(df)
+
+sub <- df[,c("site_name","ORD_STRA","NHD_STREAMORDE",
+              "Start_time","End_time","n_time",
+              "US_state")]
+
+## Need multiple years of data
+sub$Start_year <- year(sub$Start_time)
+sub$End_year <- year(sub$End_time)
+sub$n_years <- sub$End_year - sub$Start_year
+
+s <- sub[which(sub$n_years >=3),]
+
+## Compare to Savoy sites
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
