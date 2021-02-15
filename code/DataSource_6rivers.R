@@ -14,26 +14,24 @@ data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 
 site_info <- readRDS("../data/NWIS_6siteinfo_subset.rds")
 
-## Figure out how many days of data per site per year
+## How many days of data per site per year
 data$year <- year(data$date)
-data$site_year <- paste(data$site_name, data$year, sep="_")
 data_siteyears <- data %>%
   group_by(site_name, year) %>%
   tally()
-## Select the first of two years with the most data & minimal gap
-
-
-
-
-## subset to site years
-data <- subset(data, site_year %in% data_siteyears$site_year)
+## Select the first of two years
+data <- rbind(data[which(data$site_name == "nwis_08180700" & data$year %in% c(2010)),],
+                     data[which(data$site_name == "nwis_10129900" & data$year %in% c(2015)),],
+                     data[which(data$site_name == "nwis_03058000" & data$year %in% c(2014)),],
+                     data[which(data$site_name == "nwis_01649500" & data$year %in% c(2012)),],
+                     data[which(data$site_name == "nwis_14211010" & data$year %in% c(2009)),],
+                     data[which(data$site_name == "nwis_02234000" & data$year %in% c(2013)),])
 
 ## Create a GPP SD; SD = (CI - mean)/1.96
 data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
 
 ## Set any GPP < 0 to a small value close to 0
-data[which(data$GPP < 0 & data$GPP > -0.5),]$GPP <- sample(exp(-6):exp(-4), 1)
-data[which(data$GPP < -0.5),]$GPP <- sample(exp(-6):exp(-4), 1) ## eventually change to NA when figure out how to do so
+data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1)
 
 ## visualize
 ggplot(data, aes(date, GPP))+

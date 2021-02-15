@@ -140,7 +140,7 @@ site_subset <- rbind(TS[which(TS$site_name == "nwis_08180700" & TS$year %in% c(2
                TS[which(TS$site_name == "nwis_10129900" & TS$year %in% c(2015,2016)),],
                TS[which(TS$site_name == "nwis_03058000" & TS$year %in% c(2014,2015)),],
                TS[which(TS$site_name == "nwis_01649500" & TS$year %in% c(2012,2013)),],
-               TS[which(TS$site_name == "nwis_14211010" & TS$year %in% c(2009,2010)),],
+               TS[which(TS$site_name == "nwis_14211010" & TS$year %in% c(2012,2013)),],
                TS[which(TS$site_name == "nwis_02234000" & TS$year %in% c(2013,2014)),])
 
 ## NWIS site subset
