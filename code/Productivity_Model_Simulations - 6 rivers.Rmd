@@ -1,0 +1,358 @@
+---
+title: "Productivity Model Simulations - 10 river years"
+author: "J.R. Blaszczak, C.B. Yackulic, R.K. Shriver, R.O. Hall, Jr."
+output: html_document
+---
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE, include=FALSE}
+## See simulation_matrix_output.R for code to create figures
+
+# load packages
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
+         "tidyverse","rstan","bayesplot","shinystan",
+         "Metrics","MCMCglmm","wesanderson","gridExtra","usmap"), require, character.only=T)
+
+## Source data
+source("Persistence_10rivers_DataSource.R")
+df <- dat
+
+# source simulation models
+# input variables: GPP, GPP_sd, light, tQ
+source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
+#source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
+source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, beta_0, s, c, sig_p
+```
+
+
+#### Visualize data
+```{r, warning=FALSE, echo=FALSE}
+lapply(df, function(x) plot_grid(
+ ggplot(x, aes(date, GPP, ymin = GPP.lower, ymax = GPP.upper))+
+    geom_point(color="chartreuse4", size=2)+
+    geom_errorbar(width=0.2,color="chartreuse4")+
+    labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.title.x = element_blank(), axis.text = element_text(size=13),
+          axis.title.y = element_text(size=15)),
+  
+  ggplot(x, aes(date, tQ*1))+geom_line(size=1.5, color="deepskyblue4")+
+    geom_point(data=x, aes(date, light_rel), size=2, color="darkgoldenrod3")+
+    scale_y_continuous(sec.axis = sec_axis(~./1, name=expression("Relativized Q")))+
+    labs(y="Relativized Light", x="Date (2012)")+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.text = element_text(size=13),
+          axis.title = element_text(size=15)),
+  
+  align="hv",ncol=1)
+)
+
+## GPP vs light relationship
+lapply(df, function(x) ggplot(x, aes(light_rel, GPP))+
+  geom_point(size=2)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), x="Light (short-wave radiation) relative to annual max")+
+    theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.text = element_text(size=13),
+          axis.title = element_text(size=15))
+)
+
+```
+
+#### First-pass at approximating parameter estimates for different models
+```{r}
+####################
+## Stan data prep ##
+####################
+rstan_options(auto_write=TRUE)
+options(mc.cores=16)#parallel::detectCores())
+
+stan_data_compile <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP, GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+
+stan_data_l <- lapply(dat, function(x) stan_data_compile(x))
+
+###############################
+## Run Stan to get estimates ##
+###############################
+## PM - Phenomenological
+PM.AR_l_1to5 <- lapply(stan_data_l[1:5], function(x) stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+PM.AR_l_6to10 <- lapply(stan_data_l[6:10], function(x) stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+# Save Output
+saveRDS(PM.AR_l_1to5,"PM.AR_l_1to5.rds")
+saveRDS(PM.AR_l_6to10,"PM.AR_l_6to10.rds")
+
+## PM - Ricker
+PM.Ricker_l_1to5 <- lapply(stan_data_l[1:5], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+PM.Ricker_l_6to10 <- lapply(stan_data_l[6:10], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+# Save Output
+saveRDS(PM.Ricker_l_1to5,"PM.Ricker_l_1to5.rds")
+saveRDS(PM.Ricker_l_6to10,"PM.Ricker_l_6to10.rds")
+
+# View on shiny
+#launch_shinystan(PM2_DataOutput) ## Click explore tab when new window opens
+
+```
+
+
+#### Extract median estimate and simulate GPP data (despite poor parameter convergence)
+```{r, warning=FALSE}
+source("StanParameterExtraction_Source.R")
+
+##############
+## GPP Model
+##############
+PM.AR_l_1to5 <- readRDS("PM.AR_l_1to5.rds")
+PM.AR_l_6to10 <- readRDS("PM.AR_l_6to10.rds")
+PM.AR_l_all <- append(PM.AR_l_1to5, PM.AR_l_6to10)
+#Extract median value of posterior parameter estimates
+PM.AR_medpar_l <- lapply(PM.AR_l_all, function(x) phenom_extract_medians(rstan::extract(x, c("phi","alpha","beta","l_pred_GPP","sig_p"))))
+
+## Simulate data for each growth model
+df$simGPP_PM1 <- PM1(phi=PM1_medpar$par$phi,
+                     alpha=PM1_medpar$par$alpha,
+                     beta=PM1_medpar$par$beta,
+                     sig_p=PM1_medpar$par$sig_p, df=df)
+
+
+##################
+## Ricker Model
+##################
+PM.Ricker_l_1to5 <- readRDS("PM.Ricker_l_1to5.rds")
+PM.Ricker_l_6to10 <- readRDS("PM.Ricker_l_6to10.rds")
+PM.Ricker_l_all <- append(PM.Ricker_l_1to5, PM.Ricker_l_6to10)
+#Extract median value of posterior parameter estimates
+PM.Ricker_randpar_l <- lapply(PM.Ricker_l_all, function(x) mechB_randpar(rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p"))))
+
+## Simulate data
+df_Ricker_all <- Map(c, df, PM.Ricker_randpar_l)
+df_Ricker_simGPP <- lapply(df_Ricker_all, function(x) {x$simGPP_PM3 <- PM3(r=x$r,
+                                                              lambda=x$lambda,
+                                                              s=x$s,
+                                                              c=x$c,
+                                                              sig_p=x$sig_p, df=x);return(x)})
+#saveRDS(df_Ricker_simGPP, "Ricker_simGPP_10rivers.rds")
+
+#vis
+sim_viz <- function(x){
+sub <- as.data.frame(cbind(as.character(x$date), x$GPP, x$simGPP_PM3))
+  colnames(sub) <- c("date","GPP","simGPP_PM3")
+  sub$date <- as.POSIXct(as.character(sub$date), format="%Y-%m-%d")
+sub[2:3] <- apply(sub[2:3],2,function(x) as.numeric(as.character(x)))
+  
+  ggplot(sub, aes(date, GPP))+
+    geom_point()+
+    geom_line(data=sub, aes(date, simGPP_PM3))+
+    scale_y_continuous(limits = c(0,15))
+}
+lapply(df_Ricker_simGPP, function(x) sim_viz(x))
+
+#rmse
+rmse_calc <- function(x){
+  sub <- as.data.frame(cbind(as.character(x$date), x$GPP, x$simGPP_PM3))
+  colnames(sub) <- c("date","GPP","simGPP_PM3")
+  sub$date <- as.POSIXct(as.character(sub$date), format="%Y-%m-%d")
+sub[2:3] <- apply(sub[2:3],2,function(x) as.numeric(as.character(x)))
+  
+return(rmse(sub$GPP,sub$simGPP_PM3))
+  
+}
+
+lapply(df_Ricker_simGPP, function(x) rmse_calc(x))
+
+rm(PM.Ricker_l_1to5, PM.Ricker_l_6to10)
+```
+
+#### Recover parameter estimates from simulated data
+```{r}
+#######################
+## Stan data prep v2 ##
+#######################
+## Use df_Ricker_simGPP from previous code chunk
+
+## Compile Stan data
+stan_simdat_compile <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$simGPP_PM3, tQ = x$tQ, GPP_sd = x$GPP_sd)
+  return(data)
+}
+
+stan_simdat3_l <- lapply(df_Ricker_simGPP, function(x) stan_simdat_compile(x))
+
+###############################
+## Run Stan to get estimates ##
+###############################
+rstan_options(auto_write=TRUE)
+options(mc.cores= 16)#parallel::detectCores())
+
+#simPM1_DataOutput <- stan("Stan_ProductivityModel1_Autoregressive.stan", data=stan_simdat1, chains=3, iter=5000, control=list(max_treedepth=12) )
+#simPM2_DataOutput <- stan("Stan_ProductivityModel2_Logistic.stan", data=stan_simdat2, chains=3, iter=5000, control=list(max_treedepth=12) )
+#simPM3_DataOutput <- stan("Stan_ProductivityModel3_Ricker.stan", data=stan_simdat3, chains=3, iter=5000, control=list(max_treedepth=12) )
+
+## PM - Ricker - parameter recovery
+PM.Ricker_ParRecov_l_1to5 <- lapply(stan_simdat3_l[1:5], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+PM.Ricker_ParRecov_l_6to10 <- lapply(stan_simdat3_l[6:10], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+# Save Output
+saveRDS(PM.Ricker_ParRecov_l_1to5,"PM.Ricker_ParRecov_l_1to5.rds")
+saveRDS(PM.Ricker_ParRecov_l_6to10,"PM.Ricker_ParRecov_l_6to10.rds")
+
+
+#launch_shinystan(simPM3_DataOutput)
+# Save Output
+#saveRDS(simPM1_DataOutput,"simPM1_DataOutput.rds")
+#saveRDS(simPM2_DataOutput,"simPM2_DataOutput.rds")
+#saveRDS(simPM3_DataOutput,"simPM3_DataOutput_10Rivers.rds")
+```
+
+
+## Compare the Input versus Output
+```{r}
+## Source parameter extraction and recovery functions
+source("StanParameterExtraction_Source.R")
+source("PM_Evaluation_Functions.R")
+
+## Import if needed
+df_Ricker_simGPP <- readRDS("Ricker_simGPP_10rivers.rds")
+## Par out
+PM.Ricker_ParRecov_l_1to5 <- readRDS("PM.Ricker_ParRecov_l_1to5.rds")
+PM.Ricker_ParRecov_l_6to10 <- readRDS("PM.Ricker_ParRecov_l_6to10.rds")
+PM.Ricker_ParRecov_l_all <- append(PM.Ricker_ParRecov_l_1to5, PM.Ricker_ParRecov_l_6to10)
+rm(PM.Ricker_ParRecov_l_1to5, PM.Ricker_ParRecov_l_6to10)
+#Extract median value of posterior parameter estimates
+PM.Ricker_ParRecov_randpar_l <- lapply(PM.Ricker_ParRecov_l_all, function(x) mechB_randpar(rstan::extract(x, c("r","lambda","s","c","sig_p"))))
+
+
+
+## Compile input parameters
+PM3_par_IN <- ldply(lapply(df_Ricker_simGPP, function(x) return(c("r"=x$r,"lambda"=x$lambda,
+                                                            "s"=x$s,"c"=x$c,"sig_p"=x$sig_p))), data.frame)
+colnames(PM3_par_IN) <- c(".id","input_value")
+PM3_par_IN$Param <- rep(c("r","lambda","s","c","sig_p"), times=10)
+
+## Output parameter recovery
+PM3_par_OUT <- lapply(PM.Ricker_ParRecov_l_all, function(x) CI_par_PM3(rstan::extract(x)))
+PM3_par_OUT_df <- ldply(lapply(PM3_par_OUT, function(x) multriver_OUTpar_extract(x)), data.frame)
+
+## Comparison
+PM3_IN_OUT <- left_join(PM3_par_IN, PM3_par_OUT_df, by=c(".id","Param"))
+scaleFUN <- function(x) sprintf("%.1f", x)
+#ygb <- brewer.pal(10, "Paired")
+
+PM3_IN_OUT$Param <- factor(PM3_IN_OUT$Param, levels=c("r","lambda","s","c","sig_p"))
+
+## Add site info
+colnames(PM3_IN_OUT)[which(colnames(PM3_IN_OUT) == ".id")] <- "site_name"
+PM3_IN_OUT <- left_join(PM3_IN_OUT, site_info, by="site_name")
+
+PM3_IN_OUT$short_name <- revalue(PM3_IN_OUT$site_name, replace = c("nwis_01608500"="Potomac River, WV",
+                                                                   "nwis_02156500"="Broad River, SC",
+                                                                   "nwis_02168504"="Saluda River, SC",
+                                                                   "nwis_03298150"="Chenoweth Run, KY",
+                                                                   "nwis_04121944"="Little Muskegon River, MI",
+                                                                   "nwis_04136000"="Au Sable River, MI",
+                                                                   "nwis_05435950"="Sugar River, MI",
+                                                                   "nwis_06711565"="South Platte River, CO",
+                                                                   "nwis_08181500"="Medina River, TX",
+                                                                   "nwis_14211010"="Clackamas River, OR"))
+
+## Get rid of Au Sable River, MI for now
+PM3_IN_OUT <- PM3_IN_OUT[-which(PM3_IN_OUT == "nwis_04136000"),]
+
+
+# Plot
+theme_set(theme_bw())
+#col <- wes_palette("Zissou1", 9, type = "continuous")
+col <- brewer.pal(9, "Paired")
+
+# c("s","c",expression(r[max]),expression(sigma[p]),expression(lambda))
+param_labs <-c('s'="s",'c'="c",'r'=expression(r[max]),'sig_p'=expression(sigma[p]),'lambda'=expression(lambda))
+
+ggplot(PM3_IN_OUT, aes(input_value, ParOutput_med, fill=short_name))+
+    geom_abline(slope = 1, intercept = 0, color="grey", size=1)+
+    geom_linerange(data=PM3_IN_OUT[-which(PM3_IN_OUT$Param == "lambda"),], aes(ymin = ParOutput_low, ymax= ParOutput_up), color="black",size=1)+
+    geom_linerange(data=PM3_IN_OUT[which(PM3_IN_OUT$Param == "lambda"),], aes(ymin = ParOutput_up, ymax= ParOutput_low), color="black",size=1)+
+    geom_point(size=4, shape=21, aes(fill=short_name))+
+    labs(x = "Input Parameter Values", y="Median Posterior Values (CI in black)",title="PM3: Ricker")+
+    facet_wrap(.~Param, ncol=1, scales = "free",labeller = labeller(Param = param_labs))+ #, scales = "free", ncol = 2)+
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          axis.text = element_text(size=15),
+          axis.title = element_text(size=20),
+          strip.text = element_text(size=15),
+          legend.text = element_text(size=14),
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          panel.grid = element_line(color="gray90"),
+          legend.position = "bottom")+
+    scale_x_continuous(labels=scaleFUN)+#, limits=c(exp(-6),exp(6)))+
+    scale_y_continuous(labels=scaleFUN)+
+    scale_fill_manual("", values=c("Potomac River, WV"=col[1],
+                               "Broad River, SC"=col[2],
+                               "Saluda River, SC"=col[3],
+                               "Chenoweth Run, KY"=col[4],
+                               "Little Muskegon River, MI"=col[5],
+                               "Sugar River, MI"=col[6],
+                               "South Platte River, CO"=col[7],
+                               "Medina River, TX"=col[8],
+                               "Clackamas River, OR"=col[9]))+
+  guides(fill=guide_legend(nrow=3))
+  
+
+
+
+
+```
+
+```{r}
+## Map of sites
+
+# subset
+site_info_map <- site_info[,c("lon","lat","nwis_id")]
+site_info_map <- site_info_map[-which(site_info_map$nwis_id == "4136000"),]
+# revalue
+site_info_map$short_name <- revalue(as.character(site_info_map$nwis_id), replace = c("1608500"="Potomac River, WV",
+                                                                   "2156500"="Broad River, SC",
+                                                                   "2168504"="Saluda River, SC",
+                                                                   "3298150"="Chenoweth Run, KY",
+                                                                   "4121944"="Little Muskegon River, MI",
+                                                                   "5435950"="Sugar River, MI",
+                                                                   "6711565"="South Platte River, CO",
+                                                                   "8181500"="Medina River, TX",
+                                                                   "14211010"="Clackamas River, OR"))
+# transform to map
+sp_transformed <- usmap_transform(site_info_map)
+
+#plot
+#col <- wes_palette("IsleofDogs2", 9, type = "continuous")
+col <- brewer.pal(9, "Paired")
+
+plot_usmap() +
+  geom_point(data = sp_transformed, aes(x = lon.1, y = lat.1, fill=short_name),
+             size=4, shape=21)+
+    scale_fill_manual("", values=c("Potomac River, WV"=col[1],
+                               "Broad River, SC"=col[2],
+                               "Saluda River, SC"=col[3],
+                               "Chenoweth Run, KY"=col[4],
+                               "Little Muskegon River, MI"=col[5],
+                               "Sugar River, MI"=col[6],
+                               "South Platte River, CO"=col[7],
+                               "Medina River, TX"=col[8],
+                               "Clackamas River, OR"=col[9]))+
+  theme(legend.position = "right", legend.text = element_text(size=14))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

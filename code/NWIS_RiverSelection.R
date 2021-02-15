@@ -95,7 +95,7 @@ maxgap <- gap_per_year %>%
   group_by(site_name, year) %>%
   summarize_at(.vars = "gap", .funs = max)
 ## subset for sites with a max gap of 10 days
-sub_by_gap <- maxgap[which(maxgap$gap <= 10),]
+sub_by_gap <- maxgap[which(maxgap$gap <= 14),]
 length(levels(as.factor(sub_by_gap$site_name)))
 ## merge with number of days per year
 sub_by_gap <- merge(sub_by_gap, dat_per_year, by=c("site_name","year"))
@@ -111,8 +111,8 @@ TS_site <- s[which(s$site_name %in% high_q$site_name),]
 ## Assign a stream order classfication
 TS_site$order_group <- "NA"
 TS_site[which(TS_site$NHD_STREAMORDE %in% c(1,2)),]$order_group <- "small"
-TS_site[which(TS_site$NHD_STREAMORDE %in% c(3,4,5)),]$order_group <- "mid"
-TS_site[which(TS_site$NHD_STREAMORDE %in% c(6,7,8)),]$order_group <- "large"
+TS_site[which(TS_site$NHD_STREAMORDE %in% c(3,4)),]$order_group <- "mid"
+TS_site[which(TS_site$NHD_STREAMORDE %in% c(5,6)),]$order_group <- "large"
 
 ##################################################
 ## Choose rivers with higher productivity rates
@@ -125,22 +125,23 @@ colnames(TS_gpp) <- c("site_name","GPP_mean","GPP_max")
 TS_site <- left_join(TS_site, TS_gpp, by="site_name")
 
 ## View sites by river order
-View(TS_site[which(TS_site$GPP_mean > 1.5),c("site_name","long_name","order_group")])
+TS_highmean <- TS_site[which(TS_site$GPP_mean > 0.9),c("site_name","long_name","order_group")]
+View(sub_by_gap[which(sub_by_gap$site_name %in% TS_highmean$site_name),])
 
 ## plot
-ggplot(TS[which(TS$site_name == "nwis_04137500"),], aes(date, GPP))+
-  geom_point()
+ggplot(TS[which(TS$site_name == "nwis_14211010" & TS$year %in% c(2012,2013)),], aes(date, GPP))+
+  geom_line()
 
-## small: nwis_08180700 (Medina Riv, TX); nwis_10129900 (Silver Creek, UT)
-## mid: nwis_14211010 (Clackamas Riv, OR), nwis_04137500 (Au Sable Riv, MI)
-## large: nwis_07144100 (Little Arkansas Riv, KS), nwis_11044000 (Santa Margarita Riv, CA)
+## small: nwis_08180700 2010-2011 (Medina Riv, TX), nwis_10129900 2015-2016 (Silver Creek, UT)
+## mid: nwis_03058000 2014-2015 (West Fork, WV), nwis_01649500 2012-2013 (Anacostia Riv, MD)
+## large:  nwis_14211010 2009-2010 (Clackamas Riv, OR), nwis_02234000 2013-2014 (St. John Riv, FL)
 
-site_subset <- TS[which(TS$site_name %in% c("nwis_08180700",
-                                            "nwis_10129900",
-                                            "nwis_14211010",
-                                            "nwis_04137500",
-                                            "nwis_07144100",
-                                            "nwis_11044000")),]
+site_subset <- rbind(TS[which(TS$site_name == "nwis_08180700" & TS$year %in% c(2010,2011)),],
+               TS[which(TS$site_name == "nwis_10129900" & TS$year %in% c(2015,2016)),],
+               TS[which(TS$site_name == "nwis_03058000" & TS$year %in% c(2014,2015)),],
+               TS[which(TS$site_name == "nwis_01649500" & TS$year %in% c(2012,2013)),],
+               TS[which(TS$site_name == "nwis_14211010" & TS$year %in% c(2009,2010)),],
+               TS[which(TS$site_name == "nwis_02234000" & TS$year %in% c(2013,2014)),])
 
 ## NWIS site subset
 saveRDS(site_subset, "NWIS_6site_subset.rds")
