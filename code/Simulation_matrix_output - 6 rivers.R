@@ -1,4 +1,4 @@
-## Figures for model fit and RMSE comparison
+## Figures for model fit
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
@@ -20,7 +20,7 @@ source("StanParameterExtraction_Source.R")
 PM1.col <- "#d95f02"
 PM2.col <- "#7570b3"
 PM3.col <- "#1C474D"
-PM5.col <- "#743731"
+PM4.col <- "#743731"
 
 ## Change river names to short names
 site_info[,c("site_name","long_name","NHD_STREAMORDE")]
@@ -31,11 +31,11 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
                                                                                "nwis_10129900"="Silver Creek, UT",
                                                                                "nwis_14211010"="Clackamas River, OR"))
 
-## Import stan fits
+## Import stan fits - simulate one at a time
 #stan_model_output_AR <- readRDS("stan_6riv_output_AR.rds")
 #stan_model_output_Logistic <- readRDS("stan_6riv_output_Logistic.rds")
 #stan_model_output_Ricker <- readRDS("stan_6riv_output_Ricker.rds")
-stan_model_output_Gompertz <- readRDS("stan_6riv_output_Gompertz.rds")
+#stan_model_output_Gompertz <- readRDS("stan_6riv_output_Gompertz.rds")
 
 ##########################
 ## Model 1 Output - AR
@@ -354,7 +354,7 @@ Gompertz_sim_fxn <- function(x){
     rmsemat5[i]<-sqrt(sum((simmat5[,i]-df$GPP)^2)/length(df$GPP))
   }
   
-  l <- list(simmat4, rmsemat4)
+  l <- list(simmat5, rmsemat5)
   return(l)
   
 }
@@ -391,24 +391,24 @@ df_sim4$short_name <- factor(df_sim4$short_name, levels=c("Silver Creek, UT",
 ## Plot
 df_sim4_plot <- ggplot(df_sim4, aes(Date, GPP))+
   geom_point(size=2, color="black")+
-  geom_line(aes(Date, sim_GPP), color=PM5.col, size=1.2)+
+  geom_line(aes(Date, sim_GPP), color=PM4.col, size=1.2)+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM4: Gompertz")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
-              fill=PM5.col, alpha=0.2, show.legend = FALSE)+
+              fill=PM4.col, alpha=0.2, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=12),
         axis.title.y = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
         strip.background = element_rect(fill="white", color="black"),
         strip.text = element_text(size=15))+
-  facet_wrap(~short_name, scales = "free_x", ncol = 2)
+  facet_wrap(~short_name, scales = "free", ncol = 2)
 
 df_sim4_plot
 
 
 ## Plot latent B
 PM4_medpar <- ldply(lapply(stan_model_output_Gompertz,
-                           function(x) mechB_extract_medians(rstan::extract(x,c("r","lambda",
+                           function(x) mechB_extract_medians(rstan::extract(x,c("beta_0","beta_1",
                                                                                 "s","c","B",
                                                                                 "P","pred_GPP","sig_p")))),
                     data.frame)
@@ -445,72 +445,3 @@ df_modB4_plot
 
 
 
-
-
-
-
-
-
-
-
-
-##################################################
-## Compare simulations and RMSE of all models
-###################################################
-## simulation comparison
-plot_grid(
-  df_sim1_plot,
-  df_sim2_plot,
-  df_sim3_plot,
-  df_sim4_plot,
-  df_sim5_plot,
-  ncol=1
-)
-
-plot_grid(
-  df_sim3_plot+scale_y_continuous(limits=c(0,15)),
-  df_modB3_plot, ncol=1)
-
-## RMSE comparison
-#rmsemat_list <- readRDS("rmsemat_list.rds")
-rmse_comp <- as.data.frame(as.matrix(cbind(rmsemat1, rmsemat2, rmsemat3, rmsemat4, rmsemat5)))
-colnames(rmse_comp) <- c("PM1: GPP RMSE","PM2: Logistic RMSE",
-                         "PM3: Ricker RMSE","PM4: Ricker Light Adj. RMSE","PM5: Gompertz RMSE")
-rmse_comp_long <- gather(rmse_comp)
-
-rmse_comp_mean <- rmse_comp_long %>%
-  group_by(key) %>%
-  summarise(rating.mean = mean(na.omit(value)))
-
-ggplot(rmse_comp_long, aes(value, fill=key))+
-  geom_density(alpha=0.5)+
-  scale_fill_manual("",values=c("PM1: GPP RMSE" = PM1.col,"PM2: Logistic RMSE" = PM2.col,
-                                "PM3: Ricker RMSE" = PM3.col,"PM4: Ricker Light Adj. RMSE" = PM4.col,
-                                "PM5: Gompertz RMSE" = PM5.col))+
-  scale_x_continuous(trans="log", limits=c(1,40), breaks = c(1,3,5,10,30), expand = c(0.01,0.01))+
-  scale_y_continuous(expand = c(0,0.01))+
-  theme(panel.background = element_rect(color = "black", fill=NA, size=1),
-        axis.title.x = element_text(size=15), axis.text = element_text(size=13),
-        axis.title.y = element_text(size=15),
-        legend.position = c(.5, .95),
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6),
-        legend.text = element_text(size=14))+
-  labs(y="Density",x="Daily RMSE")+
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[1],
-             color=PM1.col, linetype = "dashed", size = 1)+
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[2],
-             color=PM2.col, linetype = "dashed", size = 1)+
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[3],
-             color=PM3.col, linetype = "dashed", size = 1)+
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[4],
-             color=PM4.col, linetype = "dashed", size = 1)+
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[5],
-             color=PM5.col, linetype = "dashed", size = 1)
-
-
-
-
-
-        
