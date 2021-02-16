@@ -34,9 +34,9 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
 
 ## Import stan fits
 stan_model_output_AR <- readRDS("stan_6riv_output_AR.rds")
-stan_model_output_Logistic <- readRDS("stan_model_output_Logistic.rds")
-stan_model_output_Ricker <- readRDS("stan_model_output_Ricker.rds")
-stan_model_output_Gompertz <- readRDS("stan_model_output_Gompertz.rds")
+stan_model_output_Logistic <- readRDS("stan_6riv_output_Logistic.rds")
+stan_model_output_Ricker <- readRDS("stan_6riv_output_Ricker.rds")
+stan_model_output_Gompertz <- readRDS("stan_6riv_output_Gompertz.rds")
 
 ##########################
 ## Model 1 Output - AR

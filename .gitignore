@@ -39,8 +39,11 @@
 *code/stan_6riv_output_AR.rds
 *code/stan_6riv_output_Logistic.rds
 *code/stan_6riv_output_Ricker.rds
+*code/stan_6riv_output_Gompertz.rds
 *code/Sim_6riv_AR.rds
-
+*code/Sim_6riv_Logistic.rds
+*code/Sim_6riv_Ricker.rds
+*code/Sim_6riv_Gompertz.rds
 
 
 # Session Data files
