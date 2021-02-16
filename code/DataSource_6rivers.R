@@ -21,17 +21,17 @@ data_siteyears <- data %>%
   tally()
 ## Select the first of two years
 data <- rbind(data[which(data$site_name == "nwis_08180700" & data$year %in% c(2010)),],
-                     data[which(data$site_name == "nwis_10129900" & data$year %in% c(2015)),],
-                     data[which(data$site_name == "nwis_03058000" & data$year %in% c(2014)),],
-                     data[which(data$site_name == "nwis_01649500" & data$year %in% c(2012)),],
-                     data[which(data$site_name == "nwis_14211010" & data$year %in% c(2009)),],
-                     data[which(data$site_name == "nwis_02234000" & data$year %in% c(2013)),])
-
-## Create a GPP SD; SD = (CI - mean)/1.96
-data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
+              data[which(data$site_name == "nwis_10129900" & data$year %in% c(2015)),],
+              data[which(data$site_name == "nwis_03058000" & data$year %in% c(2014)),],
+              data[which(data$site_name == "nwis_01649500" & data$year %in% c(2012)),],
+              data[which(data$site_name == "nwis_14211010" & data$year %in% c(2012)),],
+              data[which(data$site_name == "nwis_02234000" & data$year %in% c(2013)),])
 
 ## Set any GPP < 0 to a small value close to 0
 data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1)
+
+## Create a GPP SD; SD = (CI - mean)/1.96
+data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
 
 ## visualize
 ggplot(data, aes(date, GPP))+
