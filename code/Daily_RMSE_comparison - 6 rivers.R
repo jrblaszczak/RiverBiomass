@@ -78,7 +78,7 @@ ggplot(rmse_comp_long, aes(x=variable, y=value, fill=variable, group=variable))+
   facet_wrap(~short_name, ncol = 2)+
   scale_fill_manual("",values=c("PM1: GPP" = PM1.col,"PM2: Logistic" = PM2.col,
                                 "PM3: Ricker" = PM3.col,"PM4: Gompertz" = PM4.col))+
-  labs(y="",y="Daily RMSE")+
+  labs(y="Within-Sample Daily RMSE")+
   theme(legend.position = "right",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=12),

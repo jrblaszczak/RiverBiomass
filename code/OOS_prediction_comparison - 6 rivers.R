@@ -333,9 +333,9 @@ Gompertz_sim_fxn <- function(x){
 Gompertz_sim <- lapply(Gompertz_list, function(x) Gompertz_sim_fxn(x))
 
 ## Save simulation
-saveRDS(Gompertz_sim, "Sim_6riv_Gompertz.rds")
+saveRDS(Gompertz_sim, "Sim_6riv_Gompertz_oos.rds")
 ## If previously simulated
-simmat4_list <- readRDS("Sim_6riv_Gompertz.rds")
+simmat4_list <- readRDS("Sim_6riv_Gompertz_oos.rds")
 
 # For every day extract median and CI
 median_simmat4 <- ldply(lapply(simmat4_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
@@ -343,7 +343,7 @@ lower_simmat4 <- ldply(lapply(simmat4_list, function(z) apply(z[[1]], 1, functio
 upper_simmat4 <- ldply(lapply(simmat4_list, function(z) apply(z[[1]], 1, function(x) quantile(x, probs = 0.975))), data.frame)
 
 ## Plot simulated GPP
-dat4 <- ldply(dat, data.frame)
+dat4 <- ldply(dat_oos, data.frame)
 df_sim4 <- as.data.frame(cbind(dat4$site_name, as.character(dat4$date),
                                dat4$GPP, median_simmat4$X..i.., lower_simmat4$X..i.., upper_simmat4$X..i..))
 colnames(df_sim4) <- c("site_name","Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
@@ -363,7 +363,7 @@ df_sim4$short_name <- factor(df_sim4$short_name, levels=c("Silver Creek, UT",
 df_sim4_plot <- ggplot(df_sim4, aes(Date, GPP))+
   geom_point(size=2, color="black")+
   geom_line(aes(Date, sim_GPP), color=PM4.col, size=1.2)+
-  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM4: Gompertz")+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM4: Gompertz Out-of-Sample Prediction")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM4.col, alpha=0.2, show.legend = FALSE)+
   theme(legend.position = "none",
@@ -372,7 +372,7 @@ df_sim4_plot <- ggplot(df_sim4, aes(Date, GPP))+
         axis.title.y = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
         strip.background = element_rect(fill="white", color="black"),
         strip.text = element_text(size=15))+
-  facet_wrap(~short_name, scales = "free", ncol = 2)
+  facet_wrap(~short_name, scales = "free_x", ncol = 2)
 
 df_sim4_plot
 

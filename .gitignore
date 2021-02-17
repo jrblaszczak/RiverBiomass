@@ -6,48 +6,7 @@
 *data/
 
 # Stan outputs
-*code/PM1_DataOutput.rds
-*code/PM2_DataOutput.rds
-*code/PM3_DataOutput.rds
-*code/simPM1_DataOutput.rds
-*code/simPM2_DataOutput.rds
-*code/simPM3_DataOutput.rds
-*code/PM2_l_1to5.rds
-*code/PM2_l_6to10.rds
-*code/PM.Ricker_l_1to5.rds
-*code/PM.Ricker_l_6to10.rds
-*code/PM.AR_l_1to5.rds
-*code/PM.AR_l_6to10.rds
-*code/stan_model_output_AR.rds
-*code/stan_model_output_Logistic.rds
-*code/stan_model_output_Ricker.rds
-*code/stan_model_output_Ricker_Ladj.rds
-*code/stan_model_output_Gompertz.rds
-*code/Sim_matrix_Logistic.rds
-*code/Sim_matrix_AR.rds
-*code/Sim_matrix_Ricker.rds
-*code/Sim_matrix_Ricker_lightadj.rds
-*code/Sim_matrix_Gompertz.rds
-*code/PM.Ricker_ParRecov_l_1to5.rds
-*code/PM.Ricker_ParRecov_l_6to10.rds
-*code/Ricker_simGPP_10rivers.rds
-*code/RMSE_matrix_AR.rds
-*code/RMSE_matrix_Gompertz.rds
-*code/RMSE_matrix_Logistic.rds
-*code/RMSE_matrix_Ricker.rds
-*code/RMSE_matrix_Ricker_lightadj.rds
-*code/stan_6riv_output_AR.rds
-*code/stan_6riv_output_Logistic.rds
-*code/stan_6riv_output_Ricker.rds
-*code/stan_6riv_output_Gompertz.rds
-*code/Sim_6riv_AR.rds
-*code/Sim_6riv_Logistic.rds
-*code/Sim_6riv_Ricker.rds
-*code/Sim_6riv_Gompertz.rds
-*code/Sim_6riv_AR_oos.rds
-*code/Sim_6riv_Logistic_oos.rds
-*code/Sim_6riv_Ricker_oos.rds
-*code/Sim_6riv_Gompertz_oos.rds
+*code/rds files/
 
 # Session Data files
 .RData
