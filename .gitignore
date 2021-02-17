@@ -44,7 +44,10 @@
 *code/Sim_6riv_Logistic.rds
 *code/Sim_6riv_Ricker.rds
 *code/Sim_6riv_Gompertz.rds
-
+*code/Sim_6riv_AR_oos.rds
+*code/Sim_6riv_Logistic_oos.rds
+*code/Sim_6riv_Ricker_oos.rds
+*code/Sim_6riv_Gompertz_oos.rds
 
 # Session Data files
 .RData

@@ -51,8 +51,8 @@ rmsemat4 <- ldply(lapply(simmat4_list, function(x) return(x[[2]])), data.frame)
 
 ## Combine
 rmse_comp <- as.data.frame(as.matrix(cbind(rmsemat1, rmsemat2$X..i.., rmsemat3$X..i.., rmsemat4$X..i..)))
-colnames(rmse_comp) <- c("site_name","PM1: GPP RMSE","PM2: Logistic RMSE",
-                         "PM3: Ricker RMSE","PM4: Gompertz RMSE")
+colnames(rmse_comp) <- c("site_name","PM1: GPP","PM2: Logistic",
+                         "PM3: Ricker","PM4: Gompertz")
 rmse_comp$site_name <- as.factor(rmse_comp$site_name)
 rmse_comp_long <- melt(rmse_comp, id.vars = "site_name")
 rmse_comp_long$value <- as.numeric(as.character(rmse_comp_long$value))
@@ -61,41 +61,39 @@ rmse_comp_mean <- rmse_comp_long %>%
   group_by(site_name, variable) %>%
   summarise(rating.mean = mean(na.omit(value)))
 
+## Arrange rivers by river order
+rmse_comp_long <- left_join(rmse_comp_long, site_info[,c("site_name","short_name")])
+rmse_comp_long$short_name <- factor(rmse_comp_long$short_name, levels=c("Silver Creek, UT",
+                                                            "Medina River, TX",
+                                                            "Anacostia River, MD",
+                                                            "West Fork River, WV",
+                                                            "St. John's River, FL",
+                                                            "Clackamas River, OR"))
+
+
+## Visualize
+ggplot(rmse_comp_long, aes(x=variable, y=value, fill=variable, group=variable))+
+  geom_jitter(size=0.2, color="gray75", width=0.3)+
+  geom_boxplot(alpha=0.5, outlier.shape = NA)+ 
+  facet_wrap(~short_name, ncol = 2)+
+  scale_fill_manual("",values=c("PM1: GPP" = PM1.col,"PM2: Logistic" = PM2.col,
+                                "PM3: Ricker" = PM3.col,"PM4: Gompertz" = PM4.col))+
+  labs(y="",y="Daily RMSE")+
+  theme(legend.position = "right",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=12),
+        axis.title.y = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
+        strip.background = element_rect(fill="white", color="black"),
+        strip.text = element_text(size=12))+
+  scale_y_continuous(trans="log", limits=c(1,40), breaks = c(1,3,10,30), expand = c(0.01,0.01))
+
+
+## Anova
 rmse_list <- split(rmse_comp_long, rmse_comp_long$site_name)
-lapply(rmse_list, function(x) summary(aov(value ~ variable, data=x)))
-
-ggplot(rmse_comp_long, aes(value, fill=as.factor(variable)))+
-  geom_boxplot(alpha=0.5)+ coord_flip()+
-  facet_wrap(~site_name, ncol = 2)+
-  scale_x_continuous(trans = "log")
-
-  scale_fill_manual("",values=c("PM1: GPP RMSE" = PM1.col,"PM2: Logistic RMSE" = PM2.col,
-                                "PM3: Ricker RMSE" = PM3.col,"PM4: Gompertz RMSE" = PM4.col))+
-  scale_x_continuous(trans="log", limits=c(1,40), breaks = c(1,3,5,10,30), expand = c(0.01,0.01))+
-  scale_y_continuous(expand = c(0,0.01))+
-  theme(panel.background = element_rect(color = "black", fill=NA, size=1),
-        axis.title.x = element_text(size=15), axis.text = element_text(size=13),
-        axis.title.y = element_text(size=15),
-        legend.position = "none",#c(.5, .95),
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6),
-        legend.text = element_text(size=14))+
-  labs(y="Density",x="Daily RMSE")+
-  facet_wrap(~site_name, scales = "free_x", ncol = 2)
-
-
-
-
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[1],
-             color=PM1.col, linetype = "dashed", size = 1)
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[2],
-             color=PM2.col, linetype = "dashed", size = 1)
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[3],
-             color=PM3.col, linetype = "dashed", size = 1)
-  geom_vline(xintercept = rmse_comp_mean$rating.mean[4],
-             color=PM4.col, linetype = "dashed", size = 1)
-
+rmse_anova <- lapply(rmse_list, function(x) aov(value ~ variable, data=x))
+lapply(rmse_anova, function(x) summary(x))
+rmse_tukey <- lapply(rmse_anova, function(x) TukeyHSD(x))
+lapply(rmse_tukey, function(x) print(x))
 
 
 
