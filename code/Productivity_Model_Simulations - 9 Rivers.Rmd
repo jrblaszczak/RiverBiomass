@@ -42,12 +42,14 @@ PM_outputlist_AR <- lapply(stan_data_l, function(x) rstan::stan("Stan_Productivi
 saveRDS(PM_outputlist_AR, "./rds files/stan_9riv_output_AR.rds") 
 
 ## PM 3 - Ricker
-PM_outputlist_Ricker <- lapply(stan_data_l[1:2], function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #84 seconds
+PM_outputlist_Ricker <- lapply(stan_data_l, function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #78 seconds
 saveRDS(PM_outputlist_Ricker, "./rds files/stan_9riv_output_Ricker.rds")
 
 ## PM 4 - Gompertz
 PM_outputlist_Gompertz <- lapply(stan_data_l, function(x) stan("Stan_ProductivityModel5_Gompertz.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
 saveRDS(PM_outputlist_Gompertz, "./rds files/stan_3newriv_output_Gompertz.rds")
+
+launch_shinystan(PM_outputlist_Ricker$nwis_01645762)
 
 ## See simulation_matrix_output.R for code to create figures
 ```
@@ -57,7 +59,6 @@ saveRDS(PM_outputlist_Gompertz, "./rds files/stan_3newriv_output_Gompertz.rds")
 ```{r, warning=FALSE}
 # source simulation models
 source("Simulated_ProductivityModel1_Autoregressive.R") # estimated parameters: phi, alpha, beta, sig_p
-source("Simulated_ProductivityModel2_Logistic.R") # estimated parameters: r, K, s, c, sig_p
 source("Simulated_ProductivityModel3_Ricker.R") # estimated parameters: r, lambda, s, c, sig_p
 source("Simulated_ProductivityModel5_Gompertz.R") # estimated parameters: beta_0, beta_1, s, c, sig_p
 

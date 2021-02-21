@@ -34,9 +34,9 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
                                                                                "nwis_04137500"="Au Sable River, MI"))
 
 ## Import stan fits - simulate one at a time
-stan_model_output_AR <- readRDS("./rds files/stan_9riv_output_AR.rds")
-#stan_model_output_Ricker <- readRDS("stan_6riv_output_Ricker.rds")
-#stan_model_output_Gompertz <- readRDS("stan_6riv_output_Gompertz.rds")
+#stan_model_output_AR <- readRDS("./rds files/stan_9riv_output_AR.rds")
+#stan_model_output_Ricker <- readRDS("stan_9riv_output_Ricker.rds")
+#stan_model_output_Gompertz <- readRDS("stan_9riv_output_Gompertz.rds")
 
 ##########################
 ## Model 1 Output - AR
@@ -70,9 +70,9 @@ AR_sim_fxn
 AR_sim <- lapply(AR_list, function(x) AR_sim_fxn(x))
 
 ## Save simulation
-saveRDS(AR_sim, "Sim_6riv_AR.rds")
+saveRDS(AR_sim, "Sim_9riv_AR.rds")
 ## If previously simulated
-simmat1_list <- readRDS("Sim_6riv_AR.rds")
+simmat1_list <- readRDS("Sim_9riv_AR.rds")
 
 # For every day extract median and CI
 median_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
@@ -117,8 +117,10 @@ df_sim1_plot
 ###############################
 ## Model 2 Output - Ricker
 ###############################
-names(dat); names(stan_model_output_Ricker)
-Ricker_list <- Map(c, stan_model_output_Ricker, dat)
+stan_model_output_Ricker <- PM_outputlist_Ricker
+
+names(dat[1:2]); names(stan_model_output_Ricker)
+Ricker_list <- Map(c, stan_model_output_Ricker, dat[1:2])
 
 Ricker_sim_fxn <- function(x){
   #separate data
@@ -128,14 +130,16 @@ Ricker_sim_fxn <- function(x){
   # extract
   pars3<-extract(output, c("r","lambda","s","c","B","P","pred_GPP","sig_p"))
   simmat3<-matrix(NA,length(df$GPP),length(unlist(pars3$sig_p)))
+  biomat3<-matrix(NA,length(df$GPP),length(unlist(pars3$sig_p)))
   rmsemat3<-matrix(NA,length(df$GPP),1)
   #Simulated
   for (i in 1:length(pars3$r)){
     simmat3[,i]<-PM3(pars3$r[i],pars3$lambda[i],pars3$s[i],pars3$c[i],pars3$sig_p[i],df)
+    biomat3[,i]<-PM3_B(pars3$r[i],pars3$lambda[i],pars3$s[i],pars3$c[i],pars3$sig_p[i],df)
     rmsemat3[i]<-sqrt(sum((simmat3[,i]-df$GPP)^2)/length(df$GPP))
   }
 
-  l <- list(simmat3, rmsemat3)
+  l <- list(simmat3, biomat3, rmsemat3)
   return(l)
   
 }
@@ -143,9 +147,10 @@ Ricker_sim_fxn <- function(x){
 Ricker_sim <- lapply(Ricker_list, function(x) Ricker_sim_fxn(x))
 
 ## Save simulation
-saveRDS(Ricker_sim, "Sim_6riv_Ricker.rds")
+saveRDS(Ricker_sim, "Sim_9riv_Ricker.rds")
 ## If previously simulated
-simmat3_list <- readRDS("Sim_6riv_Ricker.rds")
+simmat3_list <- readRDS("Sim_9riv_Ricker.rds")
+simmat3_list <- Ricker_sim
 
 # For every day extract median and CI
 median_simmat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
@@ -254,9 +259,9 @@ Gompertz_sim_fxn <- function(x){
 Gompertz_sim <- lapply(Gompertz_list, function(x) Gompertz_sim_fxn(x))
 
 ## Save simulation
-saveRDS(Gompertz_sim, "Sim_6riv_Gompertz.rds")
+saveRDS(Gompertz_sim, "Sim_9riv_Gompertz.rds")
 ## If previously simulated
-simmat4_list <- readRDS("Sim_6riv_Gompertz.rds")
+simmat4_list <- readRDS("Sim_9riv_Gompertz.rds")
 
 # For every day extract median and CI
 median_simmat4 <- ldply(lapply(simmat4_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
