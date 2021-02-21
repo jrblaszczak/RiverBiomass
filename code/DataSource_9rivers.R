@@ -9,10 +9,10 @@ lapply(c("plyr","dplyr","ggplot2","cowplot",
 ##############################
 ## Data Import & Processing ##
 ##############################
-data <- readRDS("../rds files/NWIS_6site_subset.rds")
+data <- readRDS("./rds files/NWIS_9site_subset.rds")
 data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 
-site_info <- readRDS("../data/NWIS_6siteinfo_subset.rds")
+site_info <- readRDS("./rds files/NWIS_9siteinfo_subset.rds")
 
 ## How many days of data per site per year
 data$year <- year(data$date)
@@ -25,7 +25,10 @@ data <- rbind(data[which(data$site_name == "nwis_08180700" & data$year %in% c(20
               data[which(data$site_name == "nwis_03058000" & data$year %in% c(2014)),],
               data[which(data$site_name == "nwis_01649500" & data$year %in% c(2012)),],
               data[which(data$site_name == "nwis_14211010" & data$year %in% c(2012)),],
-              data[which(data$site_name == "nwis_02234000" & data$year %in% c(2013)),])
+              data[which(data$site_name == "nwis_02234000" & data$year %in% c(2013)),],
+              data[which(data$site_name == "nwis_01645762" & data$year %in% c(2012)),],
+              data[which(data$site_name == "nwis_01649190" & data$year %in% c(2010)),],
+              data[which(data$site_name == "nwis_04137500" & data$year %in% c(2010)),])
 
 ## Set any GPP < 0 to a small value close to 0
 data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1)
