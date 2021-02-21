@@ -19,7 +19,7 @@
     //real a; // light attenuation coefficient to inform Kd
     
     // Logistic growth parameters  
-    real B [Ndays-1]; // Biomass; g m-2
+    real B [Ndays]; // Biomass; g m-2
     real r; // growth rate; d-1
     real lambda; // r/K
     
@@ -36,8 +36,9 @@
     P[i]=exp(-exp(s*(tQ[i]-c)));
     //ben_light[i]=light[i]*exp(-1*a*turb[i]*depth[i]);
     pred_GPP[i] =light[i]*exp(B[i]);
+    }
     
-    }}
+    }
     
    
     model {
@@ -70,3 +71,9 @@
     //a ~ normal(0,1);
     
     }
+
+
+
+
+
+

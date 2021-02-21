@@ -33,7 +33,9 @@ PM5 <- function(beta_0, beta_1, s, c, sig_p, df) {
     pred_GPP[i] <- norm(1, mean = light[i]*exp(B[i]), sd = obs_err[i])
   }
   
-  return(pred_GPP)
+  GPP_B <- cbind(pred_GPP, B)
+  
+  return(GPP_B)
   
 }
 
