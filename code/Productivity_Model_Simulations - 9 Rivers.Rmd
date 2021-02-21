@@ -6,7 +6,6 @@ output: html_document
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE, include=FALSE}
 ## See simulation_matrix_output.R for code to create figures
-
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "parallel","tidyverse","rstan",
@@ -36,7 +35,7 @@ stan_data_l <- lapply(dat, function(x) stan_data_compile(x))
 ## Run Stan to get estimates ##
 ###############################
 ## PM 1 - Phenomenological
-PM_outputlist_AR <- lapply(stan_data_l, function(x) stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+PM_outputlist_AR <- lapply(stan_data_l, function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
 saveRDS(PM_outputlist_AR, "./rds files/stan_9riv_output_AR.rds") 
 ## PM 3 - Ricker
 PM_outputlist_Ricker <- lapply(stan_data_l, function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
