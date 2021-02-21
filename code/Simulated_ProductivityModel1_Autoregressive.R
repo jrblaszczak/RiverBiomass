@@ -9,18 +9,17 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   tQ <- df$tQ # discharge standardized to max value
   
   ## Error
-  #proc_err <- rlnorm(Ndays, meanlog = 0, sdlog = sig_p) # no longer here, because moved it down to the process model, however process model not working when a log normal distribution
   obs_err <- GPP_sd
   
   ## Vectors for model output
   pred_GPP<-numeric(Ndays)
-  pred_GPP[1] <- log(GPP[1])
+  pred_GPP[1] <- GPP[1]
   l_pred_GPP <- numeric(Ndays)
   l_pred_GPP[1] <- log(GPP[1])
   
   ## Process model
   for (j in 2:Ndays) {
-    l_pred_GPP[j] = rtnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p, upper=3.5)
+    l_pred_GPP[j] = norm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p)
   }
   
   for (i in 2:Ndays){
@@ -29,51 +28,4 @@ PM1 <- function(phi, alpha, beta, sig_p, df) {
   
   return(pred_GPP)
 }
-
-PM1_BL <- function(phi, alpha, beta, a, sig_p, df) {
-  ## Data
-  Ndays<-length(df$GPP)
-  GPP <- df$GPP
-  GPP_sd <- df$GPP_sd
-  light <- df$light_rel
-  tQ <- df$tQ # discharge standardized to max value
-  depth <- df$depth
-  turb <- df$turb
-  
-  ## Error
-  #proc_err <- rlnorm(Ndays, meanlog = 0, sdlog = sig_p) # no longer here, because moved it down to the process model, however process model not working when a log normal distribution
-  obs_err <- GPP_sd
-  
-  ## Vectors for model output
-  pred_GPP<-numeric(Ndays)
-  pred_GPP[1] <- log(GPP[1])
-  l_pred_GPP <- numeric(Ndays)
-  l_pred_GPP[1] <- log(GPP[1])
-  
-  ## Benthic light
-  ben_light <- numeric(Ndays)
-  for(i in 1:length(light)){
-    ben_light[i]=light[i]*exp(-1*a*turb[i]*depth[i])
-  }
-  
-  ## Process model
-  for (j in 2:Ndays) {
-    l_pred_GPP[j] = rnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*ben_light[j] + beta*tQ[j], sd = sig_p)
-  }
-  
-  for (i in 2:Ndays){
-    pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = obs_err[i], lower=0)
-  }
-  
-  return(pred_GPP)
-}
-
-
-
-
-
-
-
-
-
 

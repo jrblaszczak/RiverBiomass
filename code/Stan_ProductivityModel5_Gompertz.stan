@@ -5,6 +5,8 @@
     vector [Ndays] GPP; // mean estimates from posterior probability distributions
     vector [Ndays] GPP_sd; // sd estimates from posterior probability distributions
     vector [Ndays] tQ; // standardized discharge
+    real B_int; // Initial biomass value where B_int = log(GPP[1]/light[1])
+    
     //vector [Ndays] depth; // depth estimate
     //vector [Ndays] turb; // mean daily turbidity
     }
@@ -42,7 +44,13 @@
     
     // Process Model
     for (j in 2:(Ndays)){
-    B[j] ~ normal((beta_0 + beta_1*B[(j-1)])*P[j], sig_p);
+      
+      if(j == 2){
+         B[j] ~ normal((beta_0 + beta_1*B_int)*P[j], sig_p);
+      }
+      else{
+        B[j] ~ normal((beta_0 + beta_1*B[(j-1)])*P[j], sig_p);
+      }
     }
  
     // Observation model

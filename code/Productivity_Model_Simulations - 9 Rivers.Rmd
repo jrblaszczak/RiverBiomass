@@ -30,19 +30,20 @@ stan_data_compile <- function(x){
 }
 
 stan_data_l <- lapply(dat, function(x) stan_data_compile(x))
+stan_data_l_new <- lapply(dat[c("nwis_01645762","nwis_01649190","nwis_04137500")], function(x) stan_data_compile(x))
 
 ###############################
 ## Run Stan to get estimates ##
 ###############################
 ## PM 1 - Phenomenological
-PM_outputlist_AR <- lapply(stan_data_l, function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+PM_outputlist_AR <- lapply(stan_data_l, function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #5000 seconds
 saveRDS(PM_outputlist_AR, "./rds files/stan_9riv_output_AR.rds") 
 ## PM 3 - Ricker
-PM_outputlist_Ricker <- lapply(stan_data_l, function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_9riv_output_Ricker.rds")
+PM_outputlist_Ricker <- lapply(stan_data_l_new, function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #84 seconds
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_3newriv_output_Ricker.rds")
 ## PM 4 - Gompertz
 PM_outputlist_Gompertz <- lapply(stan_data_l, function(x) stan("Stan_ProductivityModel5_Gompertz.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
-saveRDS(PM_outputlist_Gompertz, "./rds files/stan_9riv_output_Gompertz.rds")
+saveRDS(PM_outputlist_Gompertz, "./rds files/stan_3newriv_output_Gompertz.rds")
 
 ## See simulation_matrix_output.R for code to create figures
 ```
