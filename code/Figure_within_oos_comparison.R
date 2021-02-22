@@ -5,10 +5,13 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm",
          "reshape2"), require, character.only=T)
 
+################################
+## Import and combine by site
+################################
+# Within-sample simulations
 
 
-
-
+# Out-of-sample simulations
 
 
 
