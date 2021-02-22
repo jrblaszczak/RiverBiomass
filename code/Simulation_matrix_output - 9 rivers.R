@@ -19,7 +19,7 @@ source("StanParameterExtraction_Source.R")
 PM1.col <- "#d95f02"
 PM2.col <- "#7570b3"
 PM3.col <- "#1C474D"
-PM4.col <- "#743731"
+#PM4.col <- "#743731"
 
 ## Change river names to short names
 site_info[,c("site_name","long_name","NHD_STREAMORDE")]
@@ -35,7 +35,7 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
 
 ## Import stan fits - simulate one at a time
 #stan_model_output_AR <- readRDS("./rds files/stan_9riv_output_AR.rds")
-#stan_model_output_Ricker <- readRDS("stan_9riv_output_Ricker.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_9riv_output_Ricker.rds")
 #stan_model_output_Gompertz <- readRDS("stan_9riv_output_Gompertz.rds")
 
 ##########################
@@ -117,10 +117,8 @@ df_sim1_plot
 ###############################
 ## Model 2 Output - Ricker
 ###############################
-stan_model_output_Ricker <- PM_outputlist_Ricker
-
-names(dat[1:2]); names(stan_model_output_Ricker)
-Ricker_list <- Map(c, stan_model_output_Ricker, dat[1:2])
+names(dat); names(stan_model_output_Ricker)
+Ricker_list <- Map(c, stan_model_output_Ricker, dat[(names(stan_model_output_Ricker))])
 
 Ricker_sim_fxn <- function(x){
   #separate data
@@ -139,7 +137,7 @@ Ricker_sim_fxn <- function(x){
     rmsemat3[i]<-sqrt(sum((simmat3[,i]-df$GPP)^2)/length(df$GPP))
   }
 
-  l <- list(simmat3, biomat3, rmsemat3)
+  l <- list(simmat3, rmsemat3, biomat3)
   return(l)
   
 }
@@ -158,9 +156,9 @@ lower_simmat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[1]], 1, functio
 upper_simmat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[1]], 1, function(x) quantile(x, probs = 0.975))), data.frame)
 
 ## Plot simulated GPP
-dat3 <- ldply(dat, data.frame)
+dat3 <- ldply(dat[names(Ricker_sim)], data.frame)
 df_sim3 <- as.data.frame(cbind(dat3$site_name, as.character(dat3$date),
-                               dat3$GPP, median_simmat3$X..i.., lower_simmat3$X..i.., upper_simmat3$X..i..))
+                               dat3$GPP, median_simmat3[,2], lower_simmat3[,2], upper_simmat3[,2]))
 colnames(df_sim3) <- c("site_name","Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
 df_sim3$Date <- as.POSIXct(as.character(df_sim3$Date), format="%Y-%m-%d")
 df_sim3[,3:6] <- apply(df_sim3[,3:6],2,function(x) as.numeric(as.character(x)))
@@ -192,26 +190,29 @@ df_sim3_plot <- ggplot(df_sim3, aes(Date, GPP))+
 df_sim3_plot
 
 
-## Plot latent B
-PM3_medpar <- ldply(lapply(stan_model_output_Ricker,
-                           function(x) mechB_extract_medians(rstan::extract(x,c("r","lambda",
-                                                                                "s","c","B",
-                                                                                "P","pred_GPP","sig_p")))),
-                    data.frame)
+## Plot latent biomass
+# For every day extract median and CI
+median_biomat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[3]], 1, function(x) median(x))), data.frame)
+lower_biomat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[3]], 1, function(x) quantile(x, probs = 0.025))), data.frame)
+upper_biomat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[3]], 1, function(x) quantile(x, probs = 0.975))), data.frame)
 
-df_modB3 <- as.data.frame(cbind(dat3$site_name, as.character(dat3$date), PM3_medpar$B, PM3_medpar$B_Q.025, PM3_medpar$B_Q.975))
-colnames(df_modB3) <- c("site_name","Date","B","B_lower","B_upper")
-df_modB3$Date <- as.POSIXct(as.character(df_modB3$Date), format="%Y-%m-%d")
-df_modB3[,3:5] <- apply(df_modB3[,3:5],2,function(x) as.numeric(as.character(x)))
+## Plot simulated GPP
+df_bio3 <- as.data.frame(cbind(dat3$site_name, as.character(dat3$date),
+                               dat3$GPP, median_biomat3[,2], lower_biomat3[,2], upper_biomat3[,2]))
+colnames(df_bio3) <- c("site_name","Date","B","B_lower","B_upper")
+df_bio3$Date <- as.POSIXct(as.character(df_bio3$Date), format="%Y-%m-%d")
+df_bio3[,3:5] <- apply(df_bio3[,3:5],2,function(x) as.numeric(as.character(x)))
 
 ## Arrange rivers by river order
-df_modB3 <- left_join(df_modB3, site_info[,c("site_name","short_name")])
-df_modB3$short_name <- factor(df_modB3$short_name, levels=c("Silver Creek, UT",
-                                                            "Medina River, TX",
-                                                            "Anacostia River, MD",
-                                                            "West Fork River, WV",
-                                                            "St. John's River, FL",
-                                                            "Clackamas River, OR"))
+df_bio3 <- left_join(df_bio3, site_info[,c("site_name","short_name")])
+df_bio3$short_name <- factor(df_bio3$short_name, levels=c("Silver Creek, UT",
+                                                          "Medina River, TX",
+                                                          "Anacostia River, MD",
+                                                          "West Fork River, WV",
+                                                          "St. John's River, FL",
+                                                          "Clackamas River, OR"))
+
+df_modB3 <- df_bio3
 
 ## plot
 df_modB3_plot <- ggplot(df_modB3, aes(Date, exp(B)))+
@@ -225,7 +226,7 @@ df_modB3_plot <- ggplot(df_modB3, aes(Date, exp(B)))+
         axis.title.y = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
         strip.background = element_rect(fill="white", color="black"),
         strip.text = element_text(size=15))+
-  scale_y_continuous(limits=c(0,25))+
+  #scale_y_continuous(limits=c(0,25))+
   facet_wrap(~short_name, scales = "free_x", ncol = 2)
 df_modB3_plot
 

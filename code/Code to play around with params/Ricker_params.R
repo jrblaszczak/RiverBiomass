@@ -4,7 +4,7 @@
 
 pars3<-extract(stan_model_output_Ricker[[1]], c("r","lambda","s","c","B","P","pred_GPP","sig_p"))
 
-df <- dat$nwis_01645762
+df <- dat$nwis_01649500
 r <- pars3$r[50]
 lambda <- pars3$lambda[50]
 s <- pars3$s[50]
@@ -37,11 +37,11 @@ sig_p <- pars3$sig_p[50]
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p)
+    B[j] =rnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p) #MCMCglmm::rtnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p, upper = 5)
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0.001)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0.01)
   }
  
 plot(exp(B))  

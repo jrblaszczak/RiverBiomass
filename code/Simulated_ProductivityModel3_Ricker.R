@@ -27,11 +27,11 @@ PM3 <- function(r, lambda, s, c, sig_p, df) {
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p)
+    B[j] <- MCMCglmm::rtnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p, upper = 5)
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0.001)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0)
   }
   
   return(pred_GPP)
@@ -66,14 +66,13 @@ PM3_B <- function(r, lambda, s, c, sig_p, df) {
   
   ## Process Model
   for (j in 2:Ndays){
-    B[j] = rnorm(n=1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p)
+    B[j] <- MCMCglmm::rtnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p, upper = 5)
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0.001)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0)
   }
   
   return(B)
 }
-
 
