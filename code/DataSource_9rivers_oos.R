@@ -31,15 +31,15 @@ data_siteyears <- data %>%
   group_by(site_name, year) %>%
   tally()
 ## Select the first of two years
-data <- rbind(data[which(data$site_name == "nwis_08180700" & data$year %in% c(2010)),],
-              data[which(data$site_name == "nwis_10129900" & data$year %in% c(2015)),],
-              data[which(data$site_name == "nwis_03058000" & data$year %in% c(2014)),],
-              data[which(data$site_name == "nwis_01649500" & data$year %in% c(2012)),],
-              data[which(data$site_name == "nwis_14211010" & data$year %in% c(2012)),],
-              data[which(data$site_name == "nwis_02234000" & data$year %in% c(2013)),],
-              data[which(data$site_name == "nwis_01645762" & data$year %in% c(2012)),],
-              data[which(data$site_name == "nwis_01649190" & data$year %in% c(2010)),],
-              data[which(data$site_name == "nwis_04137500" & data$year %in% c(2010)),])
+data <- rbind(data[which(data$site_name == "nwis_08180700" & data$year %in% c(2011)),],
+              data[which(data$site_name == "nwis_10129900" & data$year %in% c(2016)),],
+              data[which(data$site_name == "nwis_03058000" & data$year %in% c(2015)),],
+              data[which(data$site_name == "nwis_01649500" & data$year %in% c(2013)),],
+              data[which(data$site_name == "nwis_14211010" & data$year %in% c(2013)),],
+              data[which(data$site_name == "nwis_02234000" & data$year %in% c(2014)),],
+              data[which(data$site_name == "nwis_01645762" & data$year %in% c(2013)),],
+              data[which(data$site_name == "nwis_01649190" & data$year %in% c(2011)),],
+              data[which(data$site_name == "nwis_04137500" & data$year %in% c(2011)),])
 
 ## Set any GPP < 0 to a small value close to 0
 data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1)
@@ -67,7 +67,7 @@ rel_LQT <- function(x){
   return(x)
 }
 
-dat <- lapply(l, function(x) rel_LQT(x))
+dat_oos <- lapply(l, function(x) rel_LQT(x))
 
 
 rm(data,l, data_siteyears)

@@ -35,7 +35,7 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
 
 ## Import stan fits - simulate one at a time
 #stan_model_output_AR <- readRDS("./rds files/stan_9riv_output_AR.rds")
-stan_model_output_Ricker <- readRDS("./rds files/stan_9riv_output_Ricker.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker.rds")
 #stan_model_output_Gompertz <- readRDS("stan_9riv_output_Gompertz.rds")
 
 ##########################
@@ -145,9 +145,9 @@ Ricker_sim_fxn <- function(x){
 Ricker_sim <- lapply(Ricker_list, function(x) Ricker_sim_fxn(x))
 
 ## Save simulation
-saveRDS(Ricker_sim, "Sim_9riv_Ricker.rds")
+saveRDS(Ricker_sim, "./rds files/Sim_6riv_Ricker_ws.rds")
 ## If previously simulated
-simmat3_list <- readRDS("Sim_9riv_Ricker.rds")
+simmat3_list <- readRDS("./rds files/Sim_6riv_Ricker_ws.rds")
 simmat3_list <- Ricker_sim
 
 # For every day extract median and CI
@@ -198,7 +198,7 @@ upper_biomat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[3]], 1, functio
 
 ## Plot simulated GPP
 df_bio3 <- as.data.frame(cbind(dat3$site_name, as.character(dat3$date),
-                               dat3$GPP, median_biomat3[,2], lower_biomat3[,2], upper_biomat3[,2]))
+                               median_biomat3[,2], lower_biomat3[,2], upper_biomat3[,2]))
 colnames(df_bio3) <- c("site_name","Date","B","B_lower","B_upper")
 df_bio3$Date <- as.POSIXct(as.character(df_bio3$Date), format="%Y-%m-%d")
 df_bio3[,3:5] <- apply(df_bio3[,3:5],2,function(x) as.numeric(as.character(x)))

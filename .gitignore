@@ -5,6 +5,9 @@
 # Large data files
 *data/
 
+# Figure adjustments
+*figures/Figure adjustments
+
 # Stan outputs
 *code/rds files/
 
