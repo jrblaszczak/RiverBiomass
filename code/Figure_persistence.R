@@ -11,7 +11,7 @@ source("DataSource_9rivers.R")
 # source simulation models
 source("Simulated_ProductivityModel1_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
 source("Simulated_ProductivityModel3_Ricker.R") # parameters: r, lambda, s, c, sig_p
-source("Simulated_ProductivityModel5_Gompertz.R") # parameters: beta_0, beta_1, s, c, sig_p
+#source("Simulated_ProductivityModel5_Gompertz.R") # parameters: beta_0, beta_1, s, c, sig_p
 
 # colors
 PM_AR.col <- "#d95f02" # AR
@@ -133,6 +133,15 @@ P_df <- P_dat_R
 ## Visualize
 #####################
 
+## Identify threshold velocity (when does Q > v=0.15)
+qv <- lapply(dat, function(x) return(x[,c("site_name","date","Q",
+                                          "velocity","tQ")]))
+
+site_info$NHD_SLOPE
+
+
+
+
 ## join by river name
 P_df <- left_join(P_df, site_info[,c("site_name","short_name")], by="site_name")
 P_df$short_name <- factor(P_df$short_name, levels=c("Silver Creek, UT",
@@ -192,6 +201,12 @@ plot_grid(e,d,a,c,b,f,
           label_y = "Biomass Persistence",
           label_size = 14)
 
-library(patchwork)
 
-renderPlot({e+d})
+
+
+
+
+
+
+
+
