@@ -6,7 +6,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","patchwork"), require, character.only=T)
 
 PM_AR.col <- "#d95f02" # AR
-PM_Ricker.col <- "#1C474D" # Ricker
+PM_Ricker.col <- "#7654B4"#"#1C474D" # Ricker
 PM_Gompertz.col <- "#743731" # Gompertz
 
 ################################
@@ -50,11 +50,11 @@ GPP_matrix_extract <- function(matrix_list, dat, site_info, WS_or_OOS){
   ## Arrange rivers by river order
   GPP_df <- left_join(GPP_df, site_info[,c("site_name","short_name")])
   GPP_df$short_name <- factor(GPP_df$short_name, levels=c("Silver Creek, UT",
-                                                            "Medina River, TX",
-                                                            "Anacostia River, MD",
-                                                            "West Fork River, WV",
-                                                            "St. John's River, FL",
-                                                            "Clackamas River, OR"))
+                                                          "Medina River, TX",
+                                                          "Anacostia River, MD",
+                                                          "West Fork River, WV",
+                                                          "St. John's River, FL",
+                                                          "Clackamas River, OR"))
   
   ## Specify whether within or out-of-sample predictions
   GPP_df$WS_or_OOS <- WS_or_OOS
@@ -74,7 +74,7 @@ Bio_matrix_extract <- function(matrix_list, dat, site_info, WS_or_OOS){
   ## Extract latent biomass
   df <- ldply(dat[names(matrix_list)], data.frame)
   LB_df <- as.data.frame(cbind(df$site_name, as.character(df$date),
-                                df$GPP, median_predmat[,2], lower_predmat[,2], upper_predmat[,2]))
+                               df$GPP, median_predmat[,2], lower_predmat[,2], upper_predmat[,2]))
   colnames(LB_df) <- c("site_name","Date","GPP","Biomass","Biomass_lower","Biomass_upper")
   LB_df$Date <- as.POSIXct(as.character(LB_df$Date), format="%Y-%m-%d")
   LB_df[,3:6] <- apply(LB_df[,3:6],2,function(x) as.numeric(as.character(x)))
@@ -82,11 +82,11 @@ Bio_matrix_extract <- function(matrix_list, dat, site_info, WS_or_OOS){
   ## Arrange rivers by river order
   LB_df <- left_join(LB_df, site_info[,c("site_name","short_name")])
   LB_df$short_name <- factor(LB_df$short_name, levels=c("Silver Creek, UT",
-                                                          "Medina River, TX",
-                                                          "Anacostia River, MD",
-                                                          "West Fork River, WV",
-                                                          "St. John's River, FL",
-                                                          "Clackamas River, OR"))
+                                                        "Medina River, TX",
+                                                        "Anacostia River, MD",
+                                                        "West Fork River, WV",
+                                                        "St. John's River, FL",
+                                                        "Clackamas River, OR"))
   
   ## Specify whether within or out-of-sample predictions
   LB_df$WS_or_OOS <- WS_or_OOS
@@ -129,10 +129,13 @@ AR_vs_Ricker_plot <- function(site, AR_list, Ricker_list, Ricker_LB_list, dat_ws
   data_oos <- dat_oos[[site]]
   data <- rbind(data_ws, data_oos)
   
+  AR <- AR[which(AR$WS_or_OOS == "OOS"),]
+  Ricker <- Ricker[which(Ricker$WS_or_OOS == "OOS"),]
+  
   ## Plot
   AR_plot <- ggplot(AR, aes(Date, GPP))+
     geom_point(size=1.5, color="black")+
-    geom_line(aes(Date, sim_GPP), color=PM_AR.col, size=1)+
+    geom_line(aes(Date, sim_GPP), color=PM_AR.col, size=1.5)+
     labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM1: AR")+
     geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
                 fill=PM_AR.col, alpha=0.2, show.legend = FALSE)+
@@ -142,82 +145,80 @@ AR_vs_Ricker_plot <- function(site, AR_list, Ricker_list, Ricker_LB_list, dat_ws
           axis.title.y = element_text(size=12), axis.text.x = element_text(angle=25, hjust = 1),
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15), plot.title = element_text(hjust = 1))+
-    scale_y_continuous(limits=c(0,max(AR$sim_GPP_upper, na.rm = TRUE)))+
-    geom_vline(xintercept = AR[which(AR$WS_or_OOS == "OOS"),]$Date[1],
-               size=1, linetype="dashed")
+    scale_y_continuous(limits=c(0,max(AR$sim_GPP_upper, na.rm = TRUE)))
   
   Ricker_plot <- ggplot(Ricker, aes(Date, GPP))+
     geom_point(size=1.5, color="black")+
-    geom_line(aes(Date, sim_GPP), color=PM_Ricker.col, size=1)+
+    geom_line(aes(Date, sim_GPP), color=PM_Ricker.col, size=1.5)+
     labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM2: Ricker")+
     geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
                 fill=PM_Ricker.col, alpha=0.2, show.legend = FALSE)+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),
-          axis.title.x = element_blank(), axis.text = element_text(size=12),
+          axis.text = element_text(size=12),
           axis.title.y = element_text(size=12), axis.text.x = element_text(angle=25, hjust = 1),
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15), plot.title = element_text(hjust = 1))+
-    scale_y_continuous(limits=c(0,max(AR$sim_GPP_upper, na.rm = TRUE)))+
-    geom_vline(xintercept = Ricker[which(Ricker$WS_or_OOS == "OOS"),]$Date[1],
-               size=1, linetype="dashed")
+    scale_y_continuous(limits=c(0,max(AR$sim_GPP_upper, na.rm = TRUE)))
   
-  Ricker_LB_plot <- ggplot(Ricker_LB, aes(Date, exp(Biomass)))+
-    geom_line(size=1.5, color="chartreuse4")+
-    labs(y="Latent Biomass", title="PM2: Ricker Latent Biomass")+
-    geom_ribbon(aes(ymin=exp(Biomass_lower),ymax=exp(Biomass_upper)),
-                fill="chartreuse4", alpha=0.3, show.legend = FALSE)+
-    theme(legend.position = "none",
-          panel.background = element_rect(color = "black", fill=NA, size=1),
-          axis.title.x = element_blank(), axis.text = element_text(size=12),
-          axis.title.y = element_text(size=12), axis.text.x = element_text(angle=25, hjust = 1),
-          strip.background = element_rect(fill="white", color="black"),
-          strip.text = element_text(size=15), plot.title = element_text(hjust = 1))+
-    geom_vline(xintercept = Ricker_LB[which(Ricker_LB$WS_or_OOS == "OOS"),]$Date[1],
-               size=1, linetype="dashed")
-  
-  ratio_QL <- max(data$light)/max(data$Q)
-  
-  data_plot <- ggplot(data, aes(date, Q*ratio_QL))+
-    geom_point(data=data, aes(date, light), size=1.5, color="darkgoldenrod3")+
-    geom_line(size=1, color="deepskyblue4")+
-    scale_y_continuous(sec.axis = sec_axis(~./ratio_QL, name=expression("Daily Q (cms)")))+
-    labs(y=expression('Daily PPFD'), title="External Drivers")+# ('*~mu~mol~ m^-2~d^-1*')'), x="Date")+
-    theme(legend.position = "none",
-          panel.background = element_rect(color = "black", fill=NA, size=1),
-          axis.title.x = element_blank(), axis.text = element_text(size=12),
-          axis.title.y.left = element_text(size=12, color="darkgoldenrod3"),
-          axis.title.y.right = element_text(size=12, color="deepskyblue4"),
-          axis.text.x = element_text(angle=25, hjust = 1),
-          strip.background = element_rect(fill="white", color="black"),
-          strip.text = element_text(size=15), plot.title = element_text(hjust = 1))+
-    geom_vline(xintercept = Ricker_LB[which(Ricker_LB$WS_or_OOS == "OOS"),]$Date[1],
-               size=1, linetype="dashed")
   
   (AR_plot+theme(axis.text.x = element_blank())) + 
-    (Ricker_plot+theme(axis.text.x = element_blank())) +
-    (Ricker_LB_plot+theme(axis.text.x = element_blank())) +
-    data_plot + plot_layout(ncol=1) + plot_annotation(title=AR$short_name[1])
-
+    (Ricker_plot) +
+    plot_layout(ncol=1)
+  
 }
 
 # test plot
-AR_vs_Ricker_plot(site = names(AR_list)[5], AR_list, Ricker_list, Ricker_LB_list, dat_ws, dat_oos)
+AR_vs_Ricker_plot(site = names(AR_list)[1], AR_list, Ricker_list, Ricker_LB_list, dat_ws, dat_oos)
 
-# save figures
-setwd("~/GitHub/RiverBiomass/figures/WS OOS comparison by site")
 
-for(i in 1:length(names(AR_list))){
-  ggsave(plot = AR_vs_Ricker_plot(site = names(AR_list)[i], AR_list, Ricker_list, Ricker_LB_list, dat_ws, dat_oos),
-         filename = paste(names(AR_list)[i],"_ws_oos_TS.jpg",sep = ""))
+##################################
+## Extract and calculate RMSE
+##################################
+
+## extract RMSE summary stats
+RMSE_extract <- function(pred_rmse_list,WS_or_OOS,model.type){
+  
+  rmsemat <- ldply(lapply(pred_rmse_list, function(x) return(x[[2]])), data.frame)
+  colnames(rmsemat) <- c("site_name","RMSE")
+  
+  rmsemat_sum <- rmsemat %>%
+    group_by(site_name) %>%
+    summarise(RMSE = quantile(RMSE, c(0.025, 0.5, 0.975)), quant = c(0.025, 0.5, 0.975))
+  
+  # specify whether within or out-of-sample predictions
+  rmsemat_sum$WS_vs_OOS <- WS_or_OOS
+  
+  # specify model
+  rmsemat_sum$model_type <- model.type
+  
+  return(rmsemat_sum)
+  
 }
 
+## Summarize for each model
+#RMSE_ws_AR <- RMSE_extract(ws_AR,"WS","AR")
+RMSE_oos_AR <- RMSE_extract(oos_AR,"OOS","AR")
+#RMSE_ws_Ricker <- RMSE_extract(ws_Ricker,"WS","Ricker")
+RMSE_oos_Ricker <- RMSE_extract(oos_Ricker,"OOS","Ricker")
 
+#RMSE_all <- rbind(RMSE_ws_AR, RMSE_oos_AR, RMSE_ws_Ricker, RMSE_oos_Ricker)
 
+combined <- rbind(RMSE_oos_AR, RMSE_oos_Ricker)
 
+combined$quant <- revalue(as.character(combined$quant), replace=c("0.025"="lowerCI",
+                                                                  "0.5"="median",
+                                                                  "0.975"="upperCI"))
+RMSE_OOS_wide <- spread(combined, key = c("quant"), value="RMSE")
 
+OR <- RMSE_OOS_wide[which(RMSE_OOS_wide$site_name == "nwis_14211010"),]
 
-
+ggplot(OR, aes(as.factor(model_type), median, color=as.factor(model_type)))+
+  geom_point(size=3)+
+  geom_errorbar(aes(ymin=lowerCI, ymax=upperCI), width=0.2, size=1)+
+  labs(x="Model",y="Out-of-sample RMSE")+
+  scale_color_manual(values=c("AR" = PM_AR.col, "Ricker"= PM_Ricker.col))+
+  theme_bw()+theme(legend.position = "none")
 
 
 

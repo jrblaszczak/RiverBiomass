@@ -148,7 +148,8 @@ Ricker_sim <- lapply(Ricker_list, function(x) Ricker_sim_fxn(x))
 saveRDS(Ricker_sim, "./rds files/Sim_6riv_Ricker_ws.rds")
 ## If previously simulated
 simmat3_list <- readRDS("./rds files/Sim_6riv_Ricker_ws.rds")
-simmat3_list <- Ricker_sim
+#simmat3_list <- Ricker_sim
+Ricker_sim <- simmat3_list
 
 # For every day extract median and CI
 median_simmat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
@@ -175,10 +176,10 @@ df_sim3$short_name <- factor(df_sim3$short_name, levels=c("Silver Creek, UT",
 ## Plot
 df_sim3_plot <- ggplot(df_sim3, aes(Date, GPP))+
   geom_point(size=2, color="black")+
-  geom_line(aes(Date, sim_GPP), color=PM3.col, size=1.2)+
+  geom_line(aes(Date, sim_GPP), color=PM2.col, size=1.2)+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM3: Ricker")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
-              fill=PM3.col, alpha=0.2, show.legend = FALSE)+
+              fill=PM2.col, alpha=0.2, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=12),

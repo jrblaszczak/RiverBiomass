@@ -166,7 +166,7 @@ Persistence_plots <- function(site_num, dat, P_df, x.lab.pos, y.lab.pos){
           strip.text = element_text(size=15))+
     annotate("text", label=as.character(P$short_name[1]), x = x.lab.pos, y= y.lab.pos, size=3.5)+
     labs(x="Range of Standardized Discharge",y="Persistence")+
-    scale_y_continuous(limits=c(0,1))+scale_x_continuous(limits=c(0,1))+
+    scale_y_continuous(limits=c(0,1))+scale_x_continuous(limits=c(0,1.25))+
     geom_vline(xintercept = c, size=0.9, linetype="dashed")
   
   
@@ -180,10 +180,10 @@ Persistence_plots <- function(site_num, dat, P_df, x.lab.pos, y.lab.pos){
 
 a <- Persistence_plots(1, dat, P_df,0.75,0.9)
 b <- Persistence_plots(2, dat, P_df,0.22,0.1)
-c <- Persistence_plots(3, dat, P_df,0.75,0.9)
+c <- Persistence_plots(3, dat, P_df,0.85,0.9)
 d <- Persistence_plots(4, dat, P_df,0.2,0.1)
 e <- Persistence_plots(5, dat, P_df,0.2,0.1)
-f <- Persistence_plots(6, dat, P_df,0.75,0.9)
+f <- Persistence_plots(6, dat, P_df,0.85,0.9)
 
 ## order based on river order
 plot_grid(e,d,a,c,b,f,
@@ -192,5 +192,6 @@ plot_grid(e,d,a,c,b,f,
           label_y = "Biomass Persistence",
           label_size = 14)
 
+library(patchwork)
 
-
+renderPlot({e+d})
