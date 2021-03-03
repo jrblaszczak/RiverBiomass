@@ -3,7 +3,7 @@
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
-         "tidyverse","data.table"), require, character.only=T)
+         "tidyverse","data.table","patchwork"), require, character.only=T)
 
 ############################
 ## To create linked file
@@ -219,8 +219,47 @@ saveRDS(TS_site_subset, "./rds files/NWIS_9siteinfo_subset.rds")
 
 
 
+##############################
+## Plot for talk
+###########################
 
+df <- site_sub_list$nwis_14211010
+ratio_QL <- max(df$light)/max(df$Q)
+GPP_plot <- ggplot(df, aes(date, GPP))+
+  geom_errorbar(aes(ymin = GPP.lower, ymax = GPP.upper), width=0.2,color="chartreuse4")+
+      geom_point(color="chartreuse4", size=2)+geom_line(color="chartreuse4", size=1)+
+      labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+      theme(legend.position = "none",
+            panel.background = element_rect(color = "black", fill=NA, size=1),
+            axis.title.x = element_blank(), axis.text.x = element_blank(),
+            axis.text.y = element_text(size=12),
+            axis.title.y = element_text(size=12))+
+  geom_vline(xintercept = as.POSIXct("2013-01-01", format="%Y-%m-%d"),size=1, linetype="dashed")
+    
+data_plot <- ggplot(df, aes(date, Q*ratio_QL))+
+      geom_point(data=df, aes(date, light), size=1.5, color="darkgoldenrod3")+
+      geom_line(size=1, color="deepskyblue4")+
+      scale_y_continuous(sec.axis = sec_axis(~./ratio_QL, name=expression("Daily Q (cms)")))+
+      labs(y=expression('Daily PPFD'))+# ('*~mu~mol~ m^-2~d^-1*')'), x="Date")+
+      theme(legend.position = "none",
+            panel.background = element_rect(color = "black", fill=NA, size=1),
+            axis.title.x = element_blank(), axis.text = element_text(size=12),
+            axis.title.y.left = element_text(size=12, color="darkgoldenrod3"),
+            axis.title.y.right = element_text(size=12, color="deepskyblue4"),
+            axis.text.x = element_text(angle=25, hjust = 1),
+            strip.background = element_rect(fill="white", color="black"),
+            strip.text = element_text(size=15))+
+  geom_vline(xintercept = as.POSIXct("2013-01-01", format="%Y-%m-%d"),size=1, linetype="dashed")
+    
+GPP_plot + data_plot + plot_layout(ncol = 1)
 
-
+ggplot(df, aes(light, GPP))+
+  geom_point(size=1.5)+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), x="Daily PPFD")+
+  theme_bw()+
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.text = element_text(size=14),
+        axis.title = element_text(size=18))
 
 
