@@ -58,16 +58,13 @@ l <- split(data, data$site_name)
 rel_LQT <- function(x){
   x$light_rel <- x$light/max(x$light)
   x$temp_rel <- x$temp/max(x$temp)
-  x$tQ <- x$Q/max(x$Q)
-  
-  #x$std_light <- (x$light-mean(x$light))/sd(x$light)
-  #x$std_temp <- (x$temp-mean(x$temp))/sd(x$temp)
-  #x$tQ <- (x$Q-mean(x$Q))/sd(x$Q)
+  x$tQ <- x$Q/median(x$Q)
+
   x<-x[order(x$date),]
   return(x)
 }
 
 dat <- lapply(l, function(x) rel_LQT(x))
+df <- dat
 
-
-rm(data,l, data_siteyears)
+rm(data,l, data_siteyears, dat)
