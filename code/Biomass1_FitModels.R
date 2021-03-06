@@ -2,7 +2,6 @@
 ## JR Blaszczak
 
 # load packages
-devtools::install_github("collectivemedia/tictoc")
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "parallel","tidyverse","rstan","devtools",
          "bayesplot","shinystan","Metrics","MCMCglmm","tictoc"), require, character.only=T)
@@ -25,22 +24,68 @@ stan_data_compile <- function(x){
 stan_data_l <- lapply(df, function(x) stan_data_compile(x))
 
 #########################################
-## Run Stan to get parameter estimates
+## Run Stan to get parameter estimates - initial tests
 #########################################
-test <- stan("Stan_ProductivityModel3_Ricker_fixedinit.stan",
-             data=stan_data_l$nwis_14211010,
-             chains=3,iter=1000, control=list(max_treedepth=12))
+
+## Initial tests
+#AR
+test_ar <- stan("Stan_ProductivityModel1_Autoregressive.stan",
+             data=stan_data_l$nwis_08180700,
+             chains=3,iter=5000, control=list(max_treedepth=12))
+launch_shinystan(test_ar)
+#Ricker
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 200)
+}
+test_ricker <- stan("Stan_ProductivityModel3_Ricker_fixedinit.stan",
+             data=stan_data_l$nwis_08180700,
+             init = init_Ricker,
+             chains=3,iter=2000, control=list(max_treedepth=12))
+launch_shinystan(test_ricker)
+#Gompertz
+init_Gompertz <- function(...) {
+  list(c = 0.5, s = 200)
+}
+test_Gompertz <- stan("Stan_ProductivityModel5_Gompertz_fixedinit.stan",
+                    data=stan_data_l$nwis_08180700,
+                    init = init_Gompertz,
+                    chains=3,iter=2000, control=list(max_treedepth=12))
+launch_shinystan(test_Gompertz)
+
+#########################################
+## Run Stan to get parameter estimates - all sites
+#########################################
 
 ## PM 1 - Phenomenological
-PM_outputlist_AR <- lapply(stan_data_l, function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #5000 seconds
-saveRDS(PM_outputlist_AR, "./rds files/stan_9riv_output_AR.rds") 
+PM_outputlist_AR <- lapply(stan_data_l,
+                           function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive.stan",
+                                                   data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #5000 seconds
+PM_AR_elapsedtime <- lapply(PM_outputlist_AR, function(x) return(get_elapsed_time(x)))
+saveRDS(PM_outputlist_AR, "./rds files/stan_9riv_output_AR_2021_03_05.rds")
+saveRDS(PM_AR_elapsedtime, "./rds files/stan_9riv_AR_time_2021_03_05.rds")
 
 ## PM 3 - Ricker
-PM_outputlist_Ricker <- lapply(stan_data_l, function(x) stan("Stan_ProductivityModel3_Ricker.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #78 seconds
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_9riv_output_Ricker.rds")
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 200)
+}
+
+PM_outputlist_Ricker <- lapply(stan_data_l,
+                               function(x) stan("Stan_ProductivityModel3_Ricker_fixedinit.stan",
+                                                data=x,chains=3,iter=5000,init = init_Ricker,
+                                                control=list(max_treedepth=12)))
+PM_Ricker_elapsedtime <- lapply(PM_outputlist_Ricker, function(x) return(get_elapsed_time(x)))
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_9riv_output_Ricker_2021_03_05.rds")
+saveRDS(PM_Ricker_elapsedtime, "./rds files/stan_9riv_Ricker_time_2021_03_05.rds")
 
 ## PM 4 - Gompertz
-PM_outputlist_Gompertz <- lapply(stan_data_l, function(x) stan("Stan_ProductivityModel5_Gompertz.stan", data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+init_Gompertz <- function(...) {
+  list(c = 0.5, s = 200)
+}
+
+PM_outputlist_Gompertz <- lapply(stan_data_l,
+                                 function(x) stan("Stan_ProductivityModel5_Gompertz_fixedinit.stan",
+                                                  data=x,chains=3,iter=5000, 
+                                                  control=list(max_treedepth=12)))
 saveRDS(PM_outputlist_Gompertz, "./rds files/stan_3newriv_output_Gompertz.rds")
 
 launch_shinystan(PM_outputlist_Ricker$nwis_01649190)

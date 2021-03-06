@@ -58,7 +58,7 @@ l <- split(data, data$site_name)
 rel_LQT <- function(x){
   x$light_rel <- x$light/max(x$light)
   x$temp_rel <- x$temp/max(x$temp)
-  x$tQ <- x$Q/median(x$Q)
+  x$tQ <- x$Q/max(x$Q)
 
   x<-x[order(x$date),]
   return(x)

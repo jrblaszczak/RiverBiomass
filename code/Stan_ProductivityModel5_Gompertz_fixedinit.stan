@@ -27,6 +27,7 @@ transformed parameters {
 
   for(i in 1:Ndays){
     P[i]=exp(-exp(s*(tQ[i]-c)));
+    pred_GPP[i] =light[i]*exp(B[i]);
   }
   
 } 
@@ -34,7 +35,7 @@ transformed parameters {
 model {
   
   // Initial value
-  B[1] ~ normal(log(GPP[1]/light[1]), 1e-6);
+  B[1] ~ normal(log(GPP[1]/light[1]), 1);
   
   // Process Model
   for (j in 2:(Ndays)){
@@ -43,7 +44,7 @@ model {
   
   // Observation model
   for (j in 2:(Ndays)) {
-    GPP[j] ~ normal(light[j]*exp(B[j]), GPP_sd[j])T[0,];
+    GPP[j] ~ normal(pred_GPP[j], GPP_sd[j])T[0,];
   }
   
   // Error priors

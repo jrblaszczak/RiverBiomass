@@ -37,7 +37,7 @@ transformed parameters {
 model {
   
   // Initial value
-  B[1] ~ normal(log(GPP[1]/light[1]), 1e-6);
+  B[1] ~ normal(log(GPP[1]/light[1]), 1);
   
   // Process Model
   for (j in 2:(Ndays)){
