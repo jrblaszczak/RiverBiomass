@@ -86,9 +86,9 @@ PM_outputlist_Gompertz <- lapply(stan_data_l,
                                  function(x) stan("Stan_ProductivityModel5_Gompertz_fixedinit.stan",
                                                   data=x,chains=3,iter=5000, 
                                                   control=list(max_treedepth=12)))
-saveRDS(PM_outputlist_Gompertz, "./rds files/stan_3newriv_output_Gompertz.rds")
-
-launch_shinystan(PM_outputlist_Ricker$nwis_01649190)
+PM_Gompertz_elapsedtime <- lapply(PM_outputlist_Gompertz, function(x) return(get_elapsed_time(x)))
+saveRDS(PM_outputlist_Gompertz, "./rds files/stan_9riv_output_Gompertz_2021_03_05.rds")
+saveRDS(PM_Gompertz_elapsedtime, "./rds files/stan_9riv_Gompertz_time_2021_03_05.rds")
 
 
 

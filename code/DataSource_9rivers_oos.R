@@ -1,10 +1,7 @@
-## 6 rivers data source
-
+## 9 rivers seccond year data source
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
-         "lubridate","tidyverse", "reshape2",
-         "PerformanceAnalytics","jpeg","grid",
-         "rstan","bayesplot","shinystan"), require, character.only=T)
+         "lubridate","tidyverse", "reshape2"), require, character.only=T)
 
 ##############################
 ## Data Import & Processing ##
@@ -15,31 +12,24 @@ data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 site_info <- readRDS("./rds files/NWIS_9siteinfo_subset.rds")
 
 ## Change river names to short names
-site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                               "nwis_02234000"="St. John's River, FL",
-                                                                               "nwis_03058000"="West Fork River, WV",
-                                                                               "nwis_08180700"="Medina River, TX",
-                                                                               "nwis_10129900"="Silver Creek, UT",
-                                                                               "nwis_14211010"="Clackamas River, OR",
-                                                                               "nwis_01645762"="Little Difficult Run, VA",
-                                                                               "nwis_01649190"="Paint Branch Crrek, MD",
-                                                                               "nwis_04137500"="Au Sable River, MI"))
+site_info$short_name <- revalue(as.character(site_info$site_name),
+                                replace = c("nwis_01649500"="Anacostia River, MD",
+                                            "nwis_02234000"="St. John's River, FL",
+                                            "nwis_03058000"="West Fork River, WV",
+                                            "nwis_08180700"="Medina River, TX",
+                                            "nwis_10129900"="Silver Creek, UT",
+                                            "nwis_14211010"="Clackamas River, OR",
+                                            "nwis_01645762"="Little Difficult Run, VA",
+                                            "nwis_01649190"="Paint Branch Crrek, MD",
+                                            "nwis_04137500"="Au Sable River, MI"))
+
+
 
 ## How many days of data per site per year
 data$year <- year(data$date)
 data_siteyears <- data %>%
   group_by(site_name, year) %>%
   tally()
-## Select the first of two years
-data <- rbind(data[which(data$site_name == "nwis_08180700" & data$year %in% c(2011)),],
-              data[which(data$site_name == "nwis_10129900" & data$year %in% c(2016)),],
-              data[which(data$site_name == "nwis_03058000" & data$year %in% c(2015)),],
-              data[which(data$site_name == "nwis_01649500" & data$year %in% c(2013)),],
-              data[which(data$site_name == "nwis_14211010" & data$year %in% c(2013)),],
-              data[which(data$site_name == "nwis_02234000" & data$year %in% c(2014)),],
-              data[which(data$site_name == "nwis_01645762" & data$year %in% c(2013)),],
-              data[which(data$site_name == "nwis_01649190" & data$year %in% c(2011)),],
-              data[which(data$site_name == "nwis_04137500" & data$year %in% c(2011)),])
 
 ## Set any GPP < 0 to a small value close to 0
 data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1)
@@ -47,27 +37,46 @@ data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1)
 ## Create a GPP SD; SD = (CI - mean)/1.96
 data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
 
-## visualize
-ggplot(data, aes(date, GPP))+
-  geom_point()+geom_line()+
-  facet_wrap(~site_name,scales = "free_x")
 
-## split list by ID
-l <- split(data, data$site_name)
+#########################################################################
+## Subset data to relativize by the first year max discharge and light
+#########################################################################
+prev_post <- data %>%
+  group_by(site_name) %>%
+  summarise_at(.vars = "year", .funs = c(min, max))
+colnames(prev_post) <- c("site_name","year1","year2")
+prev_post$site_year1 <- paste(prev_post$site_name, prev_post$year1)
+prev_post$site_year2 <- paste(prev_post$site_name, prev_post$year2)
 
-rel_LQT <- function(x){
-  x$light_rel <- x$light/max(x$light)
-  x$temp_rel <- x$temp/max(x$temp)
-  x$tQ <- x$Q/max(x$Q)
+data$site_year <- paste(data$site_name, data$year)
+
+## subset time series data
+prev_dat <- subset(data, site_year %in% prev_post$site_year1)
+post_dat <- subset(data, site_year %in% prev_post$site_year2)
+
+## extract first year max light and discharge by site
+prev_max <- prev_dat %>% group_by(site_name) %>%
+  summarise_at(.vars = c("Q","light"), .funs = max)
+
+oos_relativize <- function(prev_max, post_dat, id){
   
-  #x$std_light <- (x$light-mean(x$light))/sd(x$light)
-  #x$std_temp <- (x$temp-mean(x$temp))/sd(x$temp)
-  #x$tQ <- (x$Q-mean(x$Q))/sd(x$Q)
-  x<-x[order(x$date),]
-  return(x)
+  max.vals <- prev_max[which(prev_max$site_name == id),]
+  dat <- post_dat[which(post_dat$site_name == id),]
+  
+  dat$light_rel <- dat$light/max.vals$light
+  dat$tQ <- dat$Q/max.vals$Q
+  
+  dat <- dat[order(dat$date),]
+  return(dat)
+  
 }
 
-dat_oos <- lapply(l, function(x) rel_LQT(x))
+
+dat_oos <- list()
+for(i in 1:nrow(prev_max)){
+  dat_oos[[i]] <- oos_relativize(prev_max, post_dat, prev_max[i,]$site_name)
+}
+names(dat_oos) <- prev_max$site_name
 
 
-rm(data,l, data_siteyears)
+rm(data, data_siteyears, prev_max, prev_dat, post_dat, prev_post, i, oos_relativize)
