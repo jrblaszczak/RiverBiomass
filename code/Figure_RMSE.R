@@ -14,18 +14,30 @@ PM_Gompertz.col <- "#743731" # Gompertz
 ################################
 ## Import within sample data
 source("DataSource_9rivers.R")
-dat_ws <- dat
+dat_ws <- df
+dat_ws <- dat_ws[c("nwis_01649500","nwis_02234000","nwis_03058000",
+           "nwis_08180700","nwis_10129900","nwis_14211010")]
+
 
 # Within-sample predictions
-ws_AR <- readRDS("./rds files/Sim_6riv_AR.rds")
-ws_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_ws.rds")
+ws_AR <- readRDS("./rds files/Sim_9riv_AR_ws.rds")
+ws_Ricker <- readRDS("./rds files/Sim_9riv_Ricker_ws.rds")
 
 ## Import within sample data
 source("DataSource_9rivers_oos.R")
+dat_oos <- dat_oos[c("nwis_01649500","nwis_02234000","nwis_03058000",
+                   "nwis_08180700","nwis_10129900","nwis_14211010")]
+
 
 # Out-of-sample predictions
-oos_AR <- readRDS("./rds files/Sim_6riv_AR_oos.rds")
-oos_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_oos.rds")
+oos_AR <- readRDS("./rds files/Sim_9riv_AR_oos.rds")
+oos_Ricker <- readRDS("./rds files/Sim_9riv_Ricker_oos.rds")
+
+# Get rid of extra three sites
+ws_AR <- ws_AR[names(dat_ws)]
+oos_AR <- oos_AR[names(dat_oos)]
+ws_Ricker <- ws_Ricker[names(dat_ws)]
+oos_Ricker <- oos_Ricker[names(dat_oos)]
 
 ##################################
 ## Extract and calculate RMSE
@@ -156,20 +168,6 @@ WS_plot <- ggplot(RMSE_WS_wide, aes(short_name, median))+
   scale_y_continuous(limits=c(0,16))
 
 plot_grid(WS_plot, OOS_prev_yr_plot, align = "hv", nrow=1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
