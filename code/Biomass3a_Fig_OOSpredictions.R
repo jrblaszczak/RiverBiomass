@@ -1,4 +1,4 @@
-## Within-sample predictions
+## Out-of-sample predictions
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
