@@ -10,6 +10,16 @@ source("DataSource_9rivers.R")
 # Subset source data
 df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
            "nwis_08180700","nwis_10129900","nwis_14211010")]
+## Change river names to short names
+site_info[,c("site_name","long_name","NHD_STREAMORDE")]
+site_info <- site_info[which(site_info$site_name %in% names(df)),]
+site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
+                                                                               "nwis_02234000"="St. John's River, FL",
+                                                                               "nwis_03058000"="West Fork River, WV",
+                                                                               "nwis_08180700"="Medina River, TX",
+                                                                               "nwis_10129900"="Silver Creek, UT",
+                                                                               "nwis_14211010"="Clackamas River, OR"))
+
 
 # source simulation models
 source("Simulated_ProductivityModel1_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
@@ -105,7 +115,7 @@ P_df <- P_dat_R
 ## Visualize
 #####################
 
-## Identify threshold velocity (when does Q > v=0.15)
+## Identify threshold velocity (when does Q > v=0.30)
 qv <- lapply(dat, function(x) return(x[,c("site_name","date","Q",
                                           "velocity","tQ")]))
 
