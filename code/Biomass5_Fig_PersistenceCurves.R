@@ -128,7 +128,6 @@ site_info$critQ_0.3vel <- (0.3/site_info$dvqcoefs.k)^(1/site_info$dvqcoefs.m)
 ## Check
 site_info[,c("site_name","critQ_0.3vel")]
 
-
 ## join by river name
 P_df <- left_join(P_df, site_info[,c("site_name","short_name")], by="site_name")
 P_df$short_name <- factor(P_df$short_name, levels=c("Silver Creek, UT",
@@ -139,10 +138,10 @@ P_df$short_name <- factor(P_df$short_name, levels=c("Silver Creek, UT",
                                               "Clackamas River, OR"))
 
 
-Persistence_plots <- function(site, df, site_info, P_df, x.lab.pos, y.lab.pos){
-  
-  Q_sub <- df[site]
-  Q_sub$pq <- Q_sub$Q
+Persistence_plots <- function(site, df, site_info, P_df){
+
+  Q_sub <- df[[site]]
+  #Q_sub$pq <- Q_sub$tQ
   Q_sub$p_for_q <- 0.5
   
   ## critical Q based on velocity
@@ -150,28 +149,35 @@ Persistence_plots <- function(site, df, site_info, P_df, x.lab.pos, y.lab.pos){
   
   ## convert relativized Q to original values
   P <- P_df[which(P_df$site_name == site),]
-  P$Q <- P$pq*max(Q_sub$Q)
+  P$Q <- P$pq*max(Q_sub$Q, na.rm = T)
   
   ## critical Q based on GPP - Q correction needed
-  c <- meanpar_R[site]$par$c*max(Q_sub$Q)
+  c <- meanpar_R[[site]]$par$c*max(Q_sub$Q, na.rm = T)
+  
+  scaleFUN <- function(x) sprintf("%.1f", x)
   
   ## Plot
   Persist_plot <- ggplot(P, aes(Q, p_median))+
-    geom_point(dfa=Q_sub, aes(pq, p_for_q), color="white")+
+    scale_x_continuous(trans = "log", labels = scaleFUN)+
+    geom_point(data=Q_sub, aes(Q, p_for_q), color="white")+
     geom_line(size=1.5, alpha=0.9, color="chartreuse4")+
-    geom_ribbon(dfa=P, aes(ymin=p_down, ymax=p_up), alpha=0.5, fill="chartreuse4", color=NA)+
+    geom_ribbon(data=P, aes(ymin=p_down, ymax=p_up), alpha=0.5, fill="chartreuse4", color=NA)+
     theme(panel.background = element_rect(color = "black", fill=NA, size=1),
-          axis.text = element_text(size=12),
+          axis.text.y = element_text(size=12),
+          axis.text.x = element_text(size=12, angle=45, hjust=1),
           axis.title = element_blank(), 
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15))+
-    annotate("text", label=as.character(P$short_name[1]), x = x.lab.pos, y= y.lab.pos, size=3.5)+
+    annotate("text", label=as.character(P$short_name[1]),
+             x = 1.1*min(Q_sub$Q, na.rm=T), 
+             y= 0.1, size=3.5, hjust=0)+
     labs(x="Range of Standardized Discharge",y="Persistence")+
-    #scale_y_continuous(limits=c(0,1))+scale_x_continuous(limits=c(0,1.25))+
+    scale_y_continuous(limits=c(0,1))+
+    #geom_vline(xintercept = crit_Q, size=0.9, linetype="longdash", color="purple")+
     geom_vline(xintercept = c, size=0.9, linetype="dashed")
   
   
-  Persist_plot2 <- ggExtra::ggMarginal(Persist_plot, dfa=Q_sub, type="histogram",
+  Persist_plot2 <- ggExtra::ggMarginal(Persist_plot, data=Q_sub, type="histogram",
                                        size=4, x = Q, margins = "x", color="black",
                                        fill="deepskyblue4", xparams = list(alpha=0.8))
   
@@ -179,19 +185,19 @@ Persistence_plots <- function(site, df, site_info, P_df, x.lab.pos, y.lab.pos){
   
 }
 
-Anacostia <- Persistence_plots("nwis_01649500", df, site_info, P_df, 0.75*max(df$nwis_01649500$Q),0.9)
-St_Johns <- Persistence_plots("nwis_02234000", df, site_info, P_df,0.22,0.1)
-West_Fork <- Persistence_plots("nwis_03058000", df, site_info, P_df,0.85,0.9)
-Medina <- Persistence_plots("nwis_08180700", df, site_info, P_df,0.2,0.1)
-Silver <- Persistence_plots("nwis_10129900", df, site_info, P_df,0.2,0.1)
-Clackamas <- Persistence_plots("nwis_14211010", df, site_info, P_df,0.85,0.9)
+Anacostia <- Persistence_plots("nwis_01649500", df, site_info, P_df) #, 0.05*max(df$nwis_01649500$Q),0.1)
+St_Johns <- Persistence_plots("nwis_02234000", df, site_info, P_df) #,0.05*max(df$nwis_02234000$Q),0.1)
+West_Fork <- Persistence_plots("nwis_03058000", df, site_info, P_df) #,0.05*max(df$nwis_03058000$Q),0.1)
+Medina <- Persistence_plots("nwis_08180700", df, site_info, P_df) #,0.05*max(df$nwis_08180700$Q),0.1)
+Silver <- Persistence_plots("nwis_10129900", df, site_info, P_df) #,0.05*max(df$nwis_10129900$Q),0.1)
+Clackamas <- Persistence_plots("nwis_14211010", df, site_info, P_df) #,0.05*max(df$nwis_14211010$Q),0.1)
 
 ## order based on river order
-plot_grid(Silver, Medina, Anacostia, West_Fork, St_Johns, Clackamas,
-          ncol = 2, nrow=3,
-          label_x = "Standardized Discharge",
-          label_y = "Biomass Persistence",
-          label_size = 14)
+PPLOTS <- plot_grid(Silver, Medina, Anacostia, West_Fork, St_Johns, Clackamas,
+          ncol = 2, nrow=3)
+
+ggdraw(add_sub(PPLOTS, label = "Discharge (cms)", vpadding = grid::unit(0,"lines"),y=6,x=0.5,vjust = 5.5))
+
 
 
 #########################
