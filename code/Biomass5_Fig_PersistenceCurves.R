@@ -22,21 +22,21 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
 
 
 # source simulation models
-source("Simulated_ProductivityModel1_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
-source("Simulated_ProductivityModel3_Ricker.R") # parameters: r, lambda, s, c, sig_p
+source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
+source("Predicted_ProductivityModel_Ricker.R") # parameters: r, lambda, s, c, sig_p
 #source("Simulated_ProductivityModel5_Gompertz.R") # parameters: beta_0, beta_1, s, c, sig_p
 
 # colors
-PM_AR.col <- "#d95f02" # AR
-PM_Ricker.col <- "#1C474D" # Ricker
-PM_Gompertz.col <- "#743731" # Gompertz
+PM_AR.col <- "#d95f02"
+PM_Ricker.col <- "#7570b3"
+PM_Gompertz.col <- "#1C474D"
 
 ##################################################
 ## Extract 
 ###################################################
 ## Import stan fits - simulate one at a time
 stan_model_output_Ricker <- readRDS("./rds files/stan_9riv_output_Ricker_2021_03_05.rds")
-stan_model_output_Ricker <- stan_model_output_Ricker[names(df)]
+stan_model_output_Ricker <- stan_model_output_Ricker[names(df)] ## limit to the six chosen sites
 
 #stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz.rds")
 
@@ -90,17 +90,17 @@ P_R <- persistence_list(par_Ricker, df)
 ## plot
 plotting_P_dat <- function(x){
   pq <- seq(x$range[1],x$range[2], length=length(x$s))
-  p_mean <- numeric()
+  p_median <- numeric()
   p_up <- numeric()
   p_down <- numeric()
   name <- substring(deparse(substitute(x)),7)
   for(i in 1:length(pq)){
     temp <- exp(-exp(x$s*(pq[i]-x$c)))
-    p_mean[i] <- mean(temp)
+    p_median[i] <- median(temp)
     p_up[i] <- quantile(temp, probs = 0.975)
     p_down[i] <- quantile(temp, probs = 0.025)
   }
-  df <- as.data.frame(as.matrix(cbind(pq,p_mean, p_up, p_down)))
+  df <- as.data.frame(as.matrix(cbind(pq,p_median, p_up, p_down)))
   df$site_name <- x$site_name
   
   return(df)
@@ -116,12 +116,17 @@ P_df <- P_dat_R
 #####################
 
 ## Identify threshold velocity (when does Q > v=0.30)
-qv <- lapply(dat, function(x) return(x[,c("site_name","date","Q",
+qv <- lapply(df, function(x) return(x[,c("site_name","date","Q",
                                           "velocity","tQ")]))
+qv_df <- ldply(qv, data.frame)
+## vis
+ggplot(qv_df, aes(velocity, Q))+geom_point()+facet_wrap(~site_name, scales = "free")
 
-site_info$NHD_SLOPE
-
-
+## back calculate the Q at velocity 0.3 (v = k*Q^m rearrange to Q = (v/k)^(1/m)
+## using coefficients in site_info
+site_info$critQ_0.3vel <- (0.3/site_info$dvqcoefs.k)^(1/site_info$dvqcoefs.m)
+## Check
+site_info[,c("site_name","critQ_0.3vel")]
 
 
 ## join by river name
@@ -134,22 +139,27 @@ P_df$short_name <- factor(P_df$short_name, levels=c("Silver Creek, UT",
                                               "Clackamas River, OR"))
 
 
-Persistence_plots <- function(site_num, dat, P_df, x.lab.pos, y.lab.pos){
+Persistence_plots <- function(site, df, site_info, P_df, x.lab.pos, y.lab.pos){
   
-  site <- names(dat)[site_num]
-  
-  Q_sub <- dat[[site]]
-  Q_sub$pq <- Q_sub$tQ
+  Q_sub <- df[site]
+  Q_sub$pq <- Q_sub$Q
   Q_sub$p_for_q <- 0.5
   
+  ## critical Q based on velocity
+  crit_Q <- site_info[which(site_info$site_name == site),]$critQ_0.3vel
+  
+  ## convert relativized Q to original values
   P <- P_df[which(P_df$site_name == site),]
+  P$Q <- P$pq*max(Q_sub$Q)
   
-  c <- meanpar_R[[site]]$par$c
+  ## critical Q based on GPP - Q correction needed
+  c <- meanpar_R[site]$par$c*max(Q_sub$Q)
   
-  Persist_plot <- ggplot(P, aes(pq, p_mean))+
-    geom_point(data=Q_sub, aes(pq, p_for_q), color="white")+
+  ## Plot
+  Persist_plot <- ggplot(P, aes(Q, p_median))+
+    geom_point(dfa=Q_sub, aes(pq, p_for_q), color="white")+
     geom_line(size=1.5, alpha=0.9, color="chartreuse4")+
-    geom_ribbon(data=P, aes(ymin=p_down, ymax=p_up), alpha=0.5, fill="chartreuse4", color=NA)+
+    geom_ribbon(dfa=P, aes(ymin=p_down, ymax=p_up), alpha=0.5, fill="chartreuse4", color=NA)+
     theme(panel.background = element_rect(color = "black", fill=NA, size=1),
           axis.text = element_text(size=12),
           axis.title = element_blank(), 
@@ -157,27 +167,27 @@ Persistence_plots <- function(site_num, dat, P_df, x.lab.pos, y.lab.pos){
           strip.text = element_text(size=15))+
     annotate("text", label=as.character(P$short_name[1]), x = x.lab.pos, y= y.lab.pos, size=3.5)+
     labs(x="Range of Standardized Discharge",y="Persistence")+
-    scale_y_continuous(limits=c(0,1))+scale_x_continuous(limits=c(0,1.25))+
+    #scale_y_continuous(limits=c(0,1))+scale_x_continuous(limits=c(0,1.25))+
     geom_vline(xintercept = c, size=0.9, linetype="dashed")
   
   
-  Persist_plot2 <- ggExtra::ggMarginal(Persist_plot, data=Q_sub, type="histogram",
-                                       size=4, x = pq, margins = "x", color="black",
+  Persist_plot2 <- ggExtra::ggMarginal(Persist_plot, dfa=Q_sub, type="histogram",
+                                       size=4, x = Q, margins = "x", color="black",
                                        fill="deepskyblue4", xparams = list(alpha=0.8))
   
   return(Persist_plot2)
   
 }
 
-a <- Persistence_plots(1, dat, P_df,0.75,0.9)
-b <- Persistence_plots(2, dat, P_df,0.22,0.1)
-c <- Persistence_plots(3, dat, P_df,0.85,0.9)
-d <- Persistence_plots(4, dat, P_df,0.2,0.1)
-e <- Persistence_plots(5, dat, P_df,0.2,0.1)
-f <- Persistence_plots(6, dat, P_df,0.85,0.9)
+Anacostia <- Persistence_plots("nwis_01649500", df, site_info, P_df, 0.75*max(df$nwis_01649500$Q),0.9)
+St_Johns <- Persistence_plots("nwis_02234000", df, site_info, P_df,0.22,0.1)
+West_Fork <- Persistence_plots("nwis_03058000", df, site_info, P_df,0.85,0.9)
+Medina <- Persistence_plots("nwis_08180700", df, site_info, P_df,0.2,0.1)
+Silver <- Persistence_plots("nwis_10129900", df, site_info, P_df,0.2,0.1)
+Clackamas <- Persistence_plots("nwis_14211010", df, site_info, P_df,0.85,0.9)
 
 ## order based on river order
-plot_grid(e,d,a,c,b,f,
+plot_grid(Silver, Medina, Anacostia, West_Fork, St_Johns, Clackamas,
           ncol = 2, nrow=3,
           label_x = "Standardized Discharge",
           label_y = "Biomass Persistence",
