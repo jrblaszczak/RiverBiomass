@@ -3,7 +3,7 @@
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm",
-         "reshape2","ggExtra","patchwork"), require, character.only=T)
+         "reshape2","ggExtra","patchwork","grid","gridExtra"), require, character.only=T)
 
 ## Source data
 source("DataSource_9rivers.R")
@@ -161,7 +161,7 @@ Persistence_plots <- function(site, df, site_info, P_df){
     scale_x_continuous(trans = "log", labels = scaleFUN)+
     geom_point(data=Q_sub, aes(Q, p_for_q), color="white")+
     geom_line(size=1.5, alpha=0.9, color="chartreuse4")+
-    geom_ribbon(data=P, aes(ymin=p_down, ymax=p_up), alpha=0.5, fill="chartreuse4", color=NA)+
+    geom_ribbon(data=P, aes(ymin=p_down, ymax=p_up), alpha=0.3, fill="chartreuse4", color=NA)+
     theme(panel.background = element_rect(color = "black", fill=NA, size=1),
           axis.text.y = element_text(size=12),
           axis.text.x = element_text(size=12, angle=45, hjust=1),
@@ -193,10 +193,13 @@ Silver <- Persistence_plots("nwis_10129900", df, site_info, P_df) #,0.05*max(df$
 Clackamas <- Persistence_plots("nwis_14211010", df, site_info, P_df) #,0.05*max(df$nwis_14211010$Q),0.1)
 
 ## order based on river order
-PPLOTS <- plot_grid(Silver, Medina, Anacostia, West_Fork, St_Johns, Clackamas,
-          ncol = 2, nrow=3)
-
-ggdraw(add_sub(PPLOTS, label = "Discharge (cms)", vpadding = grid::unit(0,"lines"),y=6,x=0.5,vjust = 5.5))
+grid.arrange(
+  arrangeGrob(grobs=list(Silver, Medina, Anacostia, West_Fork, St_Johns, Clackamas),
+              ncol = 2,
+              bottom=textGrob("Discharge (cms)", gp=gpar(fontsize=16)), 
+              left=textGrob("Biomass Persistence", gp=gpar(fontsize=16), rot=90)),
+  widths=c(9,1)
+)
 
 
 
