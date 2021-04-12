@@ -47,13 +47,6 @@ sub$n_years <- sub$End_year - sub$Start_year
 
 s <- sub[which(sub$n_years >=2),]
 
-## Compare to Savoy sites
-#savoy <- read.csv("Savoy_site_clusters.csv")
-#colnames(savoy)[which(colnames(savoy) == "Site_ID")] <- "site_name"
-#s2 <- left_join(savoy, s, by="site_name")
-## few of the selected have a stream order associated with them
-#rm(s2, savoy)
-
 ## Instead choose sites based on grouping of NHD_STREAMORDE
 ## low (1,2,3), mid(4,5,6), high(7,8,9)
 s_low <- s[which(s$NHD_STREAMORDE %in% c(1,2,3)),]
