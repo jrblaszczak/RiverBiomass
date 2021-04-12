@@ -83,7 +83,7 @@ GPP_oos_preds <- function(preds, df, PM.col, PM.title){
 
 GPP_oos_preds("./rds files/Sim_9riv_AR_oos.rds",df, PM_AR.col, "PM: Phenomenological")
 GPP_oos_preds("./rds files/Sim_9riv_Ricker_oos.rds",df, PM_Ricker.col, "PM: Ricker")
-GPP_oos_preds("./rds files/Sim_9riv_Gompertz_oos.rds",df, PM_Gompertz.col, "PM: Gompertz")
+#GPP_oos_preds("./rds files/Sim_9riv_Gompertz_oos.rds",df, PM_Gompertz.col, "PM: Gompertz")
 
 
 

@@ -71,6 +71,8 @@ RMSE_oos_Ricker <- RMSE_extract(oos_Ricker,"OOS","Ricker")
 
 RMSE_all <- rbind(RMSE_ws_AR, RMSE_oos_AR, RMSE_ws_Ricker, RMSE_oos_Ricker)
 
+saveRDS(RMSE_all, "./rds files/RMSE_all.rds")
+
 ###########################################################################
 ## Figure out RMSE if just using last year's data to predict this year
 ##########################################################################
@@ -168,6 +170,54 @@ WS_plot <- ggplot(RMSE_WS_wide, aes(short_name, median))+
   scale_y_continuous(limits=c(0,16))
 
 plot_grid(WS_plot, OOS_prev_yr_plot, align = "hv", nrow=1)
+
+OOS_prev_yr_plot
+
+################################
+## AR vs Ricker OOS comparison
+################################
+
+oos_biplot_R <- RMSE_OOS[which(RMSE_OOS$model_type == "Ricker"),c("site_name","RMSE","quant","model_type")]
+oos_biplot_R <- spread(oos_biplot_R, key = quant, value=RMSE)
+colnames(oos_biplot_R) <- c("site_name","model_type","Ricker_lowerCI","Ricker_median","Ricker_upperCI")
+
+oos_biplot_AR <- RMSE_OOS[which(RMSE_OOS$model_type == "AR"),c("site_name","RMSE","quant","model_type")]
+oos_biplot_AR <- spread(oos_biplot_AR, key = quant, value=RMSE)
+colnames(oos_biplot_AR) <- c("site_name","model_type","AR_lowerCI","AR_median","AR_upperCI")
+
+oos_biplot <- merge(oos_biplot_AR, oos_biplot_R, by="site_name")
+
+oos_biplot$short_name <- revalue(as.character(oos_biplot$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
+                                                                               "nwis_02234000"="St. John's River, FL",
+                                                                               "nwis_03058000"="West Fork River, WV",
+                                                                               "nwis_08180700"="Medina River, TX",
+                                                                               "nwis_10129900"="Silver Creek, UT",
+                                                                               "nwis_14211010"="Clackamas River, OR"))
+
+
+six_RMSE_plot <- ggplot(oos_biplot, aes(AR_median, Ricker_median, color=short_name))+
+  geom_abline(slope = 1, intercept = 0)+
+  geom_point(size=3)+
+  geom_errorbar(aes(ymin=Ricker_lowerCI, ymax=Ricker_upperCI, color=short_name), size=0.5)+
+  geom_errorbarh(aes(xmin=AR_lowerCI, xmax=AR_upperCI, color=short_name), size=0.5)+
+  coord_cartesian(xlim = c(0,15),y=c(0,5))+
+  scale_x_continuous(expand = c(0,0))+scale_y_continuous(expand = c(0,0))+
+  theme_bw()+
+  labs(x="Phenomenological model OOS RMSE",
+       y="Ricker model OOS RMSE",
+       color="Site")+
+  theme(axis.text = element_text(size=14), axis.title = element_text(size=16))
+  
+
+
+
+
+
+
+
+
+
+
 
 
 

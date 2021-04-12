@@ -30,14 +30,26 @@ PM_AR.col <- "#d95f02" # AR
 PM_Ricker.col <- "#1C474D" # Ricker
 PM_Gompertz.col <- "#743731" # Gompertz
 
-##################################################
-## Extract and summarize parameters
-###################################################
+
 ## Import stan fits - simulate one at a time
 stan_model_output_Ricker <- readRDS("./rds files/stan_9riv_output_Ricker_2021_03_05.rds")
 stan_model_output_Ricker <- stan_model_output_Ricker[names(df)]
 #stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz.rds")
 
+
+
+
+
+
+
+
+
+
+
+
+##################################################
+## Extract and summarize parameters
+###################################################
 ## Extract and summarize parameters
 par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p")))
 #par_Gompertz <- lapply(stan_model_output_Gompertz, function(x) rstan::extract(x, c("beta_0","beta_1","s","c","B","P","pred_GPP","sig_p")))
