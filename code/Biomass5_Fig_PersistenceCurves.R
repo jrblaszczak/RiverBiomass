@@ -112,21 +112,13 @@ P_dat_R <- ldply(lapply(P_R, function(z) plotting_P_dat(z)), data.frame); P_dat_
 P_df <- P_dat_R
 
 #####################
-## Visualize
+## Visualize & compare to bankfull discharge
 #####################
 
-## Identify threshold velocity (when does Q > v=0.30)
-qv <- lapply(df, function(x) return(x[,c("site_name","date","Q",
-                                          "velocity","tQ")]))
-qv_df <- ldply(qv, data.frame)
-## vis
-ggplot(qv_df, aes(velocity, Q))+geom_point()+facet_wrap(~site_name, scales = "free")
-
-## back calculate the Q at velocity 0.3 (v = k*Q^m rearrange to Q = (v/k)^(1/m)
-## using coefficients in site_info
-site_info$critQ_0.3vel <- (0.3/site_info$dvqcoefs.k)^(1/site_info$dvqcoefs.m)
-## Check
-site_info[,c("site_name","critQ_0.3vel")]
+## Import and merge bankfull discharge with site info
+RI_2 <- read.csv("../data/RI_2yr_flood.csv", header=T)
+sapply(RI_2, class)
+site_info <- merge(site_info, RI_2, by="site_name")
 
 ## join by river name
 P_df <- left_join(P_df, site_info[,c("site_name","short_name")], by="site_name")
@@ -145,7 +137,7 @@ Persistence_plots <- function(site, df, site_info, P_df){
   Q_sub$p_for_q <- 0.5
   
   ## critical Q based on velocity
-  crit_Q <- site_info[which(site_info$site_name == site),]$critQ_0.3vel
+  crit_Q <- site_info[which(site_info$site_name == site),]$RI_2yr_Q
   
   ## convert relativized Q to original values
   P <- P_df[which(P_df$site_name == site),]
@@ -169,12 +161,12 @@ Persistence_plots <- function(site, df, site_info, P_df){
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15))+
     annotate("text", label=as.character(P$short_name[1]),
-             x = 1.1*min(Q_sub$Q, na.rm=T), 
-             y= 0.1, size=3.5, hjust=0)+
+             x = 1.2*c, 
+             y= 0.9, size=3.75, hjust=0)+
     labs(x="Range of Standardized Discharge",y="Persistence")+
     scale_y_continuous(limits=c(0,1))+
-    #geom_vline(xintercept = crit_Q, size=0.9, linetype="longdash", color="purple")+
-    geom_vline(xintercept = c, size=0.9, linetype="dashed")
+    geom_vline(xintercept = crit_Q, size=1, linetype="dotted", color="grey25")+
+    geom_vline(xintercept = c, size=1, linetype="dashed")
   
   
   Persist_plot2 <- ggExtra::ggMarginal(Persist_plot, data=Q_sub, type="histogram",
@@ -200,7 +192,6 @@ grid.arrange(
               left=textGrob("Biomass Persistence", gp=gpar(fontsize=16), rot=90)),
   widths=c(9,1)
 )
-
 
 
 #########################
