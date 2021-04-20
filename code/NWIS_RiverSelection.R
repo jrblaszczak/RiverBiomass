@@ -58,7 +58,7 @@ s_high <- s[which(s$NHD_STREAMORDE %in% c(7,8,9)),]
 ## Further select sites based on data quality
 ##################################################
 ## Import
-NWIS <- read.table("daily_predictions.tsv", sep='\t', header = TRUE)
+NWIS <- read.table("../data/daily_predictions.tsv", sep='\t', header = TRUE)
 NWIS$date <- as.POSIXct(as.character(NWIS$date), format="%Y-%m-%d")
 head(NWIS)
 
