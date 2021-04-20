@@ -42,7 +42,7 @@ data <- rbind(data[which(data$site_name == "nwis_08180700" & data$year %in% c(20
               data[which(data$site_name == "nwis_04137500" & data$year %in% c(2010)),])
 
 ## Set any GPP < 0 to a small value close to 0
-data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1)
+data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1) ## remind myself why I did this
 
 ## Create a GPP SD; SD = (CI - mean)/1.96
 data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
