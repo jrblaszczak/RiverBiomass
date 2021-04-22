@@ -1,8 +1,8 @@
-## Out-of-sample predictions
+## Out-of-sample predictions - model weights
 
 # load packages
-lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
-         "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
+         "tidyverse"), require, character.only=T)
 
 ## Source data
 source("DataSource_9rivers_oos.R")
@@ -11,25 +11,10 @@ df <- dat_oos
 df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
            "nwis_08180700","nwis_10129900","nwis_14211010")]
 
-# source simulation models
-source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
-source("Predicted_ProductivityModel_Ricker.R") # parameters: r, lambda, s, c, sig_p
-source("Predicted_ProductivityModel_Gompertz.R") # parameters: beta_0, beta_1, s, c, sig_p
-
-# colors
-PM_AR.col <- "#d95f02"
-PM_Ricker.col <- "#7570b3"
-PM_Gompertz.col <- "#1C474D"
-
 ## Change river names to short names
 site_info[,c("site_name","long_name","NHD_STREAMORDE")]
 site_info <- site_info[which(site_info$site_name %in% names(df)),]
-site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                               "nwis_02234000"="St. John's River, FL",
-                                                                               "nwis_03058000"="West Fork River, WV",
-                                                                               "nwis_08180700"="Medina River, TX",
-                                                                               "nwis_10129900"="Silver Creek, UT",
-                                                                               "nwis_14211010"="Clackamas River, OR"))
+
 ################################
 ## Model output plot function
 ################################
