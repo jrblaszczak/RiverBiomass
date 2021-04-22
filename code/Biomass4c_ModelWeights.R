@@ -25,7 +25,7 @@ GPP_oos_preds <- function(preds, df, mean_mod, se_mod){
   
   # For every day extract median and CI
   mean_simmat <- ldply(lapply(simmat_list, function(z) apply(z[[1]], 1, function(x) mean(x))), data.frame)
-  se_simmat <- ldply(lapply(simmat_list, function(z) apply(z[[1]], 1, function(x) sd(x)/sqrt(7500))), data.frame)
+  se_simmat <- ldply(lapply(simmat_list, function(z) apply(z[[1]], 1, function(x) sd(x)/sqrt(2500))), data.frame)
   
   ## Plot simulated GPP
   dat <- ldply(df, data.frame)
@@ -37,14 +37,8 @@ GPP_oos_preds <- function(preds, df, mean_mod, se_mod){
   df_sim[,3:6] <- apply(df_sim[,3:6],2,function(x) as.numeric(as.character(x)))
   df_sim[,3:6] <- log(df_sim[,3:6])
   
-  ## Arrange rivers by river order
+  ## Link to site_info
   df_sim <- left_join(df_sim, site_info[,c("site_name","short_name")])
-  df_sim$short_name <- factor(df_sim$short_name, levels=c("Silver Creek, UT",
-                                                          "Medina River, TX",
-                                                          "Anacostia River, MD",
-                                                          "West Fork River, WV",
-                                                          "St. John's River, FL",
-                                                          "Clackamas River, OR"))
   
   return(df_sim)
   
@@ -62,33 +56,61 @@ oos_preds <- merge(oos_preds, Gomp_oos[,c("site_name","Date","mean_p_GPP_Gomp", 
 ## Split by short_name
 oos_pl <- split(oos_preds, oos_preds$short_name)
 
-test <- oos_pl$`Anacostia River, MD`
-test$p_obs_STS <- dnorm(test$GPP, test$mean_p_GPP_STS, sqrt(test$GPP_se^2 + test$se_p_GPP_STS^2), log = FALSE)
-test$p_obs_LB <- dnorm(test$GPP, test$mean_p_GPP_LB, sqrt(test$GPP_se^2 + test$se_p_GPP_LB^2), log = FALSE)
-
-
-ggplot(test, aes(Date, p_obs_STS))+geom_line()+
-  geom_line(aes(Date, p_obs_LB), color="blue")
-
-
 #######################
 ## Calc weights
 ########################
-test2 <- test[-1,]
 
-#probability vectors
-p_STS <- c(0,test2$p_obs_STS); p_LB <- c(0, test2$p_obs_LB)
-#empty vectors
-weight_STS <- numeric(nrow(test2)+1)
-weight_LB <- numeric(nrow(test2)+1)
-#starting values
-weight_STS[1] <- 0.5; weight_LB[1] <- 0.5
+visualize_support <- function(short.name){
+  
+  test <- oos_pl[[short.name]]
+  test$p_obs_STS <- dnorm(test$GPP, test$mean_p_GPP_STS, sqrt(test$GPP_se^2 + test$se_p_GPP_STS^2), log = FALSE)
+  test$p_obs_LB <- dnorm(test$GPP, test$mean_p_GPP_LB, sqrt(test$GPP_se^2 + test$se_p_GPP_LB^2), log = FALSE)
+  
+  test2 <- test[-1,]
+  
+  #probability vectors
+  p_STS <- c(0,test2$p_obs_STS); p_LB <- c(0, test2$p_obs_LB)
+  #empty vectors
+  weight_STS <- numeric(nrow(test2)+1)
+  weight_LB <- numeric(nrow(test2)+1)
+  #starting values
+  weight_STS[1] <- 0.5; weight_LB[1] <- 0.5
+  
+  for(i in 2:length(weight_STS)){
+    weight_STS[i] <- (weight_STS[(i-1)]*p_STS[i])/((weight_STS[(i-1)]*p_STS[i])+(weight_LB[(i-1)]*p_LB[i]))
+    weight_LB[i] <- 1-weight_STS[i]
+  }
+  support <- cbind(test2,"STS_support" = weight_STS[-1], "LB_support" = weight_LB[-1])
+  
+  ## visualize
+  theme_set(theme_bw())
+  
+  vis.plot <- plot_grid(
+    ggplot(support, aes(Date, exp(GPP)))+geom_point(color="grey75")+
+      geom_line(aes(Date, exp(mean_p_GPP_STS)),color="purple",size=0.9)+
+      geom_ribbon(aes(Date, ymin=exp(mean_p_GPP_STS) - exp(se_p_GPP_STS),
+                      ymax=exp(mean_p_GPP_STS) + exp(se_p_GPP_STS)), fill="purple",alpha=0.3)+
+      geom_line(aes(Date, exp(mean_p_GPP_LB)),color="chartreuse4",size=0.9)+
+      geom_ribbon(aes(Date, ymin=exp(mean_p_GPP_LB) - exp(se_p_GPP_LB),
+                      ymax=exp(mean_p_GPP_LB) + exp(se_p_GPP_LB)), fill="chartreuse4",alpha=0.3)+
+      labs(y="GPP",title = short.name),
+    
+    ggplot(support, aes(Date, STS_support))+geom_line(color="purple",size=0.9)+
+      geom_line(aes(Date, LB_support),color="chartreuse4",size=0.9),
+    ncol=1, align = "hv")
+  
+  return(vis.plot)
 
-for(i in 2:length(weight_STS)){
-  weight_STS[i] <- (weight_STS[(i-1)]*p_STS[i])/((weight_STS[(i-1)]*p_STS[i])+(weight_LB[(i-1)]*p_LB[i]))
-  weight_LB[i] <- 1-weight_STS[i]
 }
 
+## save images
+setwd("../figures/Model support")
 
-plot(weight_STS)
-plot(weight_LB)
+for(i in 1:length(site_info$short_name)){
+  
+  ggsave(filename = paste(site_info$short_name[i],"_model_support.jpeg",sep=""),
+         plot = visualize_support(site_info$short_name[i]),device = "jpeg")
+  
+
+}
+
