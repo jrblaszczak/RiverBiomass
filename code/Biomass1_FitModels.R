@@ -8,6 +8,9 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 
 ## Source data
 source("DataSource_9rivers.R")
+# Subset source data
+df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
+           "nwis_08180700","nwis_10129900","nwis_14211010")]
 
 ####################
 ## Stan data prep ##
@@ -31,7 +34,7 @@ stan_data_l <- lapply(df, function(x) stan_data_compile(x))
 #AR
 test_ar <- stan("Stan_ProductivityModel1_Autoregressive.stan",
              data=stan_data_l$nwis_08180700,
-             chains=3,iter=5000, control=list(max_treedepth=12))
+             chains=4,iter=3000, control=list(max_treedepth=12))
 launch_shinystan(test_ar)
 #Ricker
 init_Ricker <- function(...) {
@@ -59,7 +62,7 @@ launch_shinystan(test_Gompertz)
 ## PM 1 - Phenomenological
 PM_outputlist_AR <- lapply(stan_data_l,
                            function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive.stan",
-                                                   data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #5000 seconds
+                                                   data=x,chains=4,iter=3000, control=list(max_treedepth=12))) #5000 seconds
 PM_AR_elapsedtime <- lapply(PM_outputlist_AR, function(x) return(get_elapsed_time(x)))
 saveRDS(PM_outputlist_AR, "./rds files/stan_9riv_output_AR_2021_03_05.rds")
 saveRDS(PM_AR_elapsedtime, "./rds files/stan_9riv_AR_time_2021_03_05.rds")
