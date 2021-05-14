@@ -3,9 +3,7 @@
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm",
-         "reshape2","ggExtra","patchwork"), require, character.only=T)
-
-library(dataRetrieval)
+         "reshape2","ggExtra","patchwork","dataRetrieval"), require, character.only=T)
 
 # Site numbers
 site_numbers <- c("01649500","02234000","03058000",
@@ -41,11 +39,27 @@ two_year_flood <- function(data){
   maximas<-maximas[!is.na(maximas)]
   
   #Sorting maxima by decreasing order
-  sorted.maximas<-sort(maximas,decreasing=T)
-  # calculate rank for 2 year recurring flood
-  rank <- round((length(sorted.maximas)+1)/2, digits = 0)
-  # 2-year recurring flood
-  return(sorted.maximas[rank])
+  sorted.maximas<-as.data.frame(sort(maximas,decreasing=T))
+  sorted.maximas$rank <- seq(length=nrow(sorted.maximas))
+  colnames(sorted.maximas) <- c("Q_max","rank")
+  
+  #Fit relationship
+  sorted.maximas$ln_Q_max <- log(sorted.maximas$Q_max)
+  sorted.maximas$exceed_prob <- sorted.maximas$rank/(length(sorted.maximas$rank)+1)
+  
+  #visualize
+  ggplot(sorted.maximas, aes(ln_Q_max, exceed_prob))+
+    geom_point()+
+    geom_smooth(method = "lm")+
+    scale_y_reverse()
+  
+  #extract coefficients and calc 
+  mod <- lm(exceed_prob ~ ln_Q_max, data = sorted.maximas)
+  l <- as.data.frame(t(as.matrix(coefficients(mod))))
+  colnames(l) <- c("int","slope")
+  yr_2 <- exp((0.5 - l$int)/l$slope)
+  
+  return(yr_2)
 
 }
 

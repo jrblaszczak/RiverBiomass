@@ -25,12 +25,12 @@ GPP_oos_preds <- function(preds, df, mean_mod, se_mod){
   
   # For every day extract median and CI
   mean_simmat <- ldply(lapply(simmat_list, function(z) apply(z[[1]], 1, function(x) mean(x))), data.frame)
-  se_simmat <- ldply(lapply(simmat_list, function(z) apply(z[[1]], 1, function(x) sd(x)/sqrt(2500))), data.frame)
+  se_simmat <- ldply(lapply(simmat_list, function(z) apply(z[[1]], 1, function(x) sd(x))), data.frame)
   
   ## Plot simulated GPP
   dat <- ldply(df, data.frame)
   df_sim <- as.data.frame(cbind(dat$site_name, as.character(dat$date), 
-                                dat$GPP, dat$GPP_sd/sqrt(2000), 
+                                dat$GPP, dat$GPP_sd, 
                                 mean_simmat$X..i.., se_simmat$X..i..))
   colnames(df_sim) <- c("site_name","Date","GPP","GPP_se", mean_mod, se_mod)
   df_sim$Date <- as.POSIXct(as.character(df_sim$Date), format="%Y-%m-%d")
