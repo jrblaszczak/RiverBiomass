@@ -6,20 +6,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","ggExtra","patchwork","grid","gridExtra"), require, character.only=T)
 
 ## Source data
-source("DataSource_9rivers.R")
-# Subset source data
-df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
-           "nwis_08180700","nwis_10129900","nwis_14211010")]
-## Change river names to short names
-site_info[,c("site_name","long_name","NHD_STREAMORDE")]
-site_info <- site_info[which(site_info$site_name %in% names(df)),]
-site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                               "nwis_02234000"="St. John's River, FL",
-                                                                               "nwis_03058000"="West Fork River, WV",
-                                                                               "nwis_08180700"="Medina River, TX",
-                                                                               "nwis_10129900"="Silver Creek, UT",
-                                                                               "nwis_14211010"="Clackamas River, OR"))
-
+source("DataSource_6rivers.R")
 
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
@@ -35,13 +22,11 @@ PM_Gompertz.col <- "#1C474D"
 ## Extract 
 ###################################################
 ## Import stan fits - simulate one at a time
-stan_model_output_Ricker <- readRDS("./rds files/stan_9riv_output_Ricker_2021_03_05.rds")
-stan_model_output_Ricker <- stan_model_output_Ricker[names(df)] ## limit to the six chosen sites
-
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_05_16.rds")
 #stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz.rds")
 
 ## Extract and summarize parameters
-par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p")))
+par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
 #par_Gompertz <- lapply(stan_model_output_Gompertz, function(x) rstan::extract(x, c("beta_0","beta_1","s","c","B","P","pred_GPP","sig_p")))
 
 
@@ -116,18 +101,18 @@ P_df <- P_dat_R
 #####################
 
 ## Import and merge bankfull discharge with site info
-RI_2 <- read.csv("../data/RI_2yr_flood.csv", header=T)
+RI_2 <- read.csv("../data/RI_2yr_flood_6riv.csv", header=T)
 sapply(RI_2, class)
 site_info <- merge(site_info, RI_2, by="site_name")
 
 ## join by river name
 P_df <- left_join(P_df, site_info[,c("site_name","short_name")], by="site_name")
-P_df$short_name <- factor(P_df$short_name, levels=c("Silver Creek, UT",
-                                              "Medina River, TX",
-                                              "Anacostia River, MD",
-                                              "West Fork River, WV",
-                                              "St. John's River, FL",
-                                              "Clackamas River, OR"))
+P_df$short_name <- factor(P_df$short_name, levels=c("Black Earth Creek, WI",
+                                                    "Fatlick Branch, VA",
+                                                    "Beaty Creek, OK",
+                                                    "Fanno Creek, OR",
+                                                    "South Branch Potomac River, WV",
+                                                    "San Joaquin River, CA"))
 
 
 Persistence_plots <- function(site, df, site_info, P_df){
@@ -177,16 +162,19 @@ Persistence_plots <- function(site, df, site_info, P_df){
   
 }
 
-Anacostia <- Persistence_plots("nwis_01649500", df, site_info, P_df) #, 0.05*max(df$nwis_01649500$Q),0.1)
-St_Johns <- Persistence_plots("nwis_02234000", df, site_info, P_df) #,0.05*max(df$nwis_02234000$Q),0.1)
-West_Fork <- Persistence_plots("nwis_03058000", df, site_info, P_df) #,0.05*max(df$nwis_03058000$Q),0.1)
-Medina <- Persistence_plots("nwis_08180700", df, site_info, P_df) #,0.05*max(df$nwis_08180700$Q),0.1)
-Silver <- Persistence_plots("nwis_10129900", df, site_info, P_df) #,0.05*max(df$nwis_10129900$Q),0.1)
-Clackamas <- Persistence_plots("nwis_14211010", df, site_info, P_df) #,0.05*max(df$nwis_14211010$Q),0.1)
+site_list <- levels(as.factor(site_info$site_name))
+
+plots <- lapply(site_list, function(x) Persistence_plots(x,df,site_info,P_df))
+names(plots) <- site_list
 
 ## order based on river order
 grid.arrange(
-  arrangeGrob(grobs=list(Silver, Medina, Anacostia, West_Fork, St_Johns, Clackamas),
+  arrangeGrob(grobs=list(plots$nwis_05406457,
+                         plots$nwis_01656903,
+                         plots$nwis_14206950,
+                         plots$nwis_07191222,
+                         plots$nwis_01608500,
+                         plots$nwis_11273400),
               ncol = 2,
               bottom=textGrob("Discharge (cms)", gp=gpar(fontsize=16)), 
               left=textGrob("Biomass Persistence", gp=gpar(fontsize=16), rot=90)),
@@ -206,12 +194,12 @@ sc_plotting <- function(z, t){
   
   ## join by river name
   z <- left_join(z, site_info[,c("site_name","short_name")])
-  z$short_name <- factor(z$short_name, levels=c("Silver Creek, UT",
-                                                "Medina River, TX",
-                                                "Anacostia River, MD",
-                                                "West Fork River, WV",
-                                                "St. John's River, FL",
-                                                "Clackamas River, OR"))
+  z$short_name <- factor(z$short_name, levels=c("Black Earth Creek, WI",
+                                                       "Fatlick Branch, VA",
+                                                       "Beaty Creek, OK",
+                                                       "Fanno Creek, OR",
+                                                       "South Branch Potomac River, WV",
+                                                       "San Joaquin River, CA"))
   ggplot(z, aes(s, c))+geom_point()+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),
