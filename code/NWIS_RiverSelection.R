@@ -10,12 +10,11 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 ############################
 
 ## Import site data from Appling
-setwd("../data")
-site <- fread("site_data.csv")
+site <- fread("../data/site_data.csv")
 names(site)
 
 ## Import hypoxia dataset and subset to Appling
-hyp <- fread("GRDO_GEE_HA_NHD_2021_02_07.csv")
+hyp <- fread("../data/GRDO_GEE_HA_NHD_2021_02_07.csv")
 PC <- hyp[which(hyp$DB_Source == "PC"),]
 names(PC)
 
@@ -26,38 +25,33 @@ colnames(PC)[which(colnames(PC) == "SiteID")] <- "site_name"
 df <- left_join(site, PC, by="site_name")
 
 ## Export
-write.csv(df, "PC_site_attribs.csv")
+write.csv(df, "../data/PC_site_attribs.csv")
 
 ##########################################
 ## Re-import for site selection
 ##########################################
-setwd("../data")
-df <- fread("PC_site_attribs.csv")
+df <- fread("../data/PC_site_attribs.csv")
 colnames(df)
 
 ## subset
-sub <- df[,c("site_name","long_name","ORD_STRA","NHD_STREAMORDE",
-              "Start_time","End_time","n_time",
-              "US_state")]
-
-## Need multiple years of data
-sub$Start_year <- year(sub$Start_time)
-sub$End_year <- year(sub$End_time)
-sub$n_years <- sub$End_year - sub$Start_year
-
-s <- sub[which(sub$n_years >=2),]
-
-## Instead choose sites based on grouping of NHD_STREAMORDE
-## low (1,2,3), mid(4,5,6), high(7,8,9)
-s_low <- s[which(s$NHD_STREAMORDE %in% c(1,2,3)),]
-s_mid <- s[which(s$NHD_STREAMORDE %in% c(4,5,6)),]
-s_high <- s[which(s$NHD_STREAMORDE %in% c(7,8,9)),]
-
+sub <- df[,c("site_name","long_name","NHD_STREAMORDE","US_state",
+           "site_type","struct.canal_flag","struct.dam_flag","struct.npdes_flag")]
 
 ##################################################
-## Further select sites based on data quality
+## Select sites based on data quality
 ##################################################
-## Import
+
+# Import and subset model diagnostics
+diagnostics <- read.table("../data/diagnostics.tsv",sep = "\t", header=T)
+diagnostics <- diagnostics[which(diagnostics$site %in% sub$site_name),]
+high_sites <- unique(diagnostics[which(diagnostics$model_confidence == "H"),]$site) ## 254
+
+# Subset s based on high sites and site type and flags
+s <- sub[which(sub$site_name %in% high_sites),] ## 254
+s <- s[which(s$site_type == "ST"),] ## 249
+s <- s[which(s$struct.dam_flag %in% c(NA,"95")),]
+
+# Import time series
 NWIS <- read.table("../data/daily_predictions.tsv", sep='\t', header = TRUE)
 NWIS$date <- as.POSIXct(as.character(NWIS$date), format="%Y-%m-%d")
 head(NWIS)
@@ -70,8 +64,10 @@ colnames(NWIS_sub) <- c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.R
                         "ER","ER.lower","ER.upper","K600","K600.lower","K600.upper",
                         "temp","Q","light","velocity")
 
-## Subset to sites in s (with at least 3 years of data)
-NWIS_sub <- NWIS_sub[which(NWIS_sub$site_name %in% s$site_name),]
+## Subset to sites in high_sites (sites with high confidence rating)
+NWIS_sub <- NWIS_sub[which(NWIS_sub$site_name %in% high_sites),]
+# Confirm
+length(levels(as.factor(NWIS_sub$site_name))) #254 sites
 
 ## Identify which sites have the most continuous data
 NWIS_sub$doy <- yday(NWIS_sub$date)
@@ -88,59 +84,73 @@ gap_per_year <- NWIS_sub %>%
 maxgap <- gap_per_year %>%
   group_by(site_name, year) %>%
   summarize_at(.vars = "gap", .funs = max)
-## subset for sites with a max gap of 14 days
-sub_by_gap <- maxgap[which(maxgap$gap <= 14),]
-length(levels(as.factor(sub_by_gap$site_name)))
+## subset for sites with a max gap of 7 days
+sub_by_gap <- maxgap[which(maxgap$gap <= 7),]
+length(levels(as.factor(sub_by_gap$site_name))) ## 210
 ## merge with number of days per year
 sub_by_gap <- merge(sub_by_gap, dat_per_year, by=c("site_name","year"))
 ## at least 300 days per year
-sub_by_gap <- sub_by_gap[which(sub_by_gap$n > 275),]
+sub_by_gap <- sub_by_gap[which(sub_by_gap$n >= 300),]
 sub_by_gap_sum <- sub_by_gap %>% group_by(site_name) %>% count()
-high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 2),]
+high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 2),] # 59 observations
 
 ## Subset NWIS_sub
-TS <- NWIS_sub[which(NWIS_sub$site_name %in% high_q$site_name),]
+TS <- NWIS_sub[which(NWIS_sub$site_name %in% s$site_name),] ## only sites with two or more years
+
+## Subset to years that meet criteria
+sub_by_gap$site_year <- paste(sub_by_gap$site_name,sub_by_gap$year,sep = "_")
+TS$site_year <- paste(TS$site_name, TS$year,sep = "_")
+TS <- TS[which(TS$site_year %in% sub_by_gap$site_year),]
 TS_site <- s[which(s$site_name %in% high_q$site_name),]
 
-## Assign a stream order classfication
-TS_site$order_group <- "NA"
-TS_site[which(TS_site$NHD_STREAMORDE %in% c(1,2)),]$order_group <- "small"
-TS_site[which(TS_site$NHD_STREAMORDE %in% c(3,4)),]$order_group <- "mid"
-TS_site[which(TS_site$NHD_STREAMORDE %in% c(5,6)),]$order_group <- "large"
-
-##################################################
-## Choose rivers with higher productivity rates
-################################################
+## Attach the median GPP
 TS$GPP_temp <- TS$GPP
 TS[which(TS$GPP < 0),]$GPP_temp <- sample(exp(-6):exp(-4), 1)
 TS_gpp <- TS %>%
   group_by(site_name) %>%
   summarise_at(.vars = "GPP_temp", .funs = c(mean, max))
 colnames(TS_gpp) <- c("site_name","GPP_mean","GPP_max")
-
 TS_site <- left_join(TS_site, TS_gpp, by="site_name")
 
-## View sites by river order
-TS_highmean <- TS_site[which(TS_site$GPP_mean > 0.25),c("site_name","long_name","order_group")]
-View(sub_by_gap[which(sub_by_gap$site_name %in% TS_highmean$site_name),])
+## Assign a stream order classification
+TS_site$order_group <- "NA"
+TS_site[which(TS_site$NHD_STREAMORDE %in% c(1,2)),]$order_group <- "small"
+TS_site[which(TS_site$NHD_STREAMORDE %in% c(3,4)),]$order_group <- "mid"
+TS_site[which(TS_site$NHD_STREAMORDE %in% c(5,6)),]$order_group <- "large"
+
+###########################################################################
+## Choose two consecutive river years from small, mid, and large rivers
+###########################################################################
+
+## choose sites from different groups
+View(TS_site[which(TS_site$order_group == "small"),])
+View(TS_site[which(TS_site$order_group == "mid"),])
+View(TS_site[which(TS_site$order_group == "large"),])
 
 ## plot
-ggplot(TS[which(TS$site_name == "nwis_01645762" & TS$year %in% c(2012,2013)),], aes(date, GPP))+
-  geom_line()
+sid <- "nwis_11273400"
+TS_site[which(TS_site$site_name == sid),]
 
-## small: nwis_08180700 2010-2011 (Medina Riv, TX), nwis_10129900 2015-2016 (Silver Creek, UT)
-## mid: nwis_03058000 2014-2015 (West Fork, WV), nwis_01649500 2012-2013 (Anacostia Riv, MD)
-## large:  nwis_14211010 2009-2010 (Clackamas Riv, OR), nwis_02234000 2013-2014 (St. John Riv, FL)
+plot_grid(
+  ggplot(TS[which(TS$site_name == sid),], aes(date, GPP_temp))+
+    geom_line()+labs(title=TS_site[which(TS_site$site_name == sid),]$long_name),
+  ggplot(TS[which(TS$site_name == sid & TS$year %in% c(2015,2016)),], aes(date, GPP_temp))+
+  geom_line(),
+  ncol = 1)
 
-site_subset <- rbind(TS[which(TS$site_name == "nwis_08180700" & TS$year %in% c(2010,2011)),],
-               TS[which(TS$site_name == "nwis_10129900" & TS$year %in% c(2015,2016)),],
-               TS[which(TS$site_name == "nwis_03058000" & TS$year %in% c(2014,2015)),],
-               TS[which(TS$site_name == "nwis_01649500" & TS$year %in% c(2012,2013)),],
-               TS[which(TS$site_name == "nwis_14211010" & TS$year %in% c(2012,2013)),],
-               TS[which(TS$site_name == "nwis_02234000" & TS$year %in% c(2013,2014)),],
-               TS[which(TS$site_name == "nwis_04137500" & TS$year %in% c(2010,2011)),],
-               TS[which(TS$site_name == "nwis_01645762" & TS$year %in% c(2012,2013)),],
-               TS[which(TS$site_name == "nwis_01649190" & TS$year %in% c(2010,2011)),])
+## small: nwis_05406457 2015,2016 (Order 1; BLACK EARTH CREEK NR BREWERY RD AT CROSS PLAINS,WI)
+## small: nwis_01656903 2013,2014 (Order 2; FLATLICK BRANCH ABOVE FROG BRANCH AT CHANTILLY, VA)
+## mid: nwis_14206950 2009,2010 (Order 3; FANNO CREEK AT DURHAM, OR)
+## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK)
+## large: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV)
+## large: nwis_11273400 2015,2016 (Order 6; SAN JOAQUIN R AB MERCED R NR NEWMAN CA)
+
+site_subset <- rbind(TS[which(TS$site_name == "nwis_05406457" & TS$year %in% c(2015,2016)),],
+               TS[which(TS$site_name == "nwis_01656903" & TS$year %in% c(2013,2014)),],
+               TS[which(TS$site_name == "nwis_14206950" & TS$year %in% c(2009,2010)),],
+               TS[which(TS$site_name == "nwis_07191222" & TS$year %in% c(2009,2010)),],
+               TS[which(TS$site_name == "nwis_01608500" & TS$year %in% c(2012,2013)),],
+               TS[which(TS$site_name == "nwis_11273400" & TS$year %in% c(2015,2016)),])
 
 TS_site_subset <- df[which(df$site_name %in% site_subset$site_name),]
 
@@ -195,7 +205,7 @@ plotting_covar <- function(x) {
   
 }
 
-plotting_covar(site_sub_list$nwis_01645762)
+plotting_covar(site_sub_list$nwis_14206950)
 
 setwd("~/GitHub/RiverBiomass/figures/Site Covariate Plots")
 lapply(site_sub_list, function(x) ggsave(plot = plotting_covar(x),filename = paste(x$site_name[1],"covar.jpg",sep = "")))
@@ -207,13 +217,13 @@ lapply(site_sub_list, function(x) ggsave(plot = plotting_covar(x),filename = pas
 
 ## NWIS site subset
 setwd("~/GitHub/RiverBiomass/code")
-saveRDS(site_subset, "./rds files/NWIS_9site_subset.rds")
-saveRDS(TS_site_subset, "./rds files/NWIS_9siteinfo_subset.rds")
+saveRDS(site_subset, "./rds files/NWIS_6site_subset.rds")
+saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset.rds")
 
 
 
 ##############################
-## Plot for talk
+## Plot for talks
 ###########################
 
 df <- site_sub_list$nwis_14211010

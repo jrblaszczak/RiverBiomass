@@ -5,15 +5,8 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "tidyverse"), require, character.only=T)
 
 ## Source data
-source("DataSource_9rivers_oos.R")
+source("DataSource_6rivers_oos.R")
 df <- dat_oos
-# Subset source data
-df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
-           "nwis_08180700","nwis_10129900","nwis_14211010")]
-
-## Change river names to short names
-site_info[,c("site_name","long_name","NHD_STREAMORDE")]
-site_info <- site_info[which(site_info$site_name %in% names(df)),]
 
 ################################
 ## Model output plot function
@@ -44,14 +37,14 @@ GPP_oos_preds <- function(preds, df, mean_mod, se_mod){
   
 }
 
-STS_oos <- GPP_oos_preds("./rds files/Sim_9riv_AR_oos.rds", df, "mean_p_GPP_STS", "se_p_GPP_STS")
-LB_oos <- GPP_oos_preds("./rds files/Sim_9riv_Ricker_oos.rds", df, "mean_p_GPP_LB", "se_p_GPP_LB")
-Gomp_oos <- GPP_oos_preds("./rds files/Sim_9riv_Gompertz_oos.rds", df, "mean_p_GPP_Gomp", "se_p_GPP_Gomp")
+STS_oos <- GPP_oos_preds("./rds files/Sim_6riv_AR_oos.rds", df, "mean_p_GPP_STS", "se_p_GPP_STS")
+LB_oos <- GPP_oos_preds("./rds files/Sim_6riv_Ricker_oos.rds", df, "mean_p_GPP_LB", "se_p_GPP_LB")
+#Gomp_oos <- GPP_oos_preds("./rds files/Sim_9riv_Gompertz_oos.rds", df, "mean_p_GPP_Gomp", "se_p_GPP_Gomp")
 
 ## Combine
 oos_preds <- merge(STS_oos, LB_oos[,c("site_name","Date","mean_p_GPP_LB", "se_p_GPP_LB")])
-oos_preds <- merge(oos_preds, Gomp_oos[,c("site_name","Date","mean_p_GPP_Gomp", "se_p_GPP_Gomp")],
-                   by=c("site_name","Date"))
+#oos_preds <- merge(oos_preds, Gomp_oos[,c("site_name","Date","mean_p_GPP_Gomp", "se_p_GPP_Gomp")],
+#                   by=c("site_name","Date"))
 
 ## Split by short_name
 oos_pl <- split(oos_preds, oos_preds$short_name)

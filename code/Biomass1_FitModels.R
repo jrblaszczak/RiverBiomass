@@ -7,10 +7,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "bayesplot","shinystan","Metrics","MCMCglmm","tictoc"), require, character.only=T)
 
 ## Source data
-source("DataSource_9rivers.R")
-# Subset source data
-df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
-           "nwis_08180700","nwis_10129900","nwis_14211010")]
+source("DataSource_6rivers.R")
 
 ####################
 ## Stan data prep ##
@@ -32,25 +29,25 @@ stan_data_l <- lapply(df, function(x) stan_data_compile(x))
 
 ## Initial tests
 #AR
-test_ar <- stan("Stan_ProductivityModel1_Autoregressive.stan",
-             data=stan_data_l$nwis_08180700,
-             chains=4,iter=3000, control=list(max_treedepth=12))
+test_ar <- stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
+             data=stan_data_l$nwis_01608500,
+             chains=3,iter=5000, control=list(max_treedepth=12))
 launch_shinystan(test_ar)
 #Ricker
 init_Ricker <- function(...) {
   list(c = 0.5, s = 200)
 }
-test_ricker <- stan("Stan_ProductivityModel3_Ricker_fixedinit.stan",
-             data=stan_data_l$nwis_08180700,
+test_ricker <- stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
+             data=stan_data_l$nwis_01608500,
              init = init_Ricker,
-             chains=3,iter=2000, control=list(max_treedepth=12))
+             chains=3,iter=5000, control=list(max_treedepth=12))
 launch_shinystan(test_ricker)
 #Gompertz
 init_Gompertz <- function(...) {
   list(c = 0.5, s = 200)
 }
-test_Gompertz <- stan("Stan_ProductivityModel5_Gompertz_fixedinit.stan",
-                    data=stan_data_l$nwis_08180700,
+test_Gompertz <- stan("Stan_ProductivityModel3_Gompertz_fixedinit_obserr.stan",
+                    data=stan_data_l$nwis_01608500,
                     init = init_Gompertz,
                     chains=3,iter=2000, control=list(max_treedepth=12))
 launch_shinystan(test_Gompertz)
@@ -59,39 +56,39 @@ launch_shinystan(test_Gompertz)
 ## Run Stan to get parameter estimates - all sites
 #########################################
 
-## PM 1 - Phenomenological
+## PM 1 - Standard time series
 PM_outputlist_AR <- lapply(stan_data_l,
-                           function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive.stan",
-                                                   data=x,chains=4,iter=3000, control=list(max_treedepth=12))) #5000 seconds
+                           function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
+                                                   data=x,chains=3,iter=5000, control=list(max_treedepth=12))) #5000 seconds
 PM_AR_elapsedtime <- lapply(PM_outputlist_AR, function(x) return(get_elapsed_time(x)))
-saveRDS(PM_outputlist_AR, "./rds files/stan_9riv_output_AR_2021_03_05.rds")
-saveRDS(PM_AR_elapsedtime, "./rds files/stan_9riv_AR_time_2021_03_05.rds")
+saveRDS(PM_outputlist_AR, "./rds files/stan_6riv_output_AR_2021_05_16.rds")
+saveRDS(PM_AR_elapsedtime, "./rds files/stan_6riv_AR_time_2021_05_16.rds")
 
-## PM 3 - Ricker
+## PM 2 - Latent Biomass (Ricker)
 init_Ricker <- function(...) {
   list(c = 0.5, s = 200)
 }
 
 PM_outputlist_Ricker <- lapply(stan_data_l,
-                               function(x) stan("Stan_ProductivityModel3_Ricker_fixedinit.stan",
+                               function(x) stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
                                                 data=x,chains=3,iter=5000,init = init_Ricker,
                                                 control=list(max_treedepth=12)))
 PM_Ricker_elapsedtime <- lapply(PM_outputlist_Ricker, function(x) return(get_elapsed_time(x)))
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_9riv_output_Ricker_2021_03_05.rds")
-saveRDS(PM_Ricker_elapsedtime, "./rds files/stan_9riv_Ricker_time_2021_03_05.rds")
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_output_Ricker_2021_05_16.rds")
+saveRDS(PM_Ricker_elapsedtime, "./rds files/stan_6riv_Ricker_time_2021_05_16.rds")
 
-## PM 4 - Gompertz
+## PM 3 - Latent Biomass (Gompertz)
 init_Gompertz <- function(...) {
   list(c = 0.5, s = 200)
 }
 
 PM_outputlist_Gompertz <- lapply(stan_data_l,
-                                 function(x) stan("Stan_ProductivityModel5_Gompertz_fixedinit.stan",
+                                 function(x) stan("Stan_ProductivityModel3_Gompertz_fixedinit_obserr.stan",
                                                   data=x,chains=3,iter=5000, 
                                                   control=list(max_treedepth=12)))
 PM_Gompertz_elapsedtime <- lapply(PM_outputlist_Gompertz, function(x) return(get_elapsed_time(x)))
-saveRDS(PM_outputlist_Gompertz, "./rds files/stan_9riv_output_Gompertz_2021_03_05.rds")
-saveRDS(PM_Gompertz_elapsedtime, "./rds files/stan_9riv_Gompertz_time_2021_03_05.rds")
+saveRDS(PM_outputlist_Gompertz, "./rds files/stan_6riv_output_Gompertz_2021_05_16.rds")
+saveRDS(PM_Gompertz_elapsedtime, "./rds files/stan_6riv_Gompertz_time_2021_05_16.rds")
 
 
 

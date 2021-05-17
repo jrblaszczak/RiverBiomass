@@ -1,15 +1,12 @@
 ## Growth Model 1 - Data simulation 
 
-PM_AR <- function(phi, alpha, beta, sig_p, df) {
+PM_AR <- function(phi, alpha, beta, sig_p, sig_o, df) {
   ## Data
   Ndays<-length(df$GPP)
   GPP <- df$GPP
   GPP_sd <- df$GPP_sd
   light <- df$light_rel
   tQ <- df$tQ # discharge standardized to max value
-  
-  ## Error
-  obs_err <- GPP_sd
   
   ## Vectors for model output
   pred_GPP<-numeric(Ndays)
@@ -23,7 +20,7 @@ PM_AR <- function(phi, alpha, beta, sig_p, df) {
   }
   
   for (i in 2:Ndays){
-  pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = obs_err[i], lower=0)
+  pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = sig_o, lower=0)
   }
   
   return(pred_GPP)

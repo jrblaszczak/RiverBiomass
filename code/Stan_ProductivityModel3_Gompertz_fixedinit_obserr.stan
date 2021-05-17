@@ -19,6 +19,7 @@ parameters {
   
   // Error parameters
   real<lower=0> sig_p; // sigma processes error
+  real<lower=0> sig_o; // sigma observation error
 }
 
 transformed parameters {
@@ -44,11 +45,12 @@ model {
   
   // Observation model
   for (j in 2:(Ndays)) {
-    GPP[j] ~ normal(pred_GPP[j], GPP_sd[j])T[0,];
+    GPP[j] ~ normal(pred_GPP[j], sig_o)T[0,];
   }
   
   // Error priors
   sig_p ~ normal(0,2)T[0,];
+  sig_o ~ normal(mean(GPP_sd), sd(GPP_sd))T[0,];
   
   // Param priors
   c ~ rayleigh(0.5);

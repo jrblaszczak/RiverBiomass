@@ -13,31 +13,19 @@ PM_Gompertz.col <- "#743731" # Gompertz
 ## Import and combine by site
 ################################
 ## Import within sample data
-source("DataSource_9rivers.R")
+source("DataSource_6rivers.R")
 dat_ws <- df
-dat_ws <- dat_ws[c("nwis_01649500","nwis_02234000","nwis_03058000",
-           "nwis_08180700","nwis_10129900","nwis_14211010")]
-
 
 # Within-sample predictions
-ws_AR <- readRDS("./rds files/Sim_9riv_AR_ws.rds")
-ws_Ricker <- readRDS("./rds files/Sim_9riv_Ricker_ws.rds")
+ws_AR <- readRDS("./rds files/Sim_6riv_AR_ws.rds")
+ws_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_ws.rds")
 
 ## Import within sample data
-source("DataSource_9rivers_oos.R")
-dat_oos <- dat_oos[c("nwis_01649500","nwis_02234000","nwis_03058000",
-                   "nwis_08180700","nwis_10129900","nwis_14211010")]
-
+source("DataSource_6rivers_oos.R")
 
 # Out-of-sample predictions
-oos_AR <- readRDS("./rds files/Sim_9riv_AR_oos.rds")
-oos_Ricker <- readRDS("./rds files/Sim_9riv_Ricker_oos.rds")
-
-# Get rid of extra three sites
-ws_AR <- ws_AR[names(dat_ws)]
-oos_AR <- oos_AR[names(dat_oos)]
-ws_Ricker <- ws_Ricker[names(dat_ws)]
-oos_Ricker <- oos_Ricker[names(dat_oos)]
+oos_AR <- readRDS("./rds files/Sim_6riv_AR_oos.rds")
+oos_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_oos.rds")
 
 ##################################
 ## Extract and calculate RMSE
@@ -71,7 +59,7 @@ RMSE_oos_Ricker <- RMSE_extract(oos_Ricker,"OOS","Ricker")
 
 RMSE_all <- rbind(RMSE_ws_AR, RMSE_oos_AR, RMSE_ws_Ricker, RMSE_oos_Ricker)
 
-saveRDS(RMSE_all, "./rds files/RMSE_all.rds")
+saveRDS(RMSE_all, "./rds files/RMSE_all_2021_05_17.rds")
 
 ###########################################################################
 ## Figure out RMSE if just using last year's data to predict this year
@@ -142,7 +130,9 @@ OOS_prev_yr_plot <-ggplot(RMSE_OOS_wide, aes(RMSE_among_yrs, median, color=short
   geom_abline(slope=1, intercept = 0)+
   facet_wrap(~model_type)+
   labs(x="Previous year prediction RMSE",y="Out-of-sample prediction RMSE")+
-  scale_y_continuous(limits=c(0, 16))
+  coord_cartesian(ylim = c(0,20))
+OOS_prev_yr_plot
+
 
 ## Within Sample
 RMSE_WS <- RMSE_all[which(RMSE_all$WS_vs_OOS == "WS"),]
@@ -167,11 +157,9 @@ WS_plot <- ggplot(RMSE_WS_wide, aes(short_name, median))+
   #geom_abline(slope=1, intercept = 0)+
   facet_wrap(~model_type)+
   labs(x="Previous year prediction RMSE",y="Within-sample prediction RMSE")+
-  scale_y_continuous(limits=c(0,16))
+  coord_cartesian(ylim = c(0,20))
 
 plot_grid(WS_plot, OOS_prev_yr_plot, align = "hv", nrow=1)
-
-OOS_prev_yr_plot
 
 ################################
 ## AR vs Ricker OOS comparison
@@ -187,12 +175,12 @@ colnames(oos_biplot_AR) <- c("site_name","model_type","AR_lowerCI","AR_median","
 
 oos_biplot <- merge(oos_biplot_AR, oos_biplot_R, by="site_name")
 
-oos_biplot$short_name <- revalue(as.character(oos_biplot$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                               "nwis_02234000"="St. John's River, FL",
-                                                                               "nwis_03058000"="West Fork River, WV",
-                                                                               "nwis_08180700"="Medina River, TX",
-                                                                               "nwis_10129900"="Silver Creek, UT",
-                                                                               "nwis_14211010"="Clackamas River, OR"))
+oos_biplot$short_name <- revalue(as.character(oos_biplot$site_name), replace = c("nwis_05406457"="Black Earth Creek, WI",
+                                                                                 "nwis_01656903"="Fatlick Branch, VA",
+                                                                                 "nwis_07191222"="Beaty Creek, OK",
+                                                                                 "nwis_14206950"="Fanno Creek, OR",
+                                                                                 "nwis_01608500"="South Branch Potomac River, WV",
+                                                                                 "nwis_11273400"="San Joaquin River, CA"))
 
 
 six_RMSE_plot <- ggplot(oos_biplot, aes(AR_median, Ricker_median, color=short_name))+
@@ -200,7 +188,7 @@ six_RMSE_plot <- ggplot(oos_biplot, aes(AR_median, Ricker_median, color=short_na
   geom_point(size=3)+
   geom_errorbar(aes(ymin=Ricker_lowerCI, ymax=Ricker_upperCI, color=short_name), size=0.5)+
   geom_errorbarh(aes(xmin=AR_lowerCI, xmax=AR_upperCI, color=short_name), size=0.5)+
-  coord_cartesian(xlim = c(0,15),y=c(0,5))+
+  coord_cartesian(xlim = c(0,10),y=c(0,10))+
   scale_x_continuous(expand = c(0,0))+scale_y_continuous(expand = c(0,0))+
   theme_bw()+
   labs(x="Phenomenological model OOS RMSE",
@@ -209,6 +197,7 @@ six_RMSE_plot <- ggplot(oos_biplot, aes(AR_median, Ricker_median, color=short_na
   theme(axis.text = element_text(size=14), axis.title = element_text(size=16))
   
 
+six_RMSE_plot
 
 
 

@@ -1,6 +1,6 @@
 ## Growth Model 3 - Data simulation
 
-PM_Ricker <- function(r, lambda, s, c, sig_p, df) {
+PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df) {
   
   ## Data
   Ndays<-length(df$GPP)
@@ -8,11 +8,7 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, df) {
   GPP_sd <- df$GPP_sd
   light <- df$light_rel
   tQ <- df$tQ # discharge standardized to max value
-  
-  ## Error
-  #proc_err <- rnorm(Ndays, mean = 0, sd = sig_p)
-  obs_err <- GPP_sd
-  
+
   ## Vectors for model output of P, B, pred_GPP
   P <- numeric(Ndays)
   P[1] <- 1
@@ -31,7 +27,7 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0)
   }
   
   return(pred_GPP)
@@ -39,7 +35,7 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, df) {
 
 
 ## Biomass
-PM_Ricker_B <- function(r, lambda, s, c, sig_p, df) {
+PM_Ricker_B <- function(r, lambda, s, c, sig_p, sig_o, df) {
   
   ## Data
   Ndays<-length(df$GPP)
@@ -47,10 +43,6 @@ PM_Ricker_B <- function(r, lambda, s, c, sig_p, df) {
   GPP_sd <- df$GPP_sd
   light <- df$light_rel
   tQ <- df$tQ # discharge standardized to max value
-  
-  ## Error
-  #proc_err <- rnorm(Ndays, mean = 0, sd = sig_p)
-  obs_err <- GPP_sd
   
   ## Vectors for model output of P, B, pred_GPP
   P <- numeric(Ndays)
@@ -70,7 +62,7 @@ PM_Ricker_B <- function(r, lambda, s, c, sig_p, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0)
   }
   
   return(B)

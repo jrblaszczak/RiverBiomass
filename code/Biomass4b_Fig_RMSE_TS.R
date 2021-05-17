@@ -6,11 +6,8 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","ggExtra","patchwork"), require, character.only=T)
 
 ## Source data
-source("DataSource_9rivers_oos.R")
+source("DataSource_6rivers_oos.R")
 df <- dat_oos
-# Subset source data
-df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
-           "nwis_08180700","nwis_10129900","nwis_14211010")]
 
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
@@ -22,17 +19,7 @@ PM_AR.col <- "#d95f02"
 PM_Ricker.col <- "#7570b3"
 PM_Gompertz.col <- "#1C474D"
 
-## Change river names to short names
-site_info[,c("site_name","long_name","NHD_STREAMORDE")]
-site_info <- site_info[which(site_info$site_name %in% names(df)),]
-site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                               "nwis_02234000"="St. John's River, FL",
-                                                                               "nwis_03058000"="West Fork River, WV",
-                                                                               "nwis_08180700"="Medina River, TX",
-                                                                               "nwis_10129900"="Silver Creek, UT",
-                                                                               "nwis_14211010"="Clackamas River, OR"))
-
-##################################################
+#################################################
 ## GPP predicted TS
 ##################################################
 
@@ -55,15 +42,15 @@ GPP_oos_preds <- function(preds, df, PM.col, PM.title){
   
   ## Arrange rivers by river order
   df_sim <- left_join(df_sim, site_info[,c("site_name","short_name")])
-  df_sim$short_name <- factor(df_sim$short_name, levels=c("Silver Creek, UT",
-                                                          "Medina River, TX",
-                                                          "Anacostia River, MD",
-                                                          "West Fork River, WV",
-                                                          "St. John's River, FL",
-                                                          "Clackamas River, OR"))
+  df_sim$short_name <- factor(df_sim$short_name, levels=c("Black Earth Creek, WI",
+                                                          "Fatlick Branch, VA",
+                                                          "Beaty Creek, OK",
+                                                          "Fanno Creek, OR",
+                                                          "South Branch Potomac River, WV",
+                                                          "San Joaquin River, CA"))
   
   ## plot only a subset of sites
-  df_sim <- df_sim[which(df_sim$short_name %in% c("Anacostia River, MD","Clackamas River, OR")),]
+  df_sim <- df_sim[which(df_sim$short_name %in% c("Fanno Creek, OR","South Branch Potomac River, WV")),]
   
   ## Plot
   df_sim_plot <- ggplot(df_sim, aes(Date, GPP))+
@@ -85,14 +72,16 @@ GPP_oos_preds <- function(preds, df, PM.col, PM.title){
   
 }
 
-GPP_TS_Phenom <- GPP_oos_preds("./rds files/Sim_9riv_AR_oos.rds",df, PM_AR.col, "Phenomenological")
-GPP_TS_Ricker <- GPP_oos_preds("./rds files/Sim_9riv_Ricker_oos.rds",df, PM_Ricker.col, "Ricker")
+GPP_TS_Phenom <- GPP_oos_preds("./rds files/Sim_6riv_AR_oos.rds",df, PM_AR.col, "STS")
+GPP_TS_Ricker <- GPP_oos_preds("./rds files/Sim_6riv_Ricker_oos.rds",df, PM_Ricker.col, "LB")
 
+GPP_TS_Phenom
+GPP_TS_Ricker
 
 ###################################
 ## RMSE Comparison Plot
 ###################################
-RMSE_all <- readRDS("./rds files/RMSE_all.rds")
+RMSE_all <- readRDS("./rds files/RMSE_all_2021_05_17.rds")
 
 RMSE_OOS <- RMSE_all[which(RMSE_all$WS_vs_OOS == "OOS"),]
 RMSE_OOS <-left_join(RMSE_OOS, RMSE_prev_post, by="site_name")
@@ -111,12 +100,12 @@ colnames(oos_biplot_AR) <- c("site_name","model_type","AR_lowerCI","AR_median","
 
 oos_biplot <- merge(oos_biplot_AR, oos_biplot_R, by="site_name")
 
-oos_biplot$short_name <- revalue(as.character(oos_biplot$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                                 "nwis_02234000"="St. John's River, FL",
-                                                                                 "nwis_03058000"="West Fork River, WV",
-                                                                                 "nwis_08180700"="Medina River, TX",
-                                                                                 "nwis_10129900"="Silver Creek, UT",
-                                                                                 "nwis_14211010"="Clackamas River, OR"))
+oos_biplot$short_name <- revalue(as.character(oos_biplot$site_name), replace = c("nwis_05406457"="Black Earth Creek, WI",
+                                                                                 "nwis_01656903"="Fatlick Branch, VA",
+                                                                                 "nwis_07191222"="Beaty Creek, OK",
+                                                                                 "nwis_14206950"="Fanno Creek, OR",
+                                                                                 "nwis_01608500"="South Branch Potomac River, WV",
+                                                                                 "nwis_11273400"="San Joaquin River, CA"))
 
 
 six_RMSE_plot <- ggplot(oos_biplot, aes(AR_median, Ricker_median, color=short_name))+

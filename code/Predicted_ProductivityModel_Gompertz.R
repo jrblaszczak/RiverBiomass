@@ -1,6 +1,6 @@
 ## Growth Model Gompertz - Data simulation
 
-PM_Gompertz <- function(beta_0, beta_1, s, c, sig_p, df) {
+PM_Gompertz <- function(beta_0, beta_1, s, c, sig_p, sig_o, df) {
   
   ## Data
   Ndays<-length(df$GPP)
@@ -8,9 +8,7 @@ PM_Gompertz <- function(beta_0, beta_1, s, c, sig_p, df) {
   GPP_sd <- df$GPP_sd
   light <- df$light_rel
   tQ <- df$tQ # discharge standardized to max value
-  
-  ## Error
-  obs_err <- GPP_sd
+
   
   ## Vectors for model output of P, B, pred_GPP, r
   P <- numeric(Ndays)
@@ -30,7 +28,7 @@ PM_Gompertz <- function(beta_0, beta_1, s, c, sig_p, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0)
   }
   
   return(pred_GPP)
@@ -38,7 +36,7 @@ PM_Gompertz <- function(beta_0, beta_1, s, c, sig_p, df) {
 }
 
 
-PM_Gompertz_B <- function(beta_0, beta_1, s, c, sig_p, df) {
+PM_Gompertz_B <- function(beta_0, beta_1, s, c, sig_p, sig_o, df) {
   
   ## Data
   Ndays<-length(df$GPP)
@@ -46,10 +44,7 @@ PM_Gompertz_B <- function(beta_0, beta_1, s, c, sig_p, df) {
   GPP_sd <- df$GPP_sd
   light <- df$light_rel
   tQ <- df$tQ # discharge standardized to max value
-  
-  ## Error
-  obs_err <- GPP_sd
-  
+
   ## Vectors for model output of P, B, pred_GPP, r
   P <- numeric(Ndays)
   P[1] <- 1
@@ -68,7 +63,7 @@ PM_Gompertz_B <- function(beta_0, beta_1, s, c, sig_p, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = obs_err[i], lower=0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0)
   }
   
   return(B)
