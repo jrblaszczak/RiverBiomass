@@ -49,7 +49,7 @@ high_sites <- unique(diagnostics[which(diagnostics$model_confidence == "H"),]$si
 # Subset s based on high sites and site type and flags
 s <- sub[which(sub$site_name %in% high_sites),] ## 254
 s <- s[which(s$site_type == "ST"),] ## 249
-s <- s[which(s$struct.dam_flag %in% c(NA,"95")),]
+s <- s[which(s$struct.dam_flag %in% c(NA,"95")),] ##111
 
 # Import time series
 NWIS <- read.table("../data/daily_predictions.tsv", sep='\t', header = TRUE)
@@ -128,29 +128,29 @@ View(TS_site[which(TS_site$order_group == "mid"),])
 View(TS_site[which(TS_site$order_group == "large"),])
 
 ## plot
-sid <- "nwis_11273400"
+sid <- "nwis_04101500"
 TS_site[which(TS_site$site_name == sid),]
 
 plot_grid(
   ggplot(TS[which(TS$site_name == sid),], aes(date, GPP_temp))+
     geom_line()+labs(title=TS_site[which(TS_site$site_name == sid),]$long_name),
-  ggplot(TS[which(TS$site_name == sid & TS$year %in% c(2015,2016)),], aes(date, GPP_temp))+
+  ggplot(TS[which(TS$site_name == sid & TS$year %in% c(2012,2013)),], aes(date, GPP_temp))+
   geom_line(),
   ncol = 1)
 
-## small: nwis_05406457 2015,2016 (Order 1; BLACK EARTH CREEK NR BREWERY RD AT CROSS PLAINS,WI)
+## small: nwis_02336526 2015,2016 (Order 2; PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA)
 ## small: nwis_01656903 2013,2014 (Order 2; FLATLICK BRANCH ABOVE FROG BRANCH AT CHANTILLY, VA)
-## mid: nwis_14206950 2009,2010 (Order 3; FANNO CREEK AT DURHAM, OR)
+## mid: nwis_14206950 2015,2016 (Order 3; FANNO CREEK AT DURHAM, OR)
 ## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK)
 ## large: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV)
-## large: nwis_11273400 2015,2016 (Order 6; SAN JOAQUIN R AB MERCED R NR NEWMAN CA)
+## large: nwis_04101500 2012,2013 (Order 6; ST. JOSEPH RIVER AT NILES, MI)
 
-site_subset <- rbind(TS[which(TS$site_name == "nwis_05406457" & TS$year %in% c(2015,2016)),],
+site_subset <- rbind(TS[which(TS$site_name == "nwis_02336526" & TS$year %in% c(2015,2016)),],
                TS[which(TS$site_name == "nwis_01656903" & TS$year %in% c(2013,2014)),],
-               TS[which(TS$site_name == "nwis_14206950" & TS$year %in% c(2009,2010)),],
+               TS[which(TS$site_name == "nwis_14206950" & TS$year %in% c(2015,2016)),],
                TS[which(TS$site_name == "nwis_07191222" & TS$year %in% c(2009,2010)),],
                TS[which(TS$site_name == "nwis_01608500" & TS$year %in% c(2012,2013)),],
-               TS[which(TS$site_name == "nwis_11273400" & TS$year %in% c(2015,2016)),])
+               TS[which(TS$site_name == "nwis_04101500" & TS$year %in% c(2012,2013)),])
 
 TS_site_subset <- df[which(df$site_name %in% site_subset$site_name),]
 
@@ -205,7 +205,7 @@ plotting_covar <- function(x) {
   
 }
 
-plotting_covar(site_sub_list$nwis_14206950)
+plotting_covar(site_sub_list$nwis_01656903)
 
 setwd("~/GitHub/RiverBiomass/figures/Site Covariate Plots")
 lapply(site_sub_list, function(x) ggsave(plot = plotting_covar(x),filename = paste(x$site_name[1],"covar.jpg",sep = "")))
@@ -217,8 +217,8 @@ lapply(site_sub_list, function(x) ggsave(plot = plotting_covar(x),filename = pas
 
 ## NWIS site subset
 setwd("~/GitHub/RiverBiomass/code")
-saveRDS(site_subset, "./rds files/NWIS_6site_subset.rds")
-saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset.rds")
+saveRDS(site_subset, "./rds files/NWIS_6site_subset_v2.rds")
+saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_v2.rds")
 
 
 
