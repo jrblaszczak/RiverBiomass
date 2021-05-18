@@ -107,12 +107,7 @@ site_info <- merge(site_info, RI_2, by="site_name")
 
 ## join by river name
 P_df <- left_join(P_df, site_info[,c("site_name","short_name")], by="site_name")
-P_df$short_name <- factor(P_df$short_name, levels=c("Black Earth Creek, WI",
-                                                    "Fatlick Branch, VA",
-                                                    "Beaty Creek, OK",
-                                                    "Fanno Creek, OR",
-                                                    "South Branch Potomac River, WV",
-                                                    "San Joaquin River, CA"))
+P_df$short_name <- factor(P_df$short_name, levels= site_order_list)
 
 
 Persistence_plots <- function(site, df, site_info, P_df){
@@ -194,12 +189,7 @@ sc_plotting <- function(z, t){
   
   ## join by river name
   z <- left_join(z, site_info[,c("site_name","short_name")])
-  z$short_name <- factor(z$short_name, levels=c("Black Earth Creek, WI",
-                                                       "Fatlick Branch, VA",
-                                                       "Beaty Creek, OK",
-                                                       "Fanno Creek, OR",
-                                                       "South Branch Potomac River, WV",
-                                                       "San Joaquin River, CA"))
+  z$short_name <- factor(z$short_name, levels= site_order_list)
   ggplot(z, aes(s, c))+geom_point()+
     theme(legend.position = "none",
           panel.background = element_rect(color = "black", fill=NA, size=1),

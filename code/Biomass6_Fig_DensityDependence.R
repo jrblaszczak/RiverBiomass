@@ -6,19 +6,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","ggExtra","patchwork"), require, character.only=T)
 
 ## Source data
-source("DataSource_9rivers.R")
-# Subset source data
-df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
-           "nwis_08180700","nwis_10129900","nwis_14211010")]
-## Change river names to short names
-site_info[,c("site_name","long_name","NHD_STREAMORDE")]
-site_info <- site_info[which(site_info$site_name %in% names(df)),]
-site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                               "nwis_02234000"="St. John's River, FL",
-                                                                               "nwis_03058000"="West Fork River, WV",
-                                                                               "nwis_08180700"="Medina River, TX",
-                                                                               "nwis_10129900"="Silver Creek, UT",
-                                                                               "nwis_14211010"="Clackamas River, OR"))
+source("DataSource_6rivers.R")
 
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
@@ -30,14 +18,12 @@ PM_AR.col <- "#d95f02" # AR
 PM_Ricker.col <- "#1C474D" # Ricker
 PM_Gompertz.col <- "#743731" # Gompertz
 
-
 ## Import stan fits - simulate one at a time
-stan_model_output_Ricker <- readRDS("./rds files/stan_9riv_output_Ricker_2021_03_05.rds")
-stan_model_output_Ricker <- stan_model_output_Ricker[names(df)]
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_05_16.rds")
 #stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz.rds")
 
 ## Extract parameters
-par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p")))
+par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
 #par_Gompertz <- lapply(stan_model_output_Gompertz, function(x) rstan::extract(x, c("beta_0","beta_1","s","c","B","P","pred_GPP","sig_p")))
 
 #################################################
@@ -45,43 +31,44 @@ par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("
 ################################################
 
 r_K_func <- function(x) {
-  pars <- as.data.frame(cbind(x$r, x$lambda))
-  colnames(pars) <- c("r","lambda")
-  pars$K <- (-1*pars$r)/pars$lambda
-  return(pars) 
+  rx <- x$r
+  rm <- as.data.frame(cbind(rx[1:2500],rx[2501:5000],rx[5001:7500]))
+  rm <- rm %>%
+    rowwise() %>% mutate(Avg=mean(c(V1, V2, V3))) 
+  
+  lx <- x$lambda
+  lambda <- as.data.frame(cbind(lx[1:2500],lx[2501:5000],lx[5001:7500]))
+  lambda <- lambda %>%
+    rowwise() %>% mutate(Avg=mean(c(V1, V2, V3))) 
+  
+  new <- as.data.frame(cbind(rm$Avg, lambda$Avg))
+  colnames(new) <- c("r","lambda")
+  new$K <- (-1*new$r)/new$lambda
+  
+  long <- gather(new)
+  
+  return(long)
 }
 
-par_Ricker_rK <- ldply(lapply(par_Ricker, function(z) r_K_func(z)), data.frame)
-colnames(par_Ricker_rK)[which(colnames(par_Ricker_rK) == ".id")] <- "site_name"
 
-par_Ricker_rK$short_name <- revalue(as.character(par_Ricker_rK$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                                 "nwis_02234000"="St. John's River, FL",
-                                                                                 "nwis_03058000"="West Fork River, WV",
-                                                                                 "nwis_08180700"="Medina River, TX",
-                                                                                 "nwis_10129900"="Silver Creek, UT",
-                                                                                 "nwis_14211010"="Clackamas River, OR"))
+rK <- ldply(lapply(par_Ricker, function(x) r_K_func(x)), data.frame)
+rK$short_name <- revalue(as.character(rK$.id), replace = c("nwis_05406457"="Black Earth Creek, WI",
+                                                           "nwis_01656903"="Fatlick Branch, VA",
+                                                           "nwis_07191222"="Beaty Creek, OK",
+                                                           "nwis_14206950"="Fanno Creek, OR",
+                                                           "nwis_01608500"="South Branch Potomac River, WV",
+                                                           "nwis_11273400"="San Joaquin River, CA"))
+rK$short_name <- factor(rK$short_name, levels= site_order_list)
+rK$key <- factor(rK$key, levels = c("r","lambda","K"))
+
+## Visualize
+rK <- rK[-which(rK$short_name == "San Joaquin River, CA"),]
 
 
-plot_grid(
-
-ggplot(par_Ricker_rK, aes(r, color=short_name, fill=short_name))+
-  geom_density(alpha=0.5)+
-  theme_bw()+labs(color="Site",fill="Site")+
-  theme(legend.position = c(0.7,0.7)),
-
-ggplot(par_Ricker_rK, aes(lambda, color=short_name, fill=short_name))+
-  geom_density(alpha=0.5)+
-  theme_bw()+labs(color="Site",fill="Site")+
-  theme(legend.position = "none")+
-  coord_cartesian(xlim = c(-0.15,0.15)),
-
-ggplot(par_Ricker_rK, aes(K, color=short_name, fill=short_name))+
-  geom_density(alpha=0.5)+
-  theme_bw()+labs(color="Site",fill="Site")+
-  theme(legend.position = "none")+
-  coord_cartesian(xlim = c(-500,500)),
-
-ncol=1, align = "hv")
+ggplot(rK, aes(value, fill = short_name))+
+  geom_histogram()+
+  facet_grid(~key, scales = "free_x")
+ 
 
 
 

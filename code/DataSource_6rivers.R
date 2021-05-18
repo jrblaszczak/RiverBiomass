@@ -22,6 +22,15 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
                                                                                "nwis_01608500"="South Branch Potomac River, WV",
                                                                                "nwis_11273400"="San Joaquin River, CA"))
 
+## Order for figures by stream order
+site_order_list <- c("Black Earth Creek, WI",
+                     "Fatlick Branch, VA",
+                     "Beaty Creek, OK",
+                     "Fanno Creek, OR",
+                     "South Branch Potomac River, WV",
+                     "San Joaquin River, CA")
+
+
 ## How many days of data per site per year
 data$year <- year(data$date)
 data_siteyears <- data %>%
