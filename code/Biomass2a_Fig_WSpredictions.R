@@ -42,7 +42,7 @@ df_sim1$short_name <- factor(df_sim1$short_name, levels=site_order_list)
 df_sim1_plot <- ggplot(df_sim1, aes(Date, GPP))+
   geom_point(size=2, color="black")+
   geom_line(aes(Date, sim_GPP), color=PM_AR.col, size=1.2)+
-  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM1: GPP")+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM1: STS")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM_AR.col, alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
@@ -84,7 +84,7 @@ df_sim3$short_name <- factor(df_sim3$short_name, levels=site_order_list)
 df_sim3_plot <- ggplot(df_sim3, aes(Date, GPP))+
   geom_point(size=2, color="black")+
   geom_line(aes(Date, sim_GPP), color=PM_Ricker.col, size=1.2)+
-  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM3: Ricker")+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM2: LB - Ricker")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM_Ricker.col, alpha=0.2, show.legend = FALSE)+
   theme(legend.position = "none",
@@ -116,7 +116,7 @@ ggplot(df_sim3, aes(Date, GPP))+
         axis.title.y = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
         strip.background = element_rect(fill="white", color="black"),
         strip.text = element_text(size=15))+
-  #coord_cartesian(ylim=c(0,5))+
+  #coord_cartesian(ylim=c(0,max(df_sim1$GPP)*1.5))+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
   facet_wrap(~short_name, scales = "free", ncol = 2)
 
@@ -160,7 +160,7 @@ df_modB3_plot <- ggplot(df_modB3, aes(Date, exp(B)))+
         axis.title.y = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
         strip.background = element_rect(fill="white", color="black"),
         strip.text = element_text(size=15))+
-  coord_cartesian(ylim=c(0,20))+
+  coord_cartesian(ylim=c(0,30))+
   facet_wrap(~short_name, scales = "free_x", ncol = 2)
 df_modB3_plot
 

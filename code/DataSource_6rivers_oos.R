@@ -24,7 +24,7 @@ site_order_list <- c("Black Earth Creek, WI",
                      "Fatlick Branch, VA",
                      "Beaty Creek, OK",
                      "Fanno Creek, OR",
-                     "South Branch Potomac River, WV",
+                     "South Br. Potomac River, WV",
                      "San Joaquin River, CA")
 
 
