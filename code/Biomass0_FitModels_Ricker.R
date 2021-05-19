@@ -198,7 +198,7 @@ saveRDS(Ricker_sim_Gmod, "./rds files/Ricker_Gmod_ws_comparison.rds")
 ## Plot within sample pred comparison
 #################################
 
-vis_preds <- function(simmat1_list, mod_title){
+vis_preds <- function(simmat1_list, dataTS, mod_title){
   
   # For every day extract median and CI
   median_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
@@ -206,7 +206,7 @@ vis_preds <- function(simmat1_list, mod_title){
   upper_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) quantile(x, probs = 0.975))), data.frame)
   
   ## Plot simulated GPP
-  dat1 <- ldply(df, data.frame)
+  dat1 <- ldply(dataTS, data.frame)
   df_sim1 <- as.data.frame(cbind(dat1$site_name, as.character(dat1$date), dat1$GPP, median_simmat1$X..i.., lower_simmat1$X..i.., upper_simmat1$X..i..))
   colnames(df_sim1) <- c("site_name","Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
   df_sim1$Date <- as.POSIXct(as.character(df_sim1$Date), format="%Y-%m-%d")
@@ -236,16 +236,16 @@ vis_preds <- function(simmat1_list, mod_title){
 }
 
 plot_grid(
-  vis_preds(Ricker_sim, "LB - Ricker"),
-  vis_preds(Ricker_sim_Lmod, "LB - Ricker Light"),
-  vis_preds(Ricker_sim_Gmod, "LB - Ricker GPP"),
+  vis_preds(Ricker_sim, df, "LB - Ricker"),
+  vis_preds(Ricker_sim_Lmod, df, "LB - Ricker Light"),
+  vis_preds(Ricker_sim_Gmod, df, "LB - Ricker GPP"),
   ncol = 1)
 
 
 
 ## Latent biomass
 
-vis_LB_preds <- function(simmat3_list, mod_title){
+vis_LB_preds <- function(simmat3_list, dataTS, mod_title){
   
   ## Plot latent biomass
   # For every day extract median and CI
@@ -254,7 +254,7 @@ vis_LB_preds <- function(simmat3_list, mod_title){
   upper_biomat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[3]], 1, function(x) quantile(x, probs = 0.975))), data.frame)
   
   ## Plot simulated GPP
-  dat3 <- ldply(df, data.frame)
+  dat3 <- ldply(dataTS, data.frame)
   df_bio3 <- as.data.frame(cbind(dat3$site_name, as.character(dat3$date),
                                  median_biomat3[,2], lower_biomat3[,2], upper_biomat3[,2]))
   colnames(df_bio3) <- c("site_name","Date","B","B_lower","B_upper")
@@ -286,9 +286,9 @@ vis_LB_preds <- function(simmat3_list, mod_title){
 }
 
 plot_grid(
-  vis_LB_preds(Ricker_sim, "LB - Ricker"),
-  vis_LB_preds(Ricker_sim_Lmod, "LB - Ricker Light"),
-  vis_LB_preds(Ricker_sim_Gmod, "LB - Ricker GPP"),
+  vis_LB_preds(Ricker_sim, df, "LB - Ricker"),
+  vis_LB_preds(Ricker_sim_Lmod, df, "LB - Ricker Light"),
+  vis_LB_preds(Ricker_sim_Gmod, df, "LB - Ricker GPP"),
   ncol = 1)
 
 ##############################
@@ -307,11 +307,38 @@ AR_sim_oos <- lapply(AR_list_oos, function(x) AR_sim_fxn(x))
 Ricker_list_oos <- Map(c, PM_outputlist_Ricker, dat_oos)
 Ricker_sim_oos <- lapply(Ricker_list_oos, function(x) Ricker_sim_fxn(x))
 # Ricker Lmod
-Ricker_list_Lmod_oos <- Map(c, PM_outputlist_Ricker, dat_oos)
+Ricker_list_Lmod_oos <- Map(c, PM_outputlist_Ricker_Lmod, dat_oos)
 Ricker_sim_Lmod_oos <- lapply(Ricker_list_Lmod_oos, function(x) Ricker_sim_fxn_Lmod(x))
 # Ricker Gmod
-Ricker_list_Gmod_oos <- Map(c, PM_outputlist_Ricker, dat_oos)
+Ricker_list_Gmod_oos <- Map(c, PM_outputlist_Ricker_Gmod, dat_oos)
 Ricker_sim_Gmod_oos <- lapply(Ricker_list_Gmod_oos, function(x) Ricker_sim_fxn_Gmod(x))
+
+## Save prediction
+saveRDS(AR_sim_oos, "./rds files/AR_oos_comparison.rds")
+saveRDS(Ricker_sim_oos, "./rds files/Ricker_oos_comparison.rds")
+saveRDS(Ricker_sim_Lmod_oos, "./rds files/Ricker_Lmod_oos_comparison.rds")
+saveRDS(Ricker_sim_Gmod_oos, "./rds files/Ricker_Gmod_oos_comparison.rds")
+
+
+## Plot OOS predictions
+plot_grid(
+  vis_preds(Ricker_sim_oos, dat_oos, "LB - Ricker - OOS Prediction"),
+  vis_preds(Ricker_sim_Lmod_oos, dat_oos, "LB - Ricker Light - OOS Prediction"),
+  vis_preds(Ricker_sim_Gmod_oos, dat_oos, "LB - Ricker GPP - OOS Prediction"),
+  ncol = 1)
+
+plot_grid(
+  vis_LB_preds(Ricker_sim_oos, dat_oos, "LB - Ricker - OOS Prediction"),
+  vis_LB_preds(Ricker_sim_Lmod_oos, dat_oos, "LB - Ricker Light - OOS Prediction"),
+  vis_LB_preds(Ricker_sim_Gmod_oos, dat_oos, "LB - Ricker GPP - OOS Prediction"),
+  ncol = 1)
+
+
+
+
+
+
+
 
 
 

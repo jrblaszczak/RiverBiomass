@@ -16,7 +16,7 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
                                                                                "nwis_01656903"="Fatlick Branch, VA",
                                                                                "nwis_07191222"="Beaty Creek, OK",
                                                                                "nwis_14206950"="Fanno Creek, OR",
-                                                                               "nwis_01608500"="South Branch Potomac River, WV",
+                                                                               "nwis_01608500"="South Br. Potomac River, WV",
                                                                                "nwis_11273400"="San Joaquin River, CA"))
 
 ## Order for figures by stream order
