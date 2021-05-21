@@ -44,12 +44,17 @@ sub <- df[,c("site_name","long_name","NHD_STREAMORDE","US_state",
 # Import and subset model diagnostics
 diagnostics <- read.table("../data/diagnostics.tsv",sep = "\t", header=T)
 diagnostics <- diagnostics[which(diagnostics$site %in% sub$site_name),]
-high_sites <- unique(diagnostics[which(diagnostics$model_confidence == "H"),]$site) ## 254
+highq_sites <- diagnostics[which(diagnostics$K600_daily_sigma_Rhat < 1.05 & 
+                                   diagnostics$err_obs_iid_sigma_Rhat < 1.05 &
+                                   diagnostics$err_proc_iid_sigma_Rhat < 1.05 &
+                                   diagnostics$neg_GPP < 15 & diagnostics$pos_ER < 15),] #229
+highq_site_names <- unique(highq_sites$site) ## 208
+
 
 # Subset s based on high sites and site type and flags
-s <- sub[which(sub$site_name %in% high_sites),] ## 254
-s <- s[which(s$site_type == "ST"),] ## 249
-s <- s[which(s$struct.dam_flag %in% c(NA,"95")),] ##111
+s <- sub[which(sub$site_name %in% highq_site_names),] ## 208
+s <- s[which(s$site_type == "ST"),] ## 204
+s <- s[which(s$struct.dam_flag %in% c(NA,"95")),] ## 97
 
 # Import time series
 NWIS <- read.table("../data/daily_predictions.tsv", sep='\t', header = TRUE)
@@ -64,10 +69,10 @@ colnames(NWIS_sub) <- c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.R
                         "ER","ER.lower","ER.upper","K600","K600.lower","K600.upper",
                         "temp","Q","light","velocity")
 
-## Subset to sites in high_sites (sites with high confidence rating)
-NWIS_sub <- NWIS_sub[which(NWIS_sub$site_name %in% high_sites),]
+## Subset to sites in high_sites (sites with high confidence rating and limited dam interference)
+NWIS_sub <- NWIS_sub[which(NWIS_sub$site_name %in% s$site_name),]
 # Confirm
-length(levels(as.factor(NWIS_sub$site_name))) #254 sites
+length(levels(as.factor(NWIS_sub$site_name))) #97 sites
 
 ## Identify which sites have the most continuous data
 NWIS_sub$doy <- yday(NWIS_sub$date)
@@ -85,17 +90,17 @@ maxgap <- gap_per_year %>%
   group_by(site_name, year) %>%
   summarize_at(.vars = "gap", .funs = max)
 ## subset for sites with a max gap of 7 days
-sub_by_gap <- maxgap[which(maxgap$gap <= 7),]
-length(levels(as.factor(sub_by_gap$site_name))) ## 210
+sub_by_gap <- maxgap[which(maxgap$gap <= 14),]
+length(levels(as.factor(sub_by_gap$site_name))) ## 92
 ## merge with number of days per year
 sub_by_gap <- merge(sub_by_gap, dat_per_year, by=c("site_name","year"))
-## at least 300 days per year
-sub_by_gap <- sub_by_gap[which(sub_by_gap$n >= 300),]
+## at least 275 days per year
+sub_by_gap <- sub_by_gap[which(sub_by_gap$n >= 275),]
 sub_by_gap_sum <- sub_by_gap %>% group_by(site_name) %>% count()
-high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 2),] # 59 observations
+high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 2),] # 41
 
 ## Subset NWIS_sub
-TS <- NWIS_sub[which(NWIS_sub$site_name %in% s$site_name),] ## only sites with two or more years
+TS <- NWIS_sub[which(NWIS_sub$site_name %in% high_q$site_name),] ## only sites with two or more years
 
 ## Subset to years that meet criteria
 sub_by_gap$site_year <- paste(sub_by_gap$site_name,sub_by_gap$year,sep = "_")
@@ -128,13 +133,13 @@ View(TS_site[which(TS_site$order_group == "mid"),])
 View(TS_site[which(TS_site$order_group == "large"),])
 
 ## plot
-sid <- "nwis_04101500"
+sid <- "nwis_05435943"
 TS_site[which(TS_site$site_name == sid),]
 
 plot_grid(
   ggplot(TS[which(TS$site_name == sid),], aes(date, GPP_temp))+
     geom_line()+labs(title=TS_site[which(TS_site$site_name == sid),]$long_name),
-  ggplot(TS[which(TS$site_name == sid & TS$year %in% c(2012,2013)),], aes(date, GPP_temp))+
+  ggplot(TS[which(TS$site_name == sid & TS$year %in% c(2013,2014)),], aes(date, GPP_temp))+
   geom_line(),
   ncol = 1)
 
@@ -143,7 +148,7 @@ plot_grid(
 ## mid: nwis_14206950 2015,2016 (Order 3; FANNO CREEK AT DURHAM, OR)
 ## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK)
 ## large: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV)
-## large: nwis_04101500 2012,2013 (Order 6; ST. JOSEPH RIVER AT NILES, MI)
+## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA)
 
 site_subset <- rbind(TS[which(TS$site_name == "nwis_02336526" & TS$year %in% c(2015,2016)),],
                TS[which(TS$site_name == "nwis_01656903" & TS$year %in% c(2013,2014)),],
