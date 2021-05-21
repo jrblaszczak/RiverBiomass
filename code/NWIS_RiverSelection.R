@@ -11,30 +11,19 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 
 ## Import site data from Appling
 site <- fread("../data/site_data.csv")
-names(site)
+colnames(site)
 
-## Import hypoxia dataset and subset to Appling
-hyp <- fread("../data/GRDO_GEE_HA_NHD_2021_02_07.csv")
-PC <- hyp[which(hyp$DB_Source == "PC"),]
-names(PC)
+## Import StreamLight from Savoy
+# https://www.sciencebase.gov/catalog/item/5f974adfd34e198cb77db168
+SL <- read.table("../data/StreamLight_site information and parameters.txt", header=T)
+colnames(SL)[colnames(SL) == "Site_ID"] <- "site_name"
 
-## Merge both based on siteID
-head(site$site_name); head(PC$SiteID)
-colnames(PC)[which(colnames(PC) == "SiteID")] <- "site_name"
-
-df <- left_join(site, PC, by="site_name")
-
-## Export
-write.csv(df, "../data/PC_site_attribs.csv")
-
-##########################################
-## Re-import for site selection
-##########################################
-df <- fread("../data/PC_site_attribs.csv")
+## Merge
+df <- left_join(site, SL, "site_name")
 colnames(df)
 
 ## subset
-sub <- df[,c("site_name","long_name","NHD_STREAMORDE","US_state",
+sub <- df[,c("site_name","long_name","StreamOrde",
            "site_type","struct.canal_flag","struct.dam_flag","struct.npdes_flag")]
 
 ##################################################
@@ -55,6 +44,8 @@ highq_site_names <- unique(highq_sites$site) ## 208
 s <- sub[which(sub$site_name %in% highq_site_names),] ## 208
 s <- s[which(s$site_type == "ST"),] ## 204
 s <- s[which(s$struct.dam_flag %in% c(NA,"95")),] ## 97
+# which have light
+s_l <- s[!is.na(s$StreamOrde),] # 41
 
 # Import time series
 NWIS <- read.table("../data/daily_predictions.tsv", sep='\t', header = TRUE)
@@ -72,7 +63,7 @@ colnames(NWIS_sub) <- c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.R
 ## Subset to sites in high_sites (sites with high confidence rating and limited dam interference)
 NWIS_sub <- NWIS_sub[which(NWIS_sub$site_name %in% s$site_name),]
 # Confirm
-length(levels(as.factor(NWIS_sub$site_name))) #97 sites
+length(levels(as.factor(NWIS_sub$site_name))) #41 sites
 
 ## Identify which sites have the most continuous data
 NWIS_sub$doy <- yday(NWIS_sub$date)
@@ -119,9 +110,9 @@ TS_site <- left_join(TS_site, TS_gpp, by="site_name")
 
 ## Assign a stream order classification
 TS_site$order_group <- "NA"
-TS_site[which(TS_site$NHD_STREAMORDE %in% c(1,2)),]$order_group <- "small"
-TS_site[which(TS_site$NHD_STREAMORDE %in% c(3,4)),]$order_group <- "mid"
-TS_site[which(TS_site$NHD_STREAMORDE %in% c(5,6)),]$order_group <- "large"
+TS_site[which(TS_site$StreamOrde %in% c(1,2)),]$order_group <- "small"
+TS_site[which(TS_site$StreamOrde %in% c(3,4)),]$order_group <- "mid"
+TS_site[which(TS_site$StreamOrde %in% c(5,6)),]$order_group <- "large"
 
 ###########################################################################
 ## Choose two consecutive river years from small, mid, and large rivers
@@ -133,88 +124,31 @@ View(TS_site[which(TS_site$order_group == "mid"),])
 View(TS_site[which(TS_site$order_group == "large"),])
 
 ## plot
-sid <- "nwis_05435943"
+sid <- "nwis_11044000"
 TS_site[which(TS_site$site_name == sid),]
 
 plot_grid(
   ggplot(TS[which(TS$site_name == sid),], aes(date, GPP_temp))+
     geom_line()+labs(title=TS_site[which(TS_site$site_name == sid),]$long_name),
-  ggplot(TS[which(TS$site_name == sid & TS$year %in% c(2013,2014)),], aes(date, GPP_temp))+
+  ggplot(TS[which(TS$site_name == sid & TS$year %in% c(2015,2016)),], aes(date, GPP_temp))+
   geom_line(),
   ncol = 1)
 
-## small: nwis_02336526 2015,2016 (Order 2; PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA)
-## small: nwis_01656903 2013,2014 (Order 2; FLATLICK BRANCH ABOVE FROG BRANCH AT CHANTILLY, VA)
-## mid: nwis_14206950 2015,2016 (Order 3; FANNO CREEK AT DURHAM, OR)
-## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK)
-## large: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV)
-## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA)
+## small: nwis_02336526 2015,2016 (Order 2; PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA) - light
+## small: nwis_01649190 2010,2011 (Order 2; PAINT BRANCH NEAR COLLEGE PARK, MD) - light
+## mid: nwis_14206950 2013,2014 (Order 3; FANNO CREEK AT DURHAM, OR) - light
+## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK) - light
+## large: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV) - light
+## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA) - no light
 
 site_subset <- rbind(TS[which(TS$site_name == "nwis_02336526" & TS$year %in% c(2015,2016)),],
-               TS[which(TS$site_name == "nwis_01656903" & TS$year %in% c(2013,2014)),],
-               TS[which(TS$site_name == "nwis_14206950" & TS$year %in% c(2015,2016)),],
+               TS[which(TS$site_name == "nwis_01649190" & TS$year %in% c(2010,2011)),],
+               TS[which(TS$site_name == "nwis_14206950" & TS$year %in% c(2013,2014)),],
                TS[which(TS$site_name == "nwis_07191222" & TS$year %in% c(2009,2010)),],
                TS[which(TS$site_name == "nwis_01608500" & TS$year %in% c(2012,2013)),],
-               TS[which(TS$site_name == "nwis_04101500" & TS$year %in% c(2012,2013)),])
+               TS[which(TS$site_name == "nwis_11044000" & TS$year %in% c(2015,2016)),])
 
 TS_site_subset <- df[which(df$site_name %in% site_subset$site_name),]
-
-###################################################
-## Check other covariate data quality
-###################################################
-site_sub_list <- split(site_subset, site_subset$site_name)
-
-plotting_covar <- function(x) {
-  
-  df <- x
-  p <- plot_grid(
-
-    ggplot(df, aes(date, GPP))+
-      geom_point(color="chartreuse4", size=2)+
-      geom_errorbar(aes(ymin = GPP.lower, ymax = GPP.upper), width=0.2,color="darkolivegreen4")+
-      labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), title=df$site_name[1])+
-      theme(legend.position = "none",
-            panel.background = element_rect(color = "black", fill=NA, size=1),
-            axis.title.x = element_blank(), axis.text.x = element_blank(),
-            axis.text.y = element_text(size=12),
-            axis.title.y = element_text(size=12)),
-    
-    ggplot(df, aes(date, Q))+
-      geom_line(size=1.5, color="deepskyblue4")+
-      labs(y="Q (cms)")+
-      theme(legend.position = "none",
-            panel.background = element_rect(color = "black", fill=NA, size=1),
-            axis.title.x = element_blank(), axis.text.x = element_blank(),
-            axis.text.y = element_text(size=12),
-            axis.title.y = element_text(size=12)),
-    
-    ggplot(df, aes(date, temp))+
-      geom_line(size=1.5, color="#A11F22")+
-      labs(y="Water Temp (C)")+
-      theme(legend.position = "none",
-            panel.background = element_rect(color = "black", fill=NA, size=1),
-            axis.title.x = element_blank(), axis.text.x = element_blank(),
-            axis.text.y = element_text(size=12),
-            axis.title.y = element_text(size=12)),
-    
-    ggplot(df, aes(date, light))+
-      geom_point(size=2, color="darkgoldenrod3")+
-      labs(y="Incoming Light", x="Date")+
-      theme(legend.position = "none",
-            panel.background = element_rect(color = "black", fill=NA, size=1),
-            axis.text = element_text(size=12),
-            axis.title = element_text(size=12)),
-    ncol=1, align="hv")
-  
-  return(p)
-  
-}
-
-plotting_covar(site_sub_list$nwis_01656903)
-
-setwd("~/GitHub/RiverBiomass/figures/Site Covariate Plots")
-lapply(site_sub_list, function(x) ggsave(plot = plotting_covar(x),filename = paste(x$site_name[1],"covar.jpg",sep = "")))
-
 
 ###########################
 ## Export
@@ -222,8 +156,8 @@ lapply(site_sub_list, function(x) ggsave(plot = plotting_covar(x),filename = pas
 
 ## NWIS site subset
 setwd("~/GitHub/RiverBiomass/code")
-saveRDS(site_subset, "./rds files/NWIS_6site_subset_v2.rds")
-saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_v2.rds")
+saveRDS(site_subset, "./rds files/NWIS_6site_subset_SL.rds")
+saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_SL.rds")
 
 
 
@@ -231,10 +165,10 @@ saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_v2.rds")
 ## Plot for talks
 ###########################
 
-df <- site_sub_list$nwis_14211010
+df <- site_sub_list$nwis_11044000
 ratio_QL <- max(df$light)/max(df$Q)
-GPP_plot <- ggplot(df, aes(date, GPP))+
-  geom_errorbar(aes(ymin = GPP.lower, ymax = GPP.upper), width=0.2,color="chartreuse4")+
+GPP_plot <- ggplot(df, aes(date, GPP_temp))+
+  #geom_errorbar(aes(ymin = GPP.lower, ymax = GPP.upper), width=0.2,color="chartreuse4")+
       geom_point(color="chartreuse4", size=2)+geom_line(color="chartreuse4", size=1)+
       labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
       theme(legend.position = "none",

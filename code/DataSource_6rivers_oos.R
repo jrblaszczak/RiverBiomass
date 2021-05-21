@@ -1,4 +1,4 @@
-## 9 rivers seccond year data source
+## 6 rivers seccond year data source
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
          "lubridate","tidyverse", "reshape2"), require, character.only=T)
