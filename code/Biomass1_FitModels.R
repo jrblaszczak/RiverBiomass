@@ -37,8 +37,8 @@ launch_shinystan(test_ar)
 init_Ricker <- function(...) {
   list(c = 0.5, s = 200)
 }
-test_ricker <- stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
-             data=stan_data_l$nwis_01608500,
+test_ricker <- stan("Stan_ProductivityModel2_Ricker_fixedinit_r.stan", #obserr.stan",
+             data=stan_data_l$nwis_01649190,
              init = init_Ricker,
              chains=3,iter=5000, control=list(max_treedepth=12))
 launch_shinystan(test_ricker)
@@ -51,6 +51,7 @@ test_Gompertz <- stan("Stan_ProductivityModel3_Gompertz_fixedinit_obserr.stan",
                     init = init_Gompertz,
                     chains=3,iter=5000, control=list(max_treedepth=12))
 launch_shinystan(test_Gompertz)
+
 
 #########################################
 ## Run Stan to get parameter estimates - all sites
