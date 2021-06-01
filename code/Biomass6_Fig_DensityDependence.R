@@ -6,7 +6,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","ggExtra","patchwork"), require, character.only=T)
 
 ## Source data
-source("DataSource_6rivers.R")
+source("DataSource_6rivers_StreamLight.R")
 
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
@@ -19,7 +19,7 @@ PM_Ricker.col <- "#1C474D" # Ricker
 PM_Gompertz.col <- "#743731" # Gompertz
 
 ## Import stan fits - simulate one at a time
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_05_16.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_05_21.rds")
 #stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz.rds")
 
 ## Extract parameters
@@ -52,17 +52,15 @@ r_K_func <- function(x) {
 
 
 rK <- ldply(lapply(par_Ricker, function(x) r_K_func(x)), data.frame)
-rK$short_name <- revalue(as.character(rK$.id), replace = c("nwis_05406457"="Black Earth Creek, WI",
-                                                           "nwis_01656903"="Fatlick Branch, VA",
+rK$short_name <- revalue(as.character(rK$.id), replace = c("nwis_02336526"="Proctor Creek, GA",
+                                                           "nwis_01649190"="Paint Branch, MD",
                                                            "nwis_07191222"="Beaty Creek, OK",
                                                            "nwis_14206950"="Fanno Creek, OR",
-                                                           "nwis_01608500"="South Branch Potomac River, WV",
-                                                           "nwis_11273400"="San Joaquin River, CA"))
+                                                           "nwis_01608500"="South Br. Potomac River, WV",
+                                                           "nwis_11044000"="Santa Margarita River, CA"))
 rK$short_name <- factor(rK$short_name, levels= site_order_list)
 rK$key <- factor(rK$key, levels = c("r","lambda","K"))
 
-## Visualize
-rK <- rK[-which(rK$short_name == "San Joaquin River, CA"),]
 
 
 ggplot(rK, aes(value, fill = short_name))+

@@ -7,7 +7,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "bayesplot","shinystan","Metrics","MCMCglmm","tictoc"), require, character.only=T)
 
 ## Source data
-source("DataSource_6rivers.R")
+source("DataSource_6rivers_StreamLight.R")
 
 # colors
 PM_AR.col <- "#d95f02"
@@ -15,8 +15,8 @@ PM_Ricker.col <- "#7570b3"
 PM_Gompertz.col <- "#3C7373"
 
 ## Import stan fits - simulate one at a time
-stan_model_output_AR <- readRDS("./rds files/stan_6riv_output_AR_2021_05_17.rds")
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_05_17.rds")
+stan_model_output_AR <- readRDS("./rds files/stan_6riv_output_AR_2021_05_21.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_05_21.rds")
 #stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz_2021_05_16.rds")
 
 #############################################
@@ -66,7 +66,9 @@ ggplot(obs_dist, aes(sig_o, fill=source))+
   labs(x=expression(sigma['obs']),y="Proportion of Total")
 
 
-
+#######################################
+## Compare other parameter estimates
+######################################
 
 
 

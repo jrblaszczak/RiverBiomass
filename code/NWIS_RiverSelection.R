@@ -26,6 +26,15 @@ colnames(df)
 sub <- df[,c("site_name","long_name","StreamOrde",
            "site_type","struct.canal_flag","struct.dam_flag","struct.npdes_flag")]
 
+## Secondary stream order source from hypoxia data set
+#https://www.sciencebase.gov/catalog/item/606f60afd34ef99870188ee5
+hyp <- fread("../data/GRDO_GEE_HA_NHD.csv")
+hyp <- hyp[which(hyp$DB_Source == "PC"), c("SiteID","ORD_STRA","NHD_STREAMORDE")]
+colnames(hyp)[which(colnames(hyp) == "SiteID")] <- "site_name"
+
+#Merge
+sub <- left_join(sub, hyp, by="site_name")
+
 ##################################################
 ## Select sites based on data quality
 ##################################################
@@ -44,8 +53,8 @@ highq_site_names <- unique(highq_sites$site) ## 208
 s <- sub[which(sub$site_name %in% highq_site_names),] ## 208
 s <- s[which(s$site_type == "ST"),] ## 204
 s <- s[which(s$struct.dam_flag %in% c(NA,"95")),] ## 97
-# which have light
-s_l <- s[!is.na(s$StreamOrde),] # 41
+# which have light from Phil
+#s_l <- s[!is.na(s$StreamOrde),] # 41
 
 # Import time series
 NWIS <- read.table("../data/daily_predictions.tsv", sep='\t', header = TRUE)
@@ -63,7 +72,7 @@ colnames(NWIS_sub) <- c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.R
 ## Subset to sites in high_sites (sites with high confidence rating and limited dam interference)
 NWIS_sub <- NWIS_sub[which(NWIS_sub$site_name %in% s$site_name),]
 # Confirm
-length(levels(as.factor(NWIS_sub$site_name))) #41 sites
+length(levels(as.factor(NWIS_sub$site_name))) ## 97 when subsetting for s
 
 ## Identify which sites have the most continuous data
 NWIS_sub$doy <- yday(NWIS_sub$date)
@@ -80,7 +89,7 @@ gap_per_year <- NWIS_sub %>%
 maxgap <- gap_per_year %>%
   group_by(site_name, year) %>%
   summarize_at(.vars = "gap", .funs = max)
-## subset for sites with a max gap of 7 days
+## subset for sites with a max gap of 14 days
 sub_by_gap <- maxgap[which(maxgap$gap <= 14),]
 length(levels(as.factor(sub_by_gap$site_name))) ## 92
 ## merge with number of days per year
@@ -110,9 +119,9 @@ TS_site <- left_join(TS_site, TS_gpp, by="site_name")
 
 ## Assign a stream order classification
 TS_site$order_group <- "NA"
-TS_site[which(TS_site$StreamOrde %in% c(1,2)),]$order_group <- "small"
-TS_site[which(TS_site$StreamOrde %in% c(3,4)),]$order_group <- "mid"
-TS_site[which(TS_site$StreamOrde %in% c(5,6)),]$order_group <- "large"
+TS_site[which(TS_site$NHD_STREAMORDE %in% c(1,2)),]$order_group <- "small"
+TS_site[which(TS_site$NHD_STREAMORDE %in% c(3,4,5)),]$order_group <- "mid"
+TS_site[which(TS_site$NHD_STREAMORDE >= 6),]$order_group <- "large"
 
 ###########################################################################
 ## Choose two consecutive river years from small, mid, and large rivers
@@ -124,29 +133,30 @@ View(TS_site[which(TS_site$order_group == "mid"),])
 View(TS_site[which(TS_site$order_group == "large"),])
 
 ## plot
-sid <- "nwis_11044000"
+sid <- "nwis_08447300"
+two_years <- c(2012,2013)
 TS_site[which(TS_site$site_name == sid),]
 
 plot_grid(
   ggplot(TS[which(TS$site_name == sid),], aes(date, GPP_temp))+
     geom_line()+labs(title=TS_site[which(TS_site$site_name == sid),]$long_name),
-  ggplot(TS[which(TS$site_name == sid & TS$year %in% c(2015,2016)),], aes(date, GPP_temp))+
+  ggplot(TS[which(TS$site_name == sid & TS$year %in% two_years),], aes(date, GPP_temp))+
   geom_line(),
   ncol = 1)
 
 ## small: nwis_02336526 2015,2016 (Order 2; PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA) - light
 ## small: nwis_01649190 2010,2011 (Order 2; PAINT BRANCH NEAR COLLEGE PARK, MD) - light
-## mid: nwis_14206950 2013,2014 (Order 3; FANNO CREEK AT DURHAM, OR) - light
 ## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK) - light
-## large: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV) - light
+## mid: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV) - light
 ## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA) - no light
+## large: nwis_08447300 2012,2013 (Order 7: Pecos Rv at Brotherton Rh nr Pandale, TX) - no light
 
 site_subset <- rbind(TS[which(TS$site_name == "nwis_02336526" & TS$year %in% c(2015,2016)),],
                TS[which(TS$site_name == "nwis_01649190" & TS$year %in% c(2010,2011)),],
-               TS[which(TS$site_name == "nwis_14206950" & TS$year %in% c(2013,2014)),],
                TS[which(TS$site_name == "nwis_07191222" & TS$year %in% c(2009,2010)),],
                TS[which(TS$site_name == "nwis_01608500" & TS$year %in% c(2012,2013)),],
-               TS[which(TS$site_name == "nwis_11044000" & TS$year %in% c(2015,2016)),])
+               TS[which(TS$site_name == "nwis_11044000" & TS$year %in% c(2015,2016)),],
+               TS[which(TS$site_name == "nwis_08447300" & TS$year %in% c(2012,2013)),])
 
 TS_site_subset <- df[which(df$site_name %in% site_subset$site_name),]
 
@@ -164,8 +174,10 @@ saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_SL.rds")
 ##############################
 ## Plot for talks
 ###########################
+site_subset_list <- split(site_subset, site_subset$site_name)
 
-df <- site_sub_list$nwis_11044000
+
+df <- site_subset_list$nwis_01649190
 ratio_QL <- max(df$light)/max(df$Q)
 GPP_plot <- ggplot(df, aes(date, GPP_temp))+
   #geom_errorbar(aes(ymin = GPP.lower, ymax = GPP.upper), width=0.2,color="chartreuse4")+

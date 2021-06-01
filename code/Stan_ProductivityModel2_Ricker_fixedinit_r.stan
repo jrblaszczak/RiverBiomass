@@ -16,7 +16,7 @@ parameters {
   // Logistic growth parameters  
   real B [Ndays]; // Biomass
   real r [Ndays]; // growth rate
-  real K; //carrying capacity
+  real <lower=0> K; //carrying capacity
   
   // Error parameters
   real<lower=0> sig_p; // sigma processes error
@@ -61,10 +61,10 @@ model {
   sig_r ~ normal(0,0.1)T[0,];
   
   // Param priors
-  c ~ rayleigh(0.5);
-  s ~ normal(100, 100);
+  c ~ normal(0,1)T[0,];
+  s ~ normal(0,200)T[0,];
   r ~ normal(0,1);
-  K ~ normal(0, 20);
+  K ~ normal(0,20)T[0,];
   
 }
 
