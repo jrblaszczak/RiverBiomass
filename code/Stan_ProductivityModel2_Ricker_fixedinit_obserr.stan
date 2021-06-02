@@ -55,10 +55,10 @@ model {
   sig_o ~ normal(mean(GPP_sd), sd(GPP_sd))T[0,];
   
   // Param priors
-  c ~ rayleigh(0.5);
-  s ~ normal(0,200);
+  c ~ normal(0,1)T[0,];
+  s ~ normal(0,200)T[0,];
   r ~ normal(0,1);
-  lambda ~ normal(0,1);
+  lambda ~ normal(0,1)T[,0];
   
 }
 
