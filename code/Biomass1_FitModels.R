@@ -122,5 +122,6 @@ saveRDS(PM_Gompertz_elapsedtime, "./rds files/stan_6riv_Gompertz_time_2021_06_01
 
 
 ## View
-launch_shinystan(PM_outputlist_Ricker$nwis_01608500)
-
+launch_shinystan(PM_outputlist_AR$nwis_08447300)
+launch_shinystan(PM_outputlist_Ricker$nwis_07191222)
+launch_shinystan(PM_outputlist_Ricker_tvr$nwis_07191222)
