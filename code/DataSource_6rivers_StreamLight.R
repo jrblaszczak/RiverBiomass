@@ -1,4 +1,4 @@
-## 6 rivers data source with StreamLight
+## 6 rivers data source with 4/6 StreamLight, 2/6 NLDAS light
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
@@ -25,17 +25,17 @@ data <- left_join(data, SL, by=c("site_name", "date"))
 site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_02336526"="Proctor Creek, GA",
                                                                                "nwis_01649190"="Paint Branch, MD",
                                                                                "nwis_07191222"="Beaty Creek, OK",
-                                                                               "nwis_14206950"="Fanno Creek, OR",
-                                                                               "nwis_01608500"="South Br. Potomac River, WV",
-                                                                               "nwis_11044000"="Santa Margarita River, CA"))
+                                                                               "nwis_01608500"="S. Br. Potomac River, WV",
+                                                                               "nwis_11044000"="Santa Margarita River, CA",
+                                                                               "nwis_08447300"="Pecos River, TX"))
 
 ## Order for figures by stream order
 site_order_list <- c("Proctor Creek, GA",
                      "Paint Branch, MD",
                      "Beaty Creek, OK",
-                     "Fanno Creek, OR",
-                     "South Br. Potomac River, WV",
-                     "Santa Margarita River, CA")
+                     "S. Br. Potomac River, WV",
+                     "Santa Margarita River, CA",
+                     "Pecos River, TX")
 
 
 ## How many days of data per site per year
@@ -46,20 +46,20 @@ data_siteyears <- data %>%
 ## Select the first of two years
 data <- rbind(data[which(data$site_name == "nwis_02336526" & data$year %in% c(2015)),],
               data[which(data$site_name == "nwis_01649190" & data$year %in% c(2010)),],
-              data[which(data$site_name == "nwis_14206950" & data$year %in% c(2013)),],
               data[which(data$site_name == "nwis_07191222" & data$year %in% c(2009)),],
               data[which(data$site_name == "nwis_01608500" & data$year %in% c(2012)),],
-              data[which(data$site_name == "nwis_11044000" & data$year %in% c(2015)),])
+              data[which(data$site_name == "nwis_11044000" & data$year %in% c(2015)),],
+              data[which(data$site_name == "nwis_08447300" & data$year %in% c(2012)),])
 
 
 ## small: nwis_02336526 2015,2016 (Order 2; PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA) - light
 ## small: nwis_01649190 2010,2011 (Order 2; PAINT BRANCH NEAR COLLEGE PARK, MD) - light
-## mid: nwis_14206950 2013,2014 (Order 3; FANNO CREEK AT DURHAM, OR) - light
 ## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK) - light
-## large: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV) - light
-## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA) - no light
+## mid: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV) - light
+## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA) - no SL light
+## large: nwis_08447300 2012,2013 (Order 7: Pecos Rv at Brotherton Rh nr Pandale, TX) - no SL light
 
-## Set any GPP < 0 to a small value close to 0
+## Set any GPP < 0 to a small value between 0.05 to 0.13 g O2 m-2 d-1
 data[which(data$GPP < 0),]$GPP <- sample(exp(-3):exp(-2), 1)
 
 ## Create a GPP SD; SD = (CI - mean)/1.96
@@ -74,9 +74,10 @@ ggplot(data, aes(date, GPP))+
 l <- split(data, data$site_name)
 
 
-## For only Santa Margarita River, set PAR_surface to light
+## For Santa Margarita River & Pecos River, set PAR_surface to light
 ## because no StreamLight available
 l$nwis_11044000$PAR_surface <- l$nwis_11044000$light
+l$nwis_08447300$PAR_surface <- l$nwis_08447300$light
 
 rel_LQT <- function(x){
   x$light_rel <- x$PAR_surface/max(x$PAR_surface)

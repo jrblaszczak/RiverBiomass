@@ -18,22 +18,22 @@ colnames(site)
 SL <- read.table("../data/StreamLight_site information and parameters.txt", header=T)
 colnames(SL)[colnames(SL) == "Site_ID"] <- "site_name"
 
-## Merge
-df <- left_join(site, SL, "site_name")
-colnames(df)
-
-## subset
-sub <- df[,c("site_name","long_name","StreamOrde",
-           "site_type","struct.canal_flag","struct.dam_flag","struct.npdes_flag")]
-
 ## Secondary stream order source from hypoxia data set
 #https://www.sciencebase.gov/catalog/item/606f60afd34ef99870188ee5
 hyp <- fread("../data/GRDO_GEE_HA_NHD.csv")
 hyp <- hyp[which(hyp$DB_Source == "PC"), c("SiteID","ORD_STRA","NHD_STREAMORDE")]
 colnames(hyp)[which(colnames(hyp) == "SiteID")] <- "site_name"
 
-#Merge
-sub <- left_join(sub, hyp, by="site_name")
+## Merge
+df <- left_join(site, SL, "site_name")
+df <- left_join(df, hyp, "site_name")
+colnames(df)
+
+## subset
+sub <- df[,c("site_name","long_name","StreamOrde",
+           "site_type","struct.canal_flag","struct.dam_flag","struct.npdes_flag",
+           "ORD_STRA","NHD_STREAMORDE")]
+
 
 ##################################################
 ## Select sites based on data quality
