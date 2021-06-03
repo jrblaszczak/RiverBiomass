@@ -18,8 +18,8 @@ PM_Ricker.col <- "#7570b3"
 PM_Gompertz.col <- "#1C474D"
 
 ## Import stan fits - simulate one at a time
-stan_model_output_AR <- readRDS("./rds files/stan_6riv_output_AR_2021_05_21.rds")
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_05_21.rds")
+stan_model_output_AR <- readRDS("./rds files/stan_6riv_output_AR_2021_06_01.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_06_01.rds")
 #stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz_2021_05_16.rds")
 
 ##########################
