@@ -6,10 +6,10 @@ lapply(c("plyr","dplyr","ggplot2","cowplot",
 ##############################
 ## Data Import & Processing ##
 ##############################
-data <- readRDS("./rds files/NWIS_6site_subset.rds")
+data <- readRDS("./rds files/NWIS_6site_subset_SL.rds")
 data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 
-site_info <- readRDS("./rds files/NWIS_6siteinfo_subset.rds")
+site_info <- readRDS("./rds files/NWIS_6siteinfo_subset_SL.rds")
 
 ## Change river names to short names
 site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_02336526"="Proctor Creek, GA",

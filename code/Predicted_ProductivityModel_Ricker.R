@@ -27,7 +27,7 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0.01)
   }
   
   return(pred_GPP)
@@ -61,7 +61,7 @@ PM_Ricker_B <- function(r, lambda, s, c, sig_p, sig_o, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0.01)
   }
   
   return(B)
