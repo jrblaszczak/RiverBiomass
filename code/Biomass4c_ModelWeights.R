@@ -5,7 +5,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "tidyverse"), require, character.only=T)
 
 ## Source data
-source("DataSource_6rivers_oos.R")
+source("DataSource_6rivers_oos_StreamLight.R")
 df <- dat_oos
 
 ################################

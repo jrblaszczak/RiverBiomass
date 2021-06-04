@@ -5,11 +5,8 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
 
 ## Source data
-source("DataSource_9rivers_oos.R")
+source("DataSource_6rivers_oos_StreamLight.R")
 df <- dat_oos
-# Subset source data
-df <- df[c("nwis_01649500","nwis_02234000","nwis_03058000",
-           "nwis_08180700","nwis_10129900","nwis_14211010")]
 
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
@@ -23,14 +20,6 @@ PM_Gompertz.col <- "#1C474D"
 
 ## Change river names to short names
 site_info[,c("site_name","long_name","NHD_STREAMORDE")]
-site_info <- site_info[which(site_info$site_name %in% names(df)),]
-site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_01649500"="Anacostia River, MD",
-                                                                               "nwis_02234000"="St. John's River, FL",
-                                                                               "nwis_03058000"="West Fork River, WV",
-                                                                               "nwis_08180700"="Medina River, TX",
-                                                                               "nwis_10129900"="Silver Creek, UT",
-                                                                               "nwis_14211010"="Clackamas River, OR"))
-
 
 ################################
 ## Model output plot function
@@ -54,12 +43,7 @@ GPP_oos_preds <- function(preds, df, PM.col, PM.title){
   
   ## Arrange rivers by river order
   df_sim <- left_join(df_sim, site_info[,c("site_name","short_name")])
-  df_sim$short_name <- factor(df_sim$short_name, levels=c("Silver Creek, UT",
-                                                            "Medina River, TX",
-                                                            "Anacostia River, MD",
-                                                            "West Fork River, WV",
-                                                            "St. John's River, FL",
-                                                            "Clackamas River, OR"))
+  df_sim$short_name <- factor(df_sim$short_name, levels=site_order_list)
   
   ## Plot
   df_sim_plot <- ggplot(df_sim, aes(Date, GPP))+
@@ -74,15 +58,15 @@ GPP_oos_preds <- function(preds, df, PM.col, PM.title){
           axis.title.y = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15))+
-    coord_cartesian(ylim = c(0,15))+
-    facet_wrap(~short_name, scales = "free_x", ncol = 2)
+    #coord_cartesian(ylim = c(0,15))+
+    facet_wrap(~short_name, scales = "free", ncol = 2)
   
   return(df_sim_plot)
 
 }
 
-GPP_oos_preds("./rds files/Sim_9riv_AR_oos.rds",df, PM_AR.col, "PM: Phenomenological")
-GPP_oos_preds("./rds files/Sim_9riv_Ricker_oos.rds",df, PM_Ricker.col, "PM: Ricker")
+GPP_oos_preds("./rds files/Sim_6riv_AR_oos.rds",df, PM_AR.col, "PM: STS")
+GPP_oos_preds("./rds files/Sim_6riv_Ricker_oos.rds",df, PM_Ricker.col, "PM: LB")
 #GPP_oos_preds("./rds files/Sim_9riv_Gompertz_oos.rds",df, PM_Gompertz.col, "PM: Gompertz")
 
 
@@ -112,12 +96,7 @@ LatBio_oos_preds <- function(preds, df, PM.col, PM.title){
   
   ## Arrange rivers by river order
   df_bio <- left_join(df_bio, site_info[,c("site_name","short_name")])
-  df_bio$short_name <- factor(df_bio$short_name, levels=c("Silver Creek, UT",
-                                                            "Medina River, TX",
-                                                            "Anacostia River, MD",
-                                                            "West Fork River, WV",
-                                                            "St. John's River, FL",
-                                                            "Clackamas River, OR"))
+  df_bio$short_name <- factor(df_bio$short_name, levels= site_order_list)
   
   ## plot
   df_bio_plot <- ggplot(df_bio, aes(Date, exp(B)))+
@@ -131,7 +110,7 @@ LatBio_oos_preds <- function(preds, df, PM.col, PM.title){
           axis.title.y = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15))+
-    coord_cartesian(ylim=c(0,20))+
+    coord_cartesian(ylim=c(0,30))+
     facet_wrap(~short_name, scales = "free_x", ncol = 2)
   
   
@@ -141,7 +120,7 @@ LatBio_oos_preds <- function(preds, df, PM.col, PM.title){
 }
 
 
-LatBio_oos_preds("./rds files/Sim_9riv_Ricker_oos.rds",df, PM_Ricker.col, "PM: Ricker")
-LatBio_oos_preds("./rds files/Sim_9riv_Gompertz_oos.rds",df, PM_Gompertz.col, "PM: Gompertz")
+LatBio_oos_preds("./rds files/Sim_6riv_Ricker_oos.rds",df, PM_Ricker.col, "PM: LB")
+#LatBio_oos_preds("./rds files/Sim_6riv_Gompertz_oos.rds",df, PM_Gompertz.col, "PM: Gompertz")
 
 
