@@ -6,11 +6,11 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","ggExtra","patchwork","dataRetrieval"), require, character.only=T)
 
 # Site numbers
-site_numbers <- c("05406457","01656903","07191222",
-                  "14206950","01608500","11273400")
+site_numbers <- c("02336526","01649190","07191222",
+                  "01608500","11044000","08447300")
 
 # Site information
-NWIS_Info <- lapply(site_numbers, function(x) readNWISsite(x))
+NWIS_Info <- lapply(site_numbers, function(x) dataRetrieval::readNWISsite(x))
 
 # Mean daily discharge
 parameterCd <- "00060"

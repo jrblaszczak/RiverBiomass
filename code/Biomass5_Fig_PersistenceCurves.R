@@ -6,7 +6,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","ggExtra","patchwork","grid","gridExtra"), require, character.only=T)
 
 ## Source data
-source("DataSource_6rivers.R")
+source("DataSource_6rivers_StreamLight.R")
 
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
@@ -22,7 +22,7 @@ PM_Gompertz.col <- "#1C474D"
 ## Extract 
 ###################################################
 ## Import stan fits - simulate one at a time
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_05_16.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_06_01.rds")
 #stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz.rds")
 
 ## Extract and summarize parameters
@@ -164,17 +164,31 @@ names(plots) <- site_list
 
 ## order based on river order
 grid.arrange(
-  arrangeGrob(grobs=list(plots$nwis_05406457,
-                         plots$nwis_01656903,
-                         plots$nwis_14206950,
+  arrangeGrob(grobs=list(plots$nwis_02336526,
+                         plots$nwis_01649190,
                          plots$nwis_07191222,
                          plots$nwis_01608500,
-                         plots$nwis_11273400),
+                         plots$nwis_11044000,
+                         plots$nwis_08447300),
               ncol = 2,
               bottom=textGrob("Discharge (cms)", gp=gpar(fontsize=16)), 
               left=textGrob("Biomass Persistence", gp=gpar(fontsize=16), rot=90)),
   widths=c(9,1)
 )
+
+
+## View distributions of flow across all sites
+test <- ldply(df, data.frame)
+test <- left_join(test, site_info[,c("site_name","short_name")], by="site_name")
+test$short_name <- factor(test$short_name, levels= site_order_list)
+
+library(viridis)
+
+ggplot(test, aes(Q, fill = short_name))+
+  geom_density(color="black")+
+  scale_fill_viridis("Site", discrete = TRUE, alpha=0.6, option="A") +
+  scale_x_continuous(trans="log")+
+  theme(axis.text.x = element_text(angle=45, hjust=1))
 
 
 #########################
