@@ -78,19 +78,29 @@ visualize_support <- function(short.name){
   ## visualize
   theme_set(theme_bw())
   
-  vis.plot <- plot_grid(
-    ggplot(support, aes(Date, exp(GPP)))+geom_point(color="grey75")+
-      geom_line(aes(Date, exp(mean_p_GPP_STS)),color="purple",size=0.9)+
-      geom_ribbon(aes(Date, ymin=exp(mean_p_GPP_STS) - exp(se_p_GPP_STS),
-                      ymax=exp(mean_p_GPP_STS) + exp(se_p_GPP_STS)), fill="purple",alpha=0.3)+
-      geom_line(aes(Date, exp(mean_p_GPP_LB)),color="chartreuse4",size=0.9)+
-      geom_ribbon(aes(Date, ymin=exp(mean_p_GPP_LB) - exp(se_p_GPP_LB),
-                      ymax=exp(mean_p_GPP_LB) + exp(se_p_GPP_LB)), fill="chartreuse4",alpha=0.3)+
-      labs(y="GPP",title = short.name),
-    
-    ggplot(support, aes(Date, STS_support))+geom_line(color="purple",size=0.9)+
-      geom_line(aes(Date, LB_support),color="chartreuse4",size=0.9),
-    ncol=1, align = "hv")
+  colors <- c("STS" = "purple", "LB" = "chartreuse4")
+  fills <- c("STS" = "purple", "LB" = "chartreuse4")
+  
+  vis.plot_top <- ggplot(support, aes(Date, exp(GPP)))+geom_point(color="grey75")+
+    geom_line(aes(Date, exp(mean_p_GPP_STS), color = "STS"),size=0.9)+
+    geom_ribbon(aes(Date, ymin=exp(mean_p_GPP_STS) - exp(se_p_GPP_STS),
+                    ymax=exp(mean_p_GPP_STS) + exp(se_p_GPP_STS), fill = "STS"), alpha=0.3)+
+    geom_line(aes(Date, exp(mean_p_GPP_LB), color="LB"), size=0.9)+
+    geom_ribbon(aes(Date, ymin=exp(mean_p_GPP_LB) - exp(se_p_GPP_LB),
+                    ymax=exp(mean_p_GPP_LB) + exp(se_p_GPP_LB),fill="LB"),alpha=0.3)+
+    labs(y="GPP",title = short.name, color="Legend")+
+    scale_color_manual(values = colors)+
+    scale_fill_manual(values = fills)+guides(fill=FALSE)
+  
+  vis.plot_bottom <- ggplot(support, aes(Date, STS_support))+
+    geom_line(color="purple",size=0.9)+
+    geom_line(aes(Date, LB_support),color="chartreuse4",size=0.9)+
+    labs(y="Model Weight")
+  
+  vis.plot <- plot_grid(plot_grid(vis.plot_top+ theme(legend.position = "none"), 
+                    vis.plot_bottom,
+                    ncol=1, align = "hv"),
+          get_legend(vis.plot_top), ncol=2, rel_widths = c(1,0.2))
   
   return(vis.plot)
 

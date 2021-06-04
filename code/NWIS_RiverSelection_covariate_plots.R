@@ -1,8 +1,13 @@
 ## Check covariate data quality
 
+# load packages
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
+         "tidyverse","reshape2","ggExtra","patchwork","grid","gridExtra"), require, character.only=T)
+
 ##############################
 ## Data Import & Processing ##
 ##############################
+setwd("~/GitHub/RiverBiomass/code")
 data <- readRDS("./rds files/NWIS_6site_subset_SL.rds")
 data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 
@@ -15,55 +20,70 @@ colnames(SL)[colnames(SL) == "Date"] <- "date"
 ## Join data and StreamLight
 data <- left_join(data, SL, by=c("site_name", "date"))
 
+## Add short name
+data$short_name <- revalue(as.character(data$site_name), replace = c("nwis_02336526"="Proctor Creek, GA",
+                                                                     "nwis_01649190"="Paint Branch, MD",
+                                                                     "nwis_07191222"="Beaty Creek, OK",
+                                                                     "nwis_01608500"="S. Br. Potomac River, WV",
+                                                                     "nwis_11044000"="Santa Margarita River, CA",
+                                                                     "nwis_08447300"="Pecos River, TX"))
+
+## Set any GPP < 0 to a small value between 0.05 to 0.13 g O2 m-2 d-1
+data[which(data$GPP < 0),]$GPP <- sample(exp(-3):exp(-2), 1)
+
 ## split
 site_sub_list <- split(data, data$site_name)
 
-## For only Santa Margarita River, set PAR_surface to light
+## For Santa Margarita River & Pecos Rivers, set PAR_surface to light
 # because no StreamLight available
 site_sub_list$nwis_11044000$PAR_surface <- site_sub_list$nwis_11044000$light
+site_sub_list$nwis_08447300$PAR_surface <- site_sub_list$nwis_08447300$light
+
 
 plotting_covar <- function(x) {
   
   df <- x
-  p <- plot_grid(
-    
-    ggplot(df, aes(date, GPP))+
+  
+  gpp_plot <- ggplot(df, aes(date, GPP))+
       geom_point(color="chartreuse4", size=2)+
       geom_errorbar(aes(ymin = GPP.lower, ymax = GPP.upper), width=0.2,color="darkolivegreen4")+
-      labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), title=df$site_name[1])+
+      labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), title=df$short_name[1])+
       theme(legend.position = "none",
             panel.background = element_rect(color = "black", fill=NA, size=1),
             axis.title.x = element_blank(), axis.text.x = element_blank(),
             axis.text.y = element_text(size=12),
-            axis.title.y = element_text(size=12)),
+            axis.title.y = element_text(size=12))
     
-    ggplot(df, aes(date, Q))+
+    Q_plot <- ggplot(df, aes(date, Q))+
       geom_line(size=1.5, color="deepskyblue4")+
       labs(y="Q (cms)")+
       theme(legend.position = "none",
             panel.background = element_rect(color = "black", fill=NA, size=1),
             axis.title.x = element_blank(), axis.text.x = element_blank(),
             axis.text.y = element_text(size=12),
-            axis.title.y = element_text(size=12)),
+            axis.title.y = element_text(size=12))
     
-    ggplot(df, aes(date, temp))+
+    Temp_plot <- ggplot(df, aes(date, temp))+
       geom_line(size=1.5, color="#A11F22")+
       labs(y="Water Temp (C)")+
       theme(legend.position = "none",
             panel.background = element_rect(color = "black", fill=NA, size=1),
             axis.title.x = element_blank(), axis.text.x = element_blank(),
             axis.text.y = element_text(size=12),
-            axis.title.y = element_text(size=12)),
+            axis.title.y = element_text(size=12))
     
-    ggplot(df, aes(date, PAR_surface))+
+    Light_plot <- ggplot(df, aes(date, PAR_surface))+
       geom_point(size=2, color="darkgoldenrod3")+
       labs(y="Water surface light", x="Date")+
       theme(legend.position = "none",
             panel.background = element_rect(color = "black", fill=NA, size=1),
             axis.text = element_text(size=12),
-            axis.title = element_text(size=12)),
-    ncol=1, align="hv")
+            axis.title = element_text(size=12))
   
+  
+  
+  p <- gpp_plot/Q_plot/Temp_plot/Light_plot
+ 
   return(p)
   
 }
