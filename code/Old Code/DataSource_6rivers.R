@@ -9,10 +9,27 @@ lapply(c("plyr","dplyr","ggplot2","cowplot",
 ##############################
 ## Data Import & Processing ##
 ##############################
-data <- readRDS("../rds files/NWIS_6site_subset.rds")
+data <- readRDS("./rds files/NWIS_6site_subset_v2.rds")
 data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 
-site_info <- readRDS("../data/NWIS_6siteinfo_subset.rds")
+site_info <- readRDS("./rds files/NWIS_6siteinfo_subset_v2.rds")
+
+## Change river names to short names
+site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("nwis_02336526"="Proctor Creek, GA",
+                                                                               "nwis_01656903"="Fatlick Branch, VA",
+                                                                               "nwis_07191222"="Beaty Creek, OK",
+                                                                               "nwis_14206950"="Fanno Creek, OR",
+                                                                               "nwis_01608500"="South Br. Potomac River, WV",
+                                                                               "nwis_04101500"="St. Joseph River, MI"))
+
+## Order for figures by stream order
+site_order_list <- c("Proctor Creek, GA",
+                     "Fatlick Branch, VA",
+                     "Beaty Creek, OK",
+                     "Fanno Creek, OR",
+                     "South Br. Potomac River, WV",
+                     "St. Joseph River, MI")
+
 
 ## How many days of data per site per year
 data$year <- year(data$date)
@@ -20,12 +37,12 @@ data_siteyears <- data %>%
   group_by(site_name, year) %>%
   tally()
 ## Select the first of two years
-data <- rbind(data[which(data$site_name == "nwis_08180700" & data$year %in% c(2010)),],
-              data[which(data$site_name == "nwis_10129900" & data$year %in% c(2015)),],
-              data[which(data$site_name == "nwis_03058000" & data$year %in% c(2014)),],
-              data[which(data$site_name == "nwis_01649500" & data$year %in% c(2012)),],
-              data[which(data$site_name == "nwis_14211010" & data$year %in% c(2012)),],
-              data[which(data$site_name == "nwis_02234000" & data$year %in% c(2013)),])
+data <- rbind(data[which(data$site_name == "nwis_02336526" & data$year %in% c(2015)),],
+              data[which(data$site_name == "nwis_01656903" & data$year %in% c(2013)),],
+              data[which(data$site_name == "nwis_07191222" & data$year %in% c(2009)),],
+              data[which(data$site_name == "nwis_14206950" & data$year %in% c(2015)),],
+              data[which(data$site_name == "nwis_01608500" & data$year %in% c(2012)),],
+              data[which(data$site_name == "nwis_04101500" & data$year %in% c(2012)),])
 
 ## Set any GPP < 0 to a small value close to 0
 data[which(data$GPP < 0),]$GPP <- sample(exp(-6):exp(-4), 1)
@@ -45,15 +62,12 @@ rel_LQT <- function(x){
   x$light_rel <- x$light/max(x$light)
   x$temp_rel <- x$temp/max(x$temp)
   x$tQ <- x$Q/max(x$Q)
-  
-  #x$std_light <- (x$light-mean(x$light))/sd(x$light)
-  #x$std_temp <- (x$temp-mean(x$temp))/sd(x$temp)
-  #x$tQ <- (x$Q-mean(x$Q))/sd(x$Q)
+
   x<-x[order(x$date),]
   return(x)
 }
 
 dat <- lapply(l, function(x) rel_LQT(x))
+df <- dat
 
-
-rm(data,l, data_siteyears)
+rm(data,l, data_siteyears, dat)

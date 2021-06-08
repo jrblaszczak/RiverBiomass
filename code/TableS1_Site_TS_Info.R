@@ -9,11 +9,17 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 #################################################
 
 ## Source data
-source("DataSource_9rivers.R")
+source("DataSource_6rivers_StreamLight.R")
 
-# Subset site info
-site_info <- site_info[which(site_info$site_name %in% names(df)),]
+## Subset relevant columns
+colnames(site_info)
+sub <- site_info[,c("short_name","nwis_id","lat","lon","NHD_STREAMORDE","struct.canal_flag","struct.dam_flag","struct.npdes_flag")]
 
+
+################################################
+## Import data on the number of days per year
+################################################
+saveRDS(site_subset_numdays,"./rds files/NWIS_6site_Ndays_SL.rds")
 
 
 

@@ -96,6 +96,7 @@ length(levels(as.factor(sub_by_gap$site_name))) ## 92
 sub_by_gap <- merge(sub_by_gap, dat_per_year, by=c("site_name","year"))
 ## at least 275 days per year
 sub_by_gap <- sub_by_gap[which(sub_by_gap$n >= 275),]
+
 sub_by_gap_sum <- sub_by_gap %>% group_by(site_name) %>% count()
 high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 2),] # 41
 
@@ -160,6 +161,16 @@ site_subset <- rbind(TS[which(TS$site_name == "nwis_02336526" & TS$year %in% c(2
 
 TS_site_subset <- df[which(df$site_name %in% site_subset$site_name),]
 
+## Save sub_by_gap info
+site_subset_numdays <- rbind(sub_by_gap[which(sub_by_gap$site_name == "nwis_02336526" & sub_by_gap$year %in% c(2015,2016)),],
+                     sub_by_gap[which(sub_by_gap$site_name == "nwis_01649190" & sub_by_gap$year %in% c(2010,2011)),],
+                     sub_by_gap[which(sub_by_gap$site_name == "nwis_07191222" & sub_by_gap$year %in% c(2009,2010)),],
+                     sub_by_gap[which(sub_by_gap$site_name == "nwis_01608500" & sub_by_gap$year %in% c(2012,2013)),],
+                     sub_by_gap[which(sub_by_gap$site_name == "nwis_11044000" & sub_by_gap$year %in% c(2015,2016)),],
+                     sub_by_gap[which(sub_by_gap$site_name == "nwis_08447300" & sub_by_gap$year %in% c(2012,2013)),])
+colnames(site_subset_numdays) <- c("site_name","year","max_gap","Ndays","site_year")
+
+
 ###########################
 ## Export
 ###########################
@@ -168,7 +179,7 @@ TS_site_subset <- df[which(df$site_name %in% site_subset$site_name),]
 setwd("~/GitHub/RiverBiomass/code")
 saveRDS(site_subset, "./rds files/NWIS_6site_subset_SL.rds")
 saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_SL.rds")
-
+saveRDS(site_subset_numdays,"./rds files/NWIS_6site_Ndays_SL.rds")
 
 
 ##############################
