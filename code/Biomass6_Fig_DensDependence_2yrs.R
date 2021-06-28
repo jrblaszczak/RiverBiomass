@@ -113,8 +113,6 @@ K_plot <- vis.rK("K")
 
 
 ## Biplot
-
-
 rK_sumY1 <- rK_yr1[which(rK_yr1$key %in% c("r","K")),] %>%
   group_by(.id, key) %>%
   summarise(quant_med_yr1 = quantile(value, 0.5),
@@ -145,25 +143,27 @@ r_yrs <- rk_yrs[which(rk_yrs$key == "r"),];K_yrs <- rk_yrs[which(rk_yrs$key == "
 
 r_biplot <- ggplot(r_yrs, aes(quant_med_yr1, quant_med_yr2, fill=short_name_SO))+
   scale_x_continuous(limits=c(0,0.8))+scale_y_continuous(limits = c(0,0.8))+
-  scale_fill_viridis("Site (Stream Order)", discrete = TRUE, alpha=0.6, option="A")+
-  labs(x="Year 1",y="Year 2")+
+  scale_fill_viridis("Site (Stream Order)", discrete = TRUE, alpha=0.8, option="A")+
+  labs(x="Year 1",y="Year 2",title=expression(paste(r[max]," posterior distribution")))+
   geom_point(shape=21, size=4)+ geom_abline(slope=1, intercept = 0)+
-  geom_errorbar(aes(ymin=quant_lower_yr2, ymax=quant_upper_yr2))+
-  geom_errorbarh(aes(xmin=quant_lower_yr1, xmax=quant_upper_yr1))
+  geom_errorbar(aes(ymin=quant_lower_yr2, ymax=quant_upper_yr2), width=0.02)+
+  geom_errorbarh(aes(xmin=quant_lower_yr1, xmax=quant_upper_yr1), height=0.02)+
+  theme_bw()
   
 
 K_biplot <- ggplot(K_yrs, aes(quant_med_yr1, quant_med_yr2, fill=short_name_SO))+
   scale_x_continuous(limits=c(0,22))+scale_y_continuous(limits = c(0,22))+
-  scale_fill_viridis("Site (Stream Order)", discrete = TRUE, alpha=0.6, option="A")+
-  labs(x="Year 1",y="Year 2")+
+  scale_fill_viridis("Site (Stream Order)", discrete = TRUE, alpha=0.8, option="A")+
+  labs(x="Year 1",y="Year 2",title="K posterior distribution")+
   geom_point(shape=21, size=4)+ geom_abline(slope=1, intercept = 0)+
-  geom_errorbar(aes(ymin=quant_lower_yr2, ymax=quant_upper_yr2))+
-  geom_errorbarh(aes(xmin=quant_lower_yr1, xmax=quant_upper_yr1))
+  geom_errorbar(aes(ymin=quant_lower_yr2, ymax=quant_upper_yr2), width=0.8)+
+  geom_errorbarh(aes(xmin=quant_lower_yr1, xmax=quant_upper_yr1), height=0.8)+
+  theme_bw()
 
 
 plot_grid( plot_grid(r_biplot+theme(legend.position = "none"),
           K_biplot+theme(legend.position = "none"),
-          ncol=2, align="hv"),
+          ncol=2, align="hv", labels=c('A','B')),
           get_legend(r_biplot),
           ncol=2, rel_widths = c(0.7,0.25))
 
@@ -172,15 +172,9 @@ plot_grid( plot_grid(r_biplot+theme(legend.position = "none"),
 
 
 
-
-
-
-
-
-
-
-
+###########################
 ## Median parameter
+######################
 par_summary <- function(par) {
 
   ## Find the median
