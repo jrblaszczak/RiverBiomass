@@ -108,17 +108,67 @@ x.grob <- textGrob("Date",
 #add to plot
 grid.arrange(arrangeGrob(all_plot, left = y.grob, bottom = x.grob))
 
+
+
+
+
+
+
+
+
+
 ###############################
 ## RMSE comparison
 ###############################
 
 ## Recalc RMSE for median prediction for each model
+STS_simdat_l <- split(STS_simdat, STS_simdat$short_name)
+LB_simdat_l <- split(LB_simdat, LB_simdat$short_name)
 
-rmsemat1 <- sqrt(sum((STS_simdat_site$sim_GPP - STS_simdat_site$GPP)^2)/length(STS_simdat_site$GPP))
-rmsemat2 <- sqrt(sum((STS_simdat_site$sim_GPP - STS_simdat_site$GPP)^2)/length(STS_simdat_site$GPP))
+RMSE_calcs <- function(x){
+  rmse_med <- sqrt(sum((x$sim_GPP - x$GPP)^2)/length(x$GPP))
+  rmse_lower <- sqrt(sum((x$sim_GPP_lower - x$GPP)^2)/length(x$GPP))
+  rmse_upper <- sqrt(sum((x$sim_GPP_upper - x$GPP)^2)/length(x$GPP))
+  
+  rmse_vals <- as.data.frame(cbind(rmse_med, rmse_lower, rmse_upper))
+  return(rmse_vals)
+  
+}
+
+STS_rmse <- ldply(lapply(STS_simdat_l, function(x) RMSE_calcs(x)), data.frame)
+LB_rmse <- ldply(lapply(LB_simdat_l, function(x) RMSE_calcs(x)), data.frame)
+STS_rmse$model <- "STS"; LB_rmse$model <- "LB"
+
+rmses <- rbind(STS_rmse, LB_rmse)
+rmse_melt <- melt(rmses, .idvars=c("model",".id"))
+rmse_melt$.id <- factor(rmse_melt$.id, levels=site_order_list)
+rmse_melt$model <- revalue(rmse_melt$model, replace=c("STS"="S-TS","LB"="LB-TS"))
+rmse_melt$model <- factor(rmse_melt$model, levels=c("S-TS","LB-TS"))
+rmse_melt$variable <- revalue(rmse_melt$variable, replace=c("rmse_med"="Lower CI Pred. RMSE",
+                                                            "rmse_lower"="Median Pred. RMSE",
+                                                            "rmse_upper"="Upper CI Pred. RMSE"))
+rmse_melt$variable <- factor(rmse_melt$variable, levels=c("Lower CI Pred. RMSE",
+                                                          "Median Pred. RMSE",
+                                                          "Upper CI Pred. RMSE"))
+rmse_melt$Site <- revalue(rmse_melt$.id, replace=c("Proctor Creek, GA"="GA (2)",
+                                                    "Paint Branch, MD"="MD (2)",
+                                                    "Beaty Creek, OK"="OK (3)",
+                                                    "S. Br. Potomac River, WV"="WV (5)",
+                                                    "Santa Margarita River, CA"="CA (6)",
+                                                    "Pecos River, TX"="TX (7)"))
 
 
-
+ggplot(rmse_melt, aes(fill=model, y=value, x=Site))+
+  geom_bar(stat = "identity",position="dodge",
+           color="black",alpha=0.9)+
+  theme(panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=10),
+        axis.title.y = element_text(size=12), axis.text.x = element_text(angle=35, hjust = 1),
+        strip.background = element_rect(fill="white", color="black"),
+        strip.text = element_text(size=12))+
+  labs(y="RMSE",x="Site")+
+  facet_wrap(~variable)+
+  scale_fill_manual("Model",values = c("S-TS"=PM_AR.col,"LB-TS"=PM_Ricker.col))
 
 
 

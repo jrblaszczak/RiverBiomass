@@ -140,9 +140,9 @@ Persistence_plots <- function(site, df, site_info, P_df){
           axis.title = element_blank(), 
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15))+
-    annotate("text", label=as.character(P$short_name[1]),
-             x = 1.2*c, 
-             y= 0.9, size=3.75, hjust=0)+
+    #annotate("text", label=as.character(P$short_name[1]),
+    #         x = 1.2*c, 
+    #         y= 0.9, size=3.75, hjust=0)+
     labs(x="Range of Standardized Discharge",y="Persistence")+
     scale_y_continuous(limits=c(0,1))+
     geom_vline(xintercept = crit_Q, size=1, linetype="dotted", color="grey25")+

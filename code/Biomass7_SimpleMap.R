@@ -13,13 +13,16 @@ site_info$short_name <- revalue(as.character(site_info$site_name), replace = c("
                                                                                "nwis_11044000"="Santa Margarita River, CA",
                                                                                "nwis_08447300"="Pecos River, TX"))
 
-site_info_map <- site_info[,c("lon","lat","nwis_id","short_name")]
+site_info_map <- site_info[,c("lon","lat","nwis_id","short_name","NHD_STREAMORDE")]
 
 sp_transformed <- usmap_transform(site_info_map)
 
 col <- wes_palette("Zissou1", 6, type = "continuous")
 
 plot_usmap() +
-  geom_point(data = sp_transformed, aes(x = lon.1, y = lat.1, fill=short_name),
-             size=4, shape=21)+
-  theme(legend.position = "right", legend.title = element_blank())
+  geom_point(data = sp_transformed, aes(x = lon.1, y = lat.1,
+                                        fill=short_name,
+                                        size=as.numeric(NHD_STREAMORDE)),
+             shape=21)+
+  theme(legend.position = "bottom", legend.title = element_blank())+
+  guides(fill = guide_legend(override.aes = list(size=5)))
