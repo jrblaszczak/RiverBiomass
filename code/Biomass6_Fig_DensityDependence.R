@@ -11,7 +11,7 @@ source("DataSource_6rivers_StreamLight.R")
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
 source("Predicted_ProductivityModel_Ricker.R") # parameters: r, lambda, s, c, sig_p
-source("Predicted_ProductivityModel_Gompertz.R") # parameters: beta_0, beta_1, s, c, sig_p
+#source("Predicted_ProductivityModel_Gompertz.R") # parameters: beta_0, beta_1, s, c, sig_p
 
 # colors
 PM_AR.col <- "#d95f02" # AR
