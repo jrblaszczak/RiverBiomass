@@ -8,10 +8,15 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 source("DataSource_6rivers_oos_StreamLight.R")
 df <- dat_oos
 
+# colors
+PM_AR.col <- "#d95f02"
+PM_Ricker.col <- "#7570b3"
+PM_Gompertz.col <- "#1C474D"
+
 ################################
 ## Model output plot function
 ################################
-GPP_oos_preds <- function(preds, df, mean_mod, se_mod){
+GPP_oos_preds_mw <- function(preds, df, mean_mod, se_mod){
 
   simmat_list <- readRDS(preds)
   simmat_list <- simmat_list[names(df)]
