@@ -6,7 +6,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","ggExtra","patchwork","viridis"), require, character.only=T)
 
 ## Source data
-source("DataSource_6rivers_StreamLight.R")
+#source("DataSource_6rivers_StreamLight.R")
 
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p

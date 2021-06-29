@@ -23,7 +23,9 @@ PM_Gompertz.col <- "#1C474D"
 ###################################################
 ## Import stan fits - simulate one at a time
 stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_06_01.rds")
-#stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz.rds")
+#2nd yr
+#stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2021_06_15.rds")
+#source("DataSource_6rivers_2ndYr_StreamLight.R")
 
 ## Extract and summarize parameters
 par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
@@ -34,7 +36,7 @@ par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("
 ## Persistence plots
 ##################################
 
-## Mean parameter
+## mean parameter
 par_mean <- function(par) {
   ## Find the mean
   mean_par <- lapply(par, function(x) mean(x))
@@ -50,7 +52,7 @@ par_mean <- function(par) {
 }
 
 meanpar_R <- lapply(par_Ricker, function(x) par_mean(x))
-#meanpar_G <- lapply(par_Gompertz, function(x) par_mean(x))
+
 
 ## Plot persistence
 persistence_list <- function(y, data){
@@ -92,7 +94,6 @@ plotting_P_dat <- function(x){
 }
 
 P_dat_R <- ldply(lapply(P_R, function(z) plotting_P_dat(z)), data.frame); P_dat_R$PM <- "Ricker"
-#P_dat_G <- ldply(lapply(P_G, function(z) plotting_P_dat(z)), data.frame); P_dat_G$PM <- "Gompertz"
 
 P_df <- P_dat_R
 
@@ -101,9 +102,9 @@ P_df <- P_dat_R
 #####################
 
 ## Import and merge bankfull discharge with site info
-RI_2 <- read.csv("../data/RI_2yr_flood_6riv.csv", header=T)
-sapply(RI_2, class)
-site_info <- merge(site_info, RI_2, by="site_name")
+#RI_2 <- read.csv("../data/RI_2yr_flood_6riv.csv", header=T)
+#sapply(RI_2, class)
+#site_info <- merge(site_info, RI_2, by="site_name")
 
 ## join by river name
 P_df <- left_join(P_df, site_info[,c("site_name","short_name")], by="site_name")
@@ -145,7 +146,7 @@ Persistence_plots <- function(site, df, site_info, P_df){
     #         y= 0.9, size=3.75, hjust=0)+
     labs(x="Range of Standardized Discharge",y="Persistence")+
     scale_y_continuous(limits=c(0,1))+
-    geom_vline(xintercept = crit_Q, size=1, linetype="dotted", color="grey25")+
+    #geom_vline(xintercept = crit_Q, size=1, linetype="dotted", color="grey25")+
     geom_vline(xintercept = c, size=1, linetype="dashed")
   
   
@@ -177,7 +178,12 @@ grid.arrange(
 )
 
 
+
+
+
+################################################
 ## View distributions of flow across all sites
+###################################################
 test <- ldply(df, data.frame)
 test <- left_join(test, site_info[,c("site_name","short_name")], by="site_name")
 test$short_name <- factor(test$short_name, levels= site_order_list)
