@@ -168,9 +168,17 @@ plot_grid( plot_grid(r_biplot+theme(legend.position = "none"),
           ncol=2, rel_widths = c(0.7,0.25))
 
 
+## r vs K correlation
+rK1_melt <- melt(rK_sumY1, id.vars = c(".id","key"))
+rK1_wide <- spread(rK1_melt, key, value)
+rK1_wide_med <- rK1_wide[which(rK1_wide$variable == "quant_med_yr1"),]
 
+rK2_melt <- melt(rK_sumY2, id.vars = c(".id","key"))
+rK2_wide <- spread(rK2_melt, key, value)
+rK2_wide_med <- rK2_wide[which(rK2_wide$variable == "quant_med_yr2"),]
 
-
+ggplot(rK1_wide_med, aes(r,K))+geom_point()+
+  geom_point(data=rK2_wide_med, aes(r,K), color="blue")
 
 ###########################
 ## Median parameter
