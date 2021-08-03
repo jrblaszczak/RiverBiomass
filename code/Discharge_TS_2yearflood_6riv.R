@@ -71,11 +71,3 @@ RI_two <- RI_two[,c("site_name","RI_2yr_Q")]
 
 ## Export - save to data folder
 write.csv(RI_two, "../data/RI_2yr_flood_6riv.csv")
-
-
-
-
-
-
-
-
