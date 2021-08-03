@@ -3,8 +3,8 @@
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
-         "parallel","tidyverse","rstan","devtools",
-         "bayesplot","shinystan","Metrics","MCMCglmm","tictoc"), require, character.only=T)
+         "parallel","tidyverse","rstan","devtools","shinystan",
+         "MCMCglmm"), require, character.only=T)
 
 ## Source data
 source("DataSource_6rivers_StreamLight.R")
