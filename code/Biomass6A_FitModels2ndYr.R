@@ -3,8 +3,7 @@
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
-         "parallel","tidyverse","rstan","devtools",
-         "bayesplot","shinystan","Metrics","MCMCglmm","tictoc"), require, character.only=T)
+         "parallel","tidyverse","rstan","devtools","shinystan"), require, character.only=T)
 
 ## Source data
 source("DataSource_6rivers_oos_StreamLight.R")
@@ -27,6 +26,12 @@ stan_data_l <- lapply(df, function(x) stan_data_compile(x))
 #########################################
 ## Run Stan to get parameter estimates - all sites
 #########################################
+
+## PM 1 - Standard time series
+PM_outputlist_AR <- lapply(stan_data_l,
+                           function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
+                                                   data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
+saveRDS(PM_outputlist_AR, "./rds files/stan_6riv_2ndYr_output_AR_2021_08_04.rds")
 
 ## PM 2 - Latent Biomass (Ricker)
 init_Ricker <- function(...) {

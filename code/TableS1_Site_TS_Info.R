@@ -19,7 +19,7 @@ sub <- site_info[,c("short_name","nwis_id","lat","lon","NHD_STREAMORDE","struct.
 ################################################
 ## Import data on the number of days per year
 ################################################
-saveRDS(site_subset_numdays,"./rds files/NWIS_6site_Ndays_SL.rds")
+write.csv(sub,"./rds files/NWIS_6site_Ndays_SL.csv")
 
 
 
