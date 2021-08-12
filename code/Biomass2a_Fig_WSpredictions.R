@@ -128,14 +128,16 @@ ggplot(df_sim3, aes(Date, GPP))+
 
 
 
+################################################
+## Plot latent biomass predictions
+#################################################
 
-## Plot latent biomass
 # For every day extract median and CI
 median_biomat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[3]], 1, function(x) median(x))), data.frame)
 lower_biomat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[3]], 1, function(x) quantile(x, probs = 0.025))), data.frame)
 upper_biomat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[3]], 1, function(x) quantile(x, probs = 0.975))), data.frame)
 
-## Plot simulated GPP
+## Plot simulated biomass
 df_bio3 <- as.data.frame(cbind(dat3$site_name, as.character(dat3$date),
                                median_biomat3[,2], lower_biomat3[,2], upper_biomat3[,2]))
 colnames(df_bio3) <- c("site_name","Date","B","B_lower","B_upper")
@@ -148,7 +150,7 @@ df_bio3$short_name <- factor(df_bio3$short_name, levels=site_order_list)
 
 df_modB3 <- df_bio3
 
-## plot
+## plot latent biomass model predictions
 df_modB3_plot <- ggplot(df_modB3, aes(Date, exp(B)))+
   geom_line(size=1.2, color="chartreuse4")+
   labs(y="Latent Biomass",title="PM3: Ricker")+

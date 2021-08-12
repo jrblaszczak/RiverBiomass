@@ -1,4 +1,4 @@
-## 6 rivers data source with 4/6 StreamLight, 2/6 NLDAS light
+## 6 rivers data source with StreamLight Data
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
@@ -15,7 +15,7 @@ data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 site_info <- readRDS("./rds files/NWIS_6siteinfo_subset_SL.rds")
 
 # Read in StreamLight processed data (Savoy)
-SL <- readRDS("./rds files/StreamLight_daily_6riv.rds")
+SL <- readRDS("./rds files/StreamLight_daily_6riv_all.rds")
 colnames(SL)[colnames(SL) == "Date"] <- "date"
 
 ## Join data and StreamLight
@@ -36,7 +36,6 @@ site_order_list <- c("Proctor Creek, GA",
                      "S. Br. Potomac River, WV",
                      "Santa Margarita River, CA",
                      "Pecos River, TX")
-
 
 ## How many days of data per site per year
 data$year <- year(data$date)
@@ -70,14 +69,13 @@ ggplot(data, aes(date, GPP))+
   geom_point()+geom_line()+
   facet_wrap(~site_name,scales = "free_x")
 
+ggplot(data, aes(date, PAR_surface))+
+  geom_point()+geom_line()+
+  facet_wrap(~site_name,scales = "free_x")
+
 ## split list by ID
 l <- split(data, data$site_name)
 
-
-## For Santa Margarita River & Pecos River, set PAR_surface to light
-## because no StreamLight available
-l$nwis_11044000$PAR_surface <- l$nwis_11044000$light
-l$nwis_08447300$PAR_surface <- l$nwis_08447300$light
 
 rel_LQT <- function(x){
   x$light_rel <- x$PAR_surface/max(x$PAR_surface)
