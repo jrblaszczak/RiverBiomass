@@ -1,4 +1,7 @@
-## 6 rivers data source with StreamLight Data
+##==============================================================================
+## Script for compiling and formatting data with stream light for stan
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
