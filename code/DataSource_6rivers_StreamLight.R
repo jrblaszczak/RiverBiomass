@@ -54,12 +54,12 @@ data <- rbind(data[which(data$site_name == "nwis_02336526" & data$year %in% c(20
               data[which(data$site_name == "nwis_08447300" & data$year %in% c(2012)),])
 
 
-## small: nwis_02336526 2015,2016 (Order 2; PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA) - light
-## small: nwis_01649190 2010,2011 (Order 2; PAINT BRANCH NEAR COLLEGE PARK, MD) - light
-## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK) - light
-## mid: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV) - light
-## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA) - no SL light
-## large: nwis_08447300 2012,2013 (Order 7: Pecos Rv at Brotherton Rh nr Pandale, TX) - no SL light
+## small: nwis_02336526 2015,2016 (Order 2; PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA)
+## small: nwis_01649190 2010,2011 (Order 2; PAINT BRANCH NEAR COLLEGE PARK, MD)
+## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK) 
+## mid: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV) 
+## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA) 
+## large: nwis_08447300 2012,2013 (Order 7: Pecos Rv at Brotherton Rh nr Pandale, TX) 
 
 ## Set any GPP < 0 to a small value between 0.05 to 0.13 g O2 m-2 d-1
 data[which(data$GPP < 0),]$GPP <- sample(exp(-3):exp(-2), 1)

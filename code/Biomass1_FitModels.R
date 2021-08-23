@@ -38,13 +38,13 @@ launch_shinystan(test_ar)
 
 #Ricker - P reparameterized
 init_Ricker <- function(...) {
-  list(c = 0.5, s = 0.5)
+  list(c = 5, s = 0.5)
 }
 test_ricker <- stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
-                    data=stan_data_l$nwis_01608500,
+                    data=stan_data_l$nwis_01649190,
                     init = init_Ricker,
                     chains=3,iter=5000, control=list(max_treedepth=12,
-                                                     adapt_delta=0.95))
+                                                     adapt_delta=0.90))
 launch_shinystan(test_ricker)
 
 #Gompertz
@@ -82,6 +82,12 @@ PM_outputlist_Ricker <- lapply(stan_data_l,
 PM_Ricker_elapsedtime <- lapply(PM_outputlist_Ricker, function(x) return(get_elapsed_time(x)))
 saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_output_Ricker_2021_08_23.rds")
 saveRDS(PM_Ricker_elapsedtime, "./rds files/stan_6riv_Ricker_time_2021_08_23.rds")
+
+launch_shinystan(PM_outputlist_Ricker$nwis_11044000)
+## 01649190 (Paint Branch) - 252 divergent transitions
+## 02336526 (Proctor Creek) - 151 divergent transitions
+## 08447300 (Pecos River) - 346 divergent transitions
+## 11044000 (Santa Margarita) - 75 divergent transitions
 
 #####################################
 ## View & check acceptance criteria
