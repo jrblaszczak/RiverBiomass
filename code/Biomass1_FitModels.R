@@ -36,25 +36,16 @@ test_ar <- stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
              chains=3,iter=5000, control=list(max_treedepth=12))
 launch_shinystan(test_ar)
 
-#Ricker
+#Ricker - P reparameterized
 init_Ricker <- function(...) {
-  list(c = 50, s = 100)
+  list(c = 0.5, s = 0.5)
 }
-test_ricker <- stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
+test_ricker <- stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
                     data=stan_data_l$nwis_01608500,
                     init = init_Ricker,
-                    chains=3,iter=5000, control=list(max_treedepth=12))
+                    chains=3,iter=5000, control=list(max_treedepth=12,
+                                                     adapt_delta=0.95))
 launch_shinystan(test_ricker)
-
-#Ricker - time varying r
-init_Ricker <- function(...) {
-  list(c = 0.5, s = 100)
-}
-test_ricker_tvr <- stan("Stan_ProductivityModel2_Ricker_fixedinit_r.stan",
-             data=stan_data_l$nwis_01608500,
-             init = init_Ricker,
-             chains=3,iter=5000, control=list(max_treedepth=12))
-launch_shinystan(test_ricker_tvr)
 
 #Gompertz
 init_Gompertz <- function(...) {
@@ -81,16 +72,16 @@ saveRDS(PM_AR_elapsedtime, "./rds files/stan_6riv_AR_time_2021_08_12.rds")
 
 ## PM 2 - Latent Biomass (Ricker)
 init_Ricker <- function(...) {
-  list(c = 0.5, s = 100)
+  list(c = 0.5, s = 0.5)
 }
 
 PM_outputlist_Ricker <- lapply(stan_data_l,
-                               function(x) stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
+                               function(x) stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
                                                 data=x,chains=3,iter=5000,init = init_Ricker,
-                                                control=list(max_treedepth=12)))
+                                                control=list(max_treedepth=12, adapt_delta=0.95)))
 PM_Ricker_elapsedtime <- lapply(PM_outputlist_Ricker, function(x) return(get_elapsed_time(x)))
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_output_Ricker_2021_08_12.rds")
-saveRDS(PM_Ricker_elapsedtime, "./rds files/stan_6riv_Ricker_time_2021_08_12.rds")
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_output_Ricker_2021_08_23.rds")
+saveRDS(PM_Ricker_elapsedtime, "./rds files/stan_6riv_Ricker_time_2021_08_23.rds")
 
 #####################################
 ## View & check acceptance criteria

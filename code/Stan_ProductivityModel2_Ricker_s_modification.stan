@@ -28,7 +28,7 @@ transformed parameters {
   real P [Ndays];
   
   for(i in 1:Ndays){
-    P[i]=exp(-exp((s*tQ[i])-c));
+    P[i]=exp(-exp(s*100*(tQ[i]-c)));
     pred_GPP[i] =light[i]*exp(B[i]);
   }
   
@@ -55,8 +55,8 @@ model {
   sig_o ~ normal(mean(GPP_sd), sd(GPP_sd))T[0,];
   
   // Param priors
-  c ~ normal(0,100)T[0,];
-  s ~ normal(0,200)T[0,];
+  c ~ exponential(2);
+  s ~ exponential(2);
   r ~ normal(0,1);
   lambda ~ normal(0,1)T[,0];
   
