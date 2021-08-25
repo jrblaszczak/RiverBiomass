@@ -38,14 +38,25 @@ launch_shinystan(test_ar)
 
 #Ricker - P reparameterized
 init_Ricker <- function(...) {
-  list(c = 5, s = 0.5)
+  list(c = 5, s = 1)
 }
 test_ricker <- stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
                     data=stan_data_l$nwis_01649190,
                     init = init_Ricker,
                     chains=3,iter=5000, control=list(max_treedepth=12,
-                                                     adapt_delta=0.90))
+                                                     adapt_delta=0.99))
 launch_shinystan(test_ricker)
+
+#Ricker - orig
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 150)
+}
+test_ricker_orig <- stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
+                    data=stan_data_l$nwis_01649190,
+                    init = init_Ricker,
+                    chains=3,iter=5000, control=list(max_treedepth=12,
+                                                     adapt_delta=0.99))
+launch_shinystan(test_ricker_orig)
 
 #Gompertz
 init_Gompertz <- function(...) {
