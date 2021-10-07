@@ -1,4 +1,7 @@
-## Check covariate data quality
+##==============================================================================
+## Script to check covariate data quality & relationships
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
@@ -7,14 +10,13 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
 ##############################
 ## Data Import & Processing ##
 ##############################
-setwd("~/GitHub/RiverBiomass/code")
 data <- readRDS("./rds files/NWIS_6site_subset_SL.rds")
 data$date <- as.POSIXct(as.character(data$date), format="%Y-%m-%d")
 
 site_info <- readRDS("./rds files/NWIS_6siteinfo_subset_SL.rds")
 
 # Read in StreamLight processed data (Savoy)
-SL <- readRDS("./rds files/StreamLight_daily_6riv.rds")
+SL <- readRDS("./rds files/StreamLight_daily_6riv_all.rds")
 colnames(SL)[colnames(SL) == "Date"] <- "date"
 
 ## Join data and StreamLight
@@ -34,12 +36,7 @@ data[which(data$GPP < 0),]$GPP <- sample(exp(-3):exp(-2), 1)
 ## split
 site_sub_list <- split(data, data$site_name)
 
-## For Santa Margarita River & Pecos Rivers, set PAR_surface to light
-# because no StreamLight available
-site_sub_list$nwis_11044000$PAR_surface <- site_sub_list$nwis_11044000$light
-site_sub_list$nwis_08447300$PAR_surface <- site_sub_list$nwis_08447300$light
-
-
+## Plot
 plotting_covar <- function(x) {
   
   df <- x
@@ -88,7 +85,18 @@ plotting_covar <- function(x) {
   
 }
 
-plotting_covar(site_sub_list$nwis_02336526)
+plotting_covar(site_sub_list$nwis_11044000)
 
-setwd("~/GitHub/RiverBiomass/figures/Site Covariate Plots")
+setwd("~/GitHub/RiverBiomass/figures and tables/Site Covariate Plots")
 lapply(site_sub_list, function(x) ggsave(plot = plotting_covar(x),filename = paste(x$site_name[1],"covar.jpg",sep = "")))
+
+#######################################
+## Light and temperature correlations
+#######################################
+lapply(site_sub_list, function(x) plot(x$PAR_surface, x$temp))
+
+
+
+
+
+

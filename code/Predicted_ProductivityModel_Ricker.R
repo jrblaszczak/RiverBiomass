@@ -13,7 +13,7 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df) {
   P <- numeric(Ndays)
   P[1] <- 1
   for(i in 2:length(tQ)){
-    P[i] = exp(-exp(s*(tQ[i] - c)))
+    P[i] = exp(-exp(s*100*(tQ[i] - c)))
   }
   
   B<-numeric(Ndays)
