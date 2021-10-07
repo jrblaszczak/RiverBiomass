@@ -32,7 +32,7 @@ par_Ricker <- lapply(stan_model_output_Ricker, function(x) rstan::extract(x, c("
 
 r_K_func <- function(x) {
   rx <- x$r
-  rm <- as.data.frame(cbind(rx[1:2500],rx[2501:5000],rx[5001:7500]))
+  rm <- as.data.frame(cbind(rx[1:2500],rx[2501:5000],rx[5001:7500])) ## divide by lambda first before avg
   rm <- rm %>%
     rowwise() %>% mutate(Avg=mean(c(V1, V2, V3))) 
   
