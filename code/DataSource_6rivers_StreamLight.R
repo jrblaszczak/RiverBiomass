@@ -81,7 +81,8 @@ l <- split(data, data$site_name)
 
 
 rel_LQT <- function(x){
-  x$light_rel <- x$PAR_surface/max(x$PAR_surface)
+  x$light_rel_PPFD <- x$light/max(x$light)
+  x$light_rel_PAR <- x$PAR_surface/max(x$PAR_surface)
   x$temp_rel <- x$temp/max(x$temp)
   x$tQ <- x$Q/max(x$Q)
 
