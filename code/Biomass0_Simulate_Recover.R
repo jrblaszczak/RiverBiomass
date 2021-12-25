@@ -49,7 +49,9 @@ plot_grid(
 )
 
 
+################################################
 ## Simulate data using deterministic function
+################################################
 PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
   
   ## Data
@@ -99,17 +101,71 @@ lines(ex_pred.GPP.PAR, col="red") #does better job but parameters are chosen bas
 
 
 ## Predict nwis_01649190 using previously fit parameters (challenging example)
-ex_pred.GPP.PAR <- PM_Ricker(r = 0.3, lambda = -0.03,
-                             s = 124, c = 0.28,
-                             sig_p = 0.21, sig_o = 0.9,
+ex2_pred.GPP.PAR <- PM_Ricker(r = 0.05, lambda = -0.02,
+                             s = 144, c = 0.5,
+                             sig_p = 0.23, sig_o = 0.3,
                              df = ex, light_version = ex$light_rel_PAR)
-ex_pred.GPP.PPFD <- PM_Ricker(r = 0.3, lambda = -0.03,
-                              s = 124, c = 0.28,
-                              sig_p = 0.21, sig_o = 0.9,
-                              df = ex, light_version = ex$light_rel_PPFD)
+ex2_pred.GPP.PPFD <- PM_Ricker(r = 0.05, lambda = -0.02,
+                               s = 144, c = 0.5,
+                               sig_p = 0.23, sig_o = 0.3,
+                              df = ex2, light_version = ex2$light_rel_PPFD)
 ## Plot comparison
-plot(ex_pred.GPP.PAR, type="l")
-lines(ex_pred.GPP.PPFD, col="blue")
+plot(ex2$GPP, pch=19)
+lines(ex2_pred.GPP.PPFD, col="blue")
+lines(ex2_pred.GPP.PAR, col="red")
+
+########################################################
+## Refit data to see whether parameters are returned
+########################################################
+
+## Stan data prep
+rstan_options(auto_write=TRUE)
+options(mc.cores=6)#parallel::detectCores())
+
+stan_data_compile_PAR <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
+               GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+stan_data_compile_PPFD <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel_PPFD, GPP = x$GPP,
+               GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+
+stan_data_PAR <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PAR(x))
+stan_data_PPFD <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PPFD(x))
+
+###########################
+## Fit data to models
+##########################
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 150)
+}
+
+Ricker_output_PAR <- lapply(stan_data_PAR,
+                            function(x) stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
+                                             data=x,chains=3,iter=5000,init = init_Ricker,
+                                             control=list(max_treedepth=12)))
+Ricker_output_PPFD <- lapply(stan_data_PPFD,
+                            function(x) stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
+                                             data=x,chains=3,iter=5000,init = init_Ricker,
+                                             control=list(max_treedepth=12)))
+sim_Ricker_output <- list(Ricker_output_PAR, Ricker_output_PPFD)
+
+saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_10_11.rds")
+
+#################################################################################
+## Compare parameters from simulation to posterior distributions
+################################################################################
+
+samp_param <- get_sampler_params(Ricker_output_PAR$Potomac, inc_warmup = FALSE)
+
+
+
+
+
+
 
 
 

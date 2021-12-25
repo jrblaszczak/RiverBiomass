@@ -28,7 +28,7 @@ transformed parameters {
   real P [Ndays];
   
   for(i in 1:Ndays){
-    P[i]=exp(-exp((s*10*tQ[i])-c));
+    P[i]=exp(-exp((s*100*tQ[i])-c));
     pred_GPP[i] =light[i]*exp(B[i]);
   }
   

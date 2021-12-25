@@ -61,6 +61,11 @@ NWIS <- read.table("../data/daily_predictions.tsv", sep='\t', header = TRUE)
 NWIS$date <- as.POSIXct(as.character(NWIS$date), format="%Y-%m-%d")
 head(NWIS)
 
+s <- NWIS[which(NWIS$GPP.Rhat < 1.05),]
+s <- s[which(s$K600.Rhat < 1.05),]
+length(levels(factor(s$site_name)))
+length(levels(factor(r$site_name)))
+
 ## Subset columns and sites
 NWIS_sub <- NWIS[,c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.Rhat",
                     "ER","ER.lower","ER.upper","K600","K600.lower","K600.upper",
