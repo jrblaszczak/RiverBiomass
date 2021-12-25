@@ -23,13 +23,14 @@ parameters {
   real<lower=0> sig_o; // sigma observation error
 }
 
+
 transformed parameters {
   real pred_GPP [Ndays];
   real P [Ndays];
   
   for(i in 1:Ndays){
-    P[i]=exp(-exp((s*100*tQ[i])-c));
-    pred_GPP[i] =light[i]*exp(B[i]);
+    P[i] = exp(-exp(s*(tQ[i]-c)));
+    pred_GPP[i] = light[i]*exp(B[i]);
   }
   
 }
@@ -55,8 +56,8 @@ model {
   sig_o ~ normal(mean(GPP_sd), sd(GPP_sd))T[0,];
   
   // Param priors
-  c ~ normal(5,1)T[0,];
-  s ~ normal(0,2)T[0,];
+  c ~ normal(0.5,1)T[0,];
+  s ~ normal(1.5,2)T[0,];
   r ~ normal(0,1);
   lambda ~ normal(0,1)T[,0];
   

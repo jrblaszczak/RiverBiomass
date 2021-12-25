@@ -65,7 +65,7 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
   P <- numeric(Ndays)
   P[1] <- 1
   for(i in 2:length(tQ)){
-    P[i] = exp(-exp(s*(tQ[i] - c)))
+    P[i] = exp(-exp(s*100*(tQ[i] - c)))
   }
   
   B<-numeric(Ndays)
@@ -87,26 +87,26 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
 
 ## Predict nwis_01608500 using previously fit parameters (easy example)
 ex_pred.GPP.PAR <- PM_Ricker(r = 0.3, lambda = -0.03,
-                         s = 124, c = 0.28,
+                         s = 1.24, c = 0.28,
                          sig_p = 0.21, sig_o = 0.9,
                          df = ex, light_version = ex$light_rel_PAR)
 ex_pred.GPP.PPFD <- PM_Ricker(r = 0.3, lambda = -0.03,
-                             s = 124, c = 0.28,
+                             s = 1.24, c = 0.28,
                              sig_p = 0.21, sig_o = 0.9,
                              df = ex, light_version = ex$light_rel_PPFD)
 ## Plot comparison
 plot(ex$GPP, pch=19)
 lines(ex_pred.GPP.PPFD, col="blue")
-lines(ex_pred.GPP.PAR, col="red") #does better job but parameters are chosen based on fit
+lines(ex_pred.GPP.PAR, col="red")
 
 
 ## Predict nwis_01649190 using previously fit parameters (challenging example)
 ex2_pred.GPP.PAR <- PM_Ricker(r = 0.05, lambda = -0.02,
-                             s = 144, c = 0.5,
+                             s = 1.44, c = 0.5,
                              sig_p = 0.23, sig_o = 0.3,
                              df = ex, light_version = ex$light_rel_PAR)
 ex2_pred.GPP.PPFD <- PM_Ricker(r = 0.05, lambda = -0.02,
-                               s = 144, c = 0.5,
+                               s = 1.44, c = 0.5,
                                sig_p = 0.23, sig_o = 0.3,
                               df = ex2, light_version = ex2$light_rel_PPFD)
 ## Plot comparison
@@ -140,15 +140,20 @@ stan_data_PPFD <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x)
 ## Fit data to models
 ##########################
 init_Ricker <- function(...) {
-  list(c = 0.5, s = 150)
+  list(c = 0.5, s = 1.5)
 }
 
+
+test <- stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
+             data = stan_data_PAR$Potomac, chains = 1, iter = 3000)
+
+
 Ricker_output_PAR <- lapply(stan_data_PAR,
-                            function(x) stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
+                            function(x) stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
                                              data=x,chains=3,iter=5000,init = init_Ricker,
                                              control=list(max_treedepth=12)))
 Ricker_output_PPFD <- lapply(stan_data_PPFD,
-                            function(x) stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
+                            function(x) stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
                                              data=x,chains=3,iter=5000,init = init_Ricker,
                                              control=list(max_treedepth=12)))
 sim_Ricker_output <- list(Ricker_output_PAR, Ricker_output_PPFD)
