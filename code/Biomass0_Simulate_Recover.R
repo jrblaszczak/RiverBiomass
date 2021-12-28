@@ -48,6 +48,48 @@ plot_grid(
   ncol=2
 )
 
+########################################################
+## Fit data to see parameters estimates
+########################################################
+
+## Stan data prep
+rstan_options(auto_write=TRUE)
+options(mc.cores=6)#parallel::detectCores())
+
+stan_data_compile_PAR <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
+               GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+stan_data_compile_PPFD <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel_PPFD, GPP = x$GPP,
+               GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+
+stan_data_PAR <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PAR(x))
+stan_data_PPFD <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PPFD(x))
+
+
+###########################
+## Fit data to models
+##########################
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 1.5)
+}
+
+Ricker_output_PAR <- lapply(stan_data_PAR,
+                            function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                                             data=x,chains=3,iter=5000,init = init_Ricker,
+                                             control=list(max_treedepth=12)))
+Ricker_output_PPFD <- lapply(stan_data_PPFD,
+                             function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                                              data=x,chains=3,iter=5000,init = init_Ricker,
+                                              control=list(max_treedepth=12)))
+sim_Ricker_output <- list(Ricker_output_PAR, Ricker_output_PPFD)
+
+saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_12_28.rds")
+
 
 ################################################
 ## Simulate data using deterministic function
@@ -85,6 +127,31 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
   return(pred_GPP)
 }
 
+
+
+
+
+
+# For every day extract median and CI
+median_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
+lower_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) quantile(x, probs = 0.025))), data.frame)
+upper_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) quantile(x, probs = 0.975))), data.frame)
+
+## Plot simulated GPP
+dat1 <- ldply(df, data.frame)
+df_sim1 <- as.data.frame(cbind(dat1$site_name, as.character(dat1$date), dat1$GPP, median_simmat1$X..i.., lower_simmat1$X..i.., upper_simmat1$X..i..))
+colnames(df_sim1) <- c("site_name","Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+df_sim1$Date <- as.POSIXct(as.character(df_sim1$Date), format="%Y-%m-%d")
+df_sim1[,3:6] <- apply(df_sim1[,3:6],2,function(x) as.numeric(as.character(x)))
+
+
+
+
+
+
+
+
+
 ## Predict nwis_01608500 using previously fit parameters (easy example)
 ex_pred.GPP.PAR <- PM_Ricker(r = 0.3, lambda = -0.03,
                          s = 1.24, c = 0.28,
@@ -114,55 +181,14 @@ plot(ex2$GPP, pch=19)
 lines(ex2_pred.GPP.PPFD, col="blue")
 lines(ex2_pred.GPP.PAR, col="red")
 
-########################################################
-## Refit data to see whether parameters are returned
-########################################################
 
-## Stan data prep
-rstan_options(auto_write=TRUE)
-options(mc.cores=6)#parallel::detectCores())
-
-stan_data_compile_PAR <- function(x){
-  data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
-               GPP_sd = x$GPP_sd, tQ = x$tQ)
-  return(data)
-}
-stan_data_compile_PPFD <- function(x){
-  data <- list(Ndays=length(x$GPP), light = x$light_rel_PPFD, GPP = x$GPP,
-               GPP_sd = x$GPP_sd, tQ = x$tQ)
-  return(data)
-}
-
-stan_data_PAR <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PAR(x))
-stan_data_PPFD <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PPFD(x))
-
-###########################
-## Fit data to models
-##########################
-init_Ricker <- function(...) {
-  list(c = 0.5, s = 1.5)
-}
-
-
-test <- stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
-             data = stan_data_PAR$Potomac, chains = 1, iter = 3000)
-
-
-Ricker_output_PAR <- lapply(stan_data_PAR,
-                            function(x) stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
-                                             data=x,chains=3,iter=5000,init = init_Ricker,
-                                             control=list(max_treedepth=12)))
-Ricker_output_PPFD <- lapply(stan_data_PPFD,
-                            function(x) stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
-                                             data=x,chains=3,iter=5000,init = init_Ricker,
-                                             control=list(max_treedepth=12)))
-sim_Ricker_output <- list(Ricker_output_PAR, Ricker_output_PPFD)
-
-saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_10_11.rds")
 
 #################################################################################
 ## Compare parameters from simulation to posterior distributions
 ################################################################################
+
+
+
 
 samp_param <- get_sampler_params(Ricker_output_PAR$Potomac, inc_warmup = FALSE)
 

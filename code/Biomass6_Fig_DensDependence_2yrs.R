@@ -6,7 +6,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "reshape2","ggExtra","patchwork","viridis"), require, character.only=T)
 
 ## Source data
-#source("DataSource_6rivers_StreamLight.R")
+source("DataSource_6rivers_StreamLight.R")
 
 # source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
@@ -113,6 +113,8 @@ K_plot <- vis.rK("K")
 
 
 ## Biplot
+
+
 rK_sumY1 <- rK_yr1[which(rK_yr1$key %in% c("r","K")),] %>%
   group_by(.id, key) %>%
   summarise(quant_med_yr1 = quantile(value, 0.5),
@@ -143,22 +145,20 @@ r_yrs <- rk_yrs[which(rk_yrs$key == "r"),];K_yrs <- rk_yrs[which(rk_yrs$key == "
 
 r_biplot <- ggplot(r_yrs, aes(quant_med_yr1, quant_med_yr2, fill=short_name_SO))+
   scale_x_continuous(limits=c(0,0.8))+scale_y_continuous(limits = c(0,0.8))+
-  scale_fill_viridis("Site (Stream Order)", discrete = TRUE, alpha=0.8, option="A")+
-  labs(x="Year 1",y="Year 2",title=expression(paste(r[max]," posterior distribution")))+
+  scale_fill_viridis("Site (Stream Order)", discrete = TRUE, alpha=0.6, option="A")+
+  labs(x="Year 1",y="Year 2",title=expression("r"))+
   geom_point(shape=21, size=4)+ geom_abline(slope=1, intercept = 0)+
-  geom_errorbar(aes(ymin=quant_lower_yr2, ymax=quant_upper_yr2), width=0.02)+
-  geom_errorbarh(aes(xmin=quant_lower_yr1, xmax=quant_upper_yr1), height=0.02)+
-  theme_bw()
+  geom_errorbar(aes(ymin=quant_lower_yr2, ymax=quant_upper_yr2))+
+  geom_errorbarh(aes(xmin=quant_lower_yr1, xmax=quant_upper_yr1))
   
 
 K_biplot <- ggplot(K_yrs, aes(quant_med_yr1, quant_med_yr2, fill=short_name_SO))+
   scale_x_continuous(limits=c(0,22))+scale_y_continuous(limits = c(0,22))+
-  scale_fill_viridis("Site (Stream Order)", discrete = TRUE, alpha=0.8, option="A")+
-  labs(x="Year 1",y="Year 2",title="K posterior distribution")+
+  scale_fill_viridis("Site (Stream Order)", discrete = TRUE, alpha=0.6, option="A")+
+  labs(x="Year 1",y="Year 2")+
   geom_point(shape=21, size=4)+ geom_abline(slope=1, intercept = 0)+
-  geom_errorbar(aes(ymin=quant_lower_yr2, ymax=quant_upper_yr2), width=0.8)+
-  geom_errorbarh(aes(xmin=quant_lower_yr1, xmax=quant_upper_yr1), height=0.8)+
-  theme_bw()
+  geom_errorbar(aes(ymin=quant_lower_yr2, ymax=quant_upper_yr2))+
+  geom_errorbarh(aes(xmin=quant_lower_yr1, xmax=quant_upper_yr1))
 
 
 plot_grid( plot_grid(r_biplot+theme(legend.position = "none"),
@@ -168,21 +168,19 @@ plot_grid( plot_grid(r_biplot+theme(legend.position = "none"),
           ncol=2, rel_widths = c(0.7,0.25))
 
 
-## r vs K correlation
-rK1_melt <- melt(rK_sumY1, id.vars = c(".id","key"))
-rK1_wide <- spread(rK1_melt, key, value)
-rK1_wide_med <- rK1_wide[which(rK1_wide$variable == "quant_med_yr1"),]
 
-rK2_melt <- melt(rK_sumY2, id.vars = c(".id","key"))
-rK2_wide <- spread(rK2_melt, key, value)
-rK2_wide_med <- rK2_wide[which(rK2_wide$variable == "quant_med_yr2"),]
 
-ggplot(rK1_wide_med, aes(r,K))+geom_point()+
-  geom_point(data=rK2_wide_med, aes(r,K), color="blue")
 
-###########################
+
+
+
+
+
+
+
+
+
 ## Median parameter
-######################
 par_summary <- function(par) {
 
   ## Find the median
