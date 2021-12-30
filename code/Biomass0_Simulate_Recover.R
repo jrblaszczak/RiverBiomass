@@ -94,6 +94,19 @@ saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_12_28.rds")
 ################################################
 ## Simulate data using deterministic function
 ################################################
+
+## Extract parameter estimates from simulation
+#sim_Ricker_output <- readRDS("./rds files/sim_Ricker_output_2021_12_28.rds")
+Ricker_output_PAR <- sim_Ricker_output[[1]]
+Ricker_output_PPFD <- sim_Ricker_output[[2]]
+#extract
+p_PAR<- lapply(Ricker_output_PAR, function(x) extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
+p_PPFD<- lapply(Ricker_output_PPFD, function(x) extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
+#median
+med_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) median(y)))
+med_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) median(y)))
+
+## Ricker
 PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
   
   ## Data
@@ -127,59 +140,53 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
   return(pred_GPP)
 }
 
-
-
-
-
-
-# For every day extract median and CI
-median_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
-lower_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) quantile(x, probs = 0.025))), data.frame)
-upper_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) quantile(x, probs = 0.975))), data.frame)
-
-## Plot simulated GPP
-dat1 <- ldply(df, data.frame)
-df_sim1 <- as.data.frame(cbind(dat1$site_name, as.character(dat1$date), dat1$GPP, median_simmat1$X..i.., lower_simmat1$X..i.., upper_simmat1$X..i..))
-colnames(df_sim1) <- c("site_name","Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
-df_sim1$Date <- as.POSIXct(as.character(df_sim1$Date), format="%Y-%m-%d")
-df_sim1[,3:6] <- apply(df_sim1[,3:6],2,function(x) as.numeric(as.character(x)))
-
-
-
-
-
-
-
-
-
-## Predict nwis_01608500 using previously fit parameters (easy example)
-ex_pred.GPP.PAR <- PM_Ricker(r = 0.3, lambda = -0.03,
-                         s = 1.24, c = 0.28,
-                         sig_p = 0.21, sig_o = 0.9,
+## simulate GPP
+Pot_GPP_PAR <- PM_Ricker(r = med_PAR$Potomac$r,
+                         lambda = med_PAR$Potomac$lambda,
+                         s = med_PAR$Potomac$s,
+                         c = med_PAR$Potomac$c, 
+                         sig_p = med_PAR$Potomac$sig_p,
+                         sig_o = med_PAR$Potomac$sig_o, 
                          df = ex, light_version = ex$light_rel_PAR)
-ex_pred.GPP.PPFD <- PM_Ricker(r = 0.3, lambda = -0.03,
-                             s = 1.24, c = 0.28,
-                             sig_p = 0.21, sig_o = 0.9,
-                             df = ex, light_version = ex$light_rel_PPFD)
-## Plot comparison
+Pot_GPP_PPFD <- PM_Ricker(r = med_PPFD$Potomac$r,
+                         lambda = med_PPFD$Potomac$lambda,
+                         s = med_PPFD$Potomac$s,
+                         c = med_PPFD$Potomac$c, 
+                         sig_p = med_PPFD$Potomac$sig_p,
+                         sig_o = med_PPFD$Potomac$sig_o, 
+                         df = ex, light_version = ex$light_rel_PPFD)
+Paint_GPP_PAR <- PM_Ricker(r = med_PAR$`Paint Branch`$r,
+                         lambda = med_PAR$`Paint Branch`$lambda,
+                         s = med_PAR$`Paint Branch`$s,
+                         c = med_PAR$`Paint Branch`$c, 
+                         sig_p = med_PAR$`Paint Branch`$sig_p,
+                         sig_o = med_PAR$`Paint Branch`$sig_o, 
+                         df = ex2, light_version = ex2$light_rel_PAR)
+Paint_GPP_PPFD <- PM_Ricker(r = med_PPFD$`Paint Branch`$r,
+                          lambda = med_PPFD$`Paint Branch`$lambda,
+                          s = med_PPFD$`Paint Branch`$s,
+                          c = med_PPFD$`Paint Branch`$c, 
+                          sig_p = med_PPFD$`Paint Branch`$sig_p,
+                          sig_o = med_PPFD$`Paint Branch`$sig_o, 
+                          df = ex2, light_version = ex2$light_rel_PPFD)
+
+
+## Plot comparison (better agreement)
 plot(ex$GPP, pch=19)
-lines(ex_pred.GPP.PPFD, col="blue")
-lines(ex_pred.GPP.PAR, col="red")
+lines(Pot_GPP_PAR, col="blue")
+lines(Pot_GPP_PPFD, col="red")
 
 
-## Predict nwis_01649190 using previously fit parameters (challenging example)
-ex2_pred.GPP.PAR <- PM_Ricker(r = 0.05, lambda = -0.02,
-                             s = 1.44, c = 0.5,
-                             sig_p = 0.23, sig_o = 0.3,
-                             df = ex, light_version = ex$light_rel_PAR)
-ex2_pred.GPP.PPFD <- PM_Ricker(r = 0.05, lambda = -0.02,
-                               s = 1.44, c = 0.5,
-                               sig_p = 0.23, sig_o = 0.3,
-                              df = ex2, light_version = ex2$light_rel_PPFD)
-## Plot comparison
+## Plot comparison (worse agreement)
 plot(ex2$GPP, pch=19)
-lines(ex2_pred.GPP.PPFD, col="blue")
-lines(ex2_pred.GPP.PAR, col="red")
+lines(Paint_GPP_PAR, col="blue")
+lines(Paint_GPP_PPFD, col="red") #better
+
+#############################################################################
+## Replace GPP with predicted with known params and fit model again
+#############################################################################
+
+
 
 
 
