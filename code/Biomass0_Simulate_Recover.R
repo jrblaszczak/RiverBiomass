@@ -183,12 +183,28 @@ lines(Paint_GPP_PAR, col="blue")
 lines(Paint_GPP_PPFD, col="red") #better
 
 #############################################################################
-## Replace GPP with predicted with known params and fit model again
+## Replace original GPP with predicted GPP in data list and fit model again
 #############################################################################
+#create copies of data lists
+stan_data_PAR_v2 <- stan_data_PAR
+stan_data_PPFD_v2 <- stan_data_PPFD
+#replace
+stan_data_PAR_v2$Potomac$GPP <- Pot_GPP_PAR
+stan_data_PAR_v2$`Paint Branch`$GPP <- Paint_GPP_PAR
+## missing replacing sd
 
+#Fit models again
+Ricker_output_PAR_v2 <- lapply(stan_data_PAR_v2,
+                            function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                                             data=x,chains=3,iter=5000,init = init_Ricker,
+                                             control=list(max_treedepth=12)))
+Ricker_output_PPFD_v2 <- lapply(stan_data_PPFD_v2,
+                             function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                                              data=x,chains=3,iter=5000,init = init_Ricker,
+                                              control=list(max_treedepth=12)))
+sim_Ricker_output_v2 <- list(Ricker_output_PAR_v2, Ricker_output_PPFD_v2)
 
-
-
+saveRDS(sim_Ricker_output_v2, "./rds files/sim_Ricker_output_v2_2022_01_03.rds")
 
 #################################################################################
 ## Compare parameters from simulation to posterior distributions
