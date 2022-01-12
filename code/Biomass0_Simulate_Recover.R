@@ -99,12 +99,64 @@ saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_12_28.rds")
 #sim_Ricker_output <- readRDS("./rds files/sim_Ricker_output_2021_12_28.rds")
 Ricker_output_PAR <- sim_Ricker_output[[1]]
 Ricker_output_PPFD <- sim_Ricker_output[[2]]
+
+## Bring in simulation code
+source("Predicted_ProductivityModel_Ricker.R") # parameters: r, lambda, s, c, sig_p
+
+## Pair up data
+names(stan_data_PAR); names(Ricker_output_PAR)
+names(stan_data_PPFD); names(Ricker_output_PPFD)
+PAR_list <- Map(c, Ricker_output_PAR, stan_data_PAR)
+PPFD_list <- Map(c, Ricker_output_PPFD, stan_data_PPFD)
+
+Ricker_sim_fxn <- function(x){
+  
+  # separate data
+  output <- x[[1]]
+  df <- x
+
+  # extract
+  pars<-extract(output, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o"))
+  simmat<-matrix(NA,length(df$GPP),length(unlist(pars$sig_p)))
+  biomat<-matrix(NA,length(df$GPP),length(unlist(pars$sig_p)))
+  rmsemat<-matrix(NA,length(df$GPP),1)
+  # simulate
+  for (i in 1:length(pars$r)){
+    simmat[,i]<-PM_Ricker(pars$r[i],pars$lambda[i],pars$s[i],pars$c[i],pars$sig_p[i],pars$sig_o[i],df)
+    }
+  
+  return(simmat)
+  
+}
+
+Ricker_sim_PAR <- lapply(PAR_list, function(x) Ricker_sim_fxn(x))
+Ricker_sim_PPFD <- lapply(PPFD_list, function(x) Ricker_sim_fxn(x))
+
+
+
+
+
+
+
+
+
+
+
+
+
 #extract
 p_PAR<- lapply(Ricker_output_PAR, function(x) extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
 p_PPFD<- lapply(Ricker_output_PPFD, function(x) extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
 #median
 med_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) median(y)))
 med_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) median(y)))
+
+
+
+
+
+
+
 
 ## Ricker
 PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
@@ -191,7 +243,10 @@ stan_data_PPFD_v2 <- stan_data_PPFD
 #replace
 stan_data_PAR_v2$Potomac$GPP <- Pot_GPP_PAR
 stan_data_PAR_v2$`Paint Branch`$GPP <- Paint_GPP_PAR
-## missing replacing sd
+
+
+
+
 
 #Fit models again
 Ricker_output_PAR_v2 <- lapply(stan_data_PAR_v2,
