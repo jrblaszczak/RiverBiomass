@@ -5,7 +5,7 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df) {
   ## Data
   Ndays<-length(df$GPP)
   GPP <- df$GPP
-  GPP_sd <- df$GPP_sd
+  #GPP_sd <- df$GPP_sd
   light <- df$light
   tQ <- df$tQ # discharge standardized to max value
 

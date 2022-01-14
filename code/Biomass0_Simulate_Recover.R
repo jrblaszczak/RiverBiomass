@@ -49,12 +49,8 @@ plot_grid(
 )
 
 ########################################################
-## Fit data to see parameters estimates
+## Stan data prep for initial fit
 ########################################################
-
-## Stan data prep
-rstan_options(auto_write=TRUE)
-options(mc.cores=6)#parallel::detectCores())
 
 stan_data_compile_PAR <- function(x){
   data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
@@ -74,6 +70,10 @@ stan_data_PPFD <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x)
 ###########################
 ## Fit data to models
 ##########################
+## Stan prep
+rstan_options(auto_write=TRUE)
+options(mc.cores=6)#parallel::detectCores())
+
 init_Ricker <- function(...) {
   list(c = 0.5, s = 1.5)
 }
@@ -132,123 +132,52 @@ Ricker_sim_fxn <- function(x){
 Ricker_sim_PAR <- lapply(PAR_list, function(x) Ricker_sim_fxn(x))
 Ricker_sim_PPFD <- lapply(PPFD_list, function(x) Ricker_sim_fxn(x))
 
+# For every day extract mean and sd of GPP
+mean_sim_PAR <- ldply(lapply(Ricker_sim_PAR, function(z) apply(z, 1, function(x) mean(x))), data.frame)
+sd_sim_PAR <- ldply(lapply(Ricker_sim_PAR, function(z) apply(z, 1, function(x) sd(x))), data.frame)
+mean_sim_PPFD <- ldply(lapply(Ricker_sim_PPFD, function(z) apply(z, 1, function(x) mean(x))), data.frame)
+sd_sim_PPFD <- ldply(lapply(Ricker_sim_PPFD, function(z) apply(z, 1, function(x) sd(x))), data.frame)
+#rename PAR colnames
+sim_PAR <- cbind(mean_sim_PAR, sd_sim_PAR[,2])
+colnames(sim_PAR) <- c("SiteID", "mean_GPP_PAR","sd_GPP_PAR")
+#rename PPFD colnames
+sim_PPFD <- cbind(mean_sim_PPFD, sd_sim_PPFD[,2])
+colnames(sim_PPFD) <- c("SiteID", "mean_GPP_PPFD","sd_GPP_PPFD")
 
+## Visualize
+sim_PAR$order <- as.numeric(rownames(sim_PAR)); sim_PPFD$order <- as.numeric(rownames(sim_PPFD))
+ggplot(sim_PAR, aes(order, mean_GPP_PAR))+
+  geom_line()+facet_wrap(~SiteID, nrow=1, scales="free_x")
+ggplot(sim_PPFD, aes(order, mean_GPP_PPFD))+
+  geom_line()+facet_wrap(~SiteID, nrow=1, scales="free_x")
 
-
-
-
-
-
-
-
-
-
-
-#extract
-p_PAR<- lapply(Ricker_output_PAR, function(x) extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
-p_PPFD<- lapply(Ricker_output_PPFD, function(x) extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
-#median
-med_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) median(y)))
-med_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) median(y)))
-
-
-
-
-
-
-
-
-## Ricker
-PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
-  
-  ## Data
-  Ndays<-length(df$GPP)
-  GPP <- df$GPP
-  GPP_sd <- df$GPP_sd
-  light <- light_version
-  tQ <- df$tQ # discharge standardized to max value
-  
-  ## Vectors for model output of P, B, pred_GPP
-  P <- numeric(Ndays)
-  P[1] <- 1
-  for(i in 2:length(tQ)){
-    P[i] = exp(-exp(s*100*(tQ[i] - c)))
-  }
-  
-  B<-numeric(Ndays)
-  B[1] <- log(GPP[1]/light[1])
-  pred_GPP<-numeric(Ndays)
-  pred_GPP[1] <- light[1]*exp(B[1])
-  
-  ## Process Model
-  for (j in 2:Ndays){
-    B[j] <- MCMCglmm::rtnorm(1, mean = (B[j-1] + r + lambda*exp(B[j-1]))*P[j], sd = sig_p, upper = 5)
-  }
-  
-  for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0.01)
-  }
-  
-  return(pred_GPP)
-}
-
-## simulate GPP
-Pot_GPP_PAR <- PM_Ricker(r = med_PAR$Potomac$r,
-                         lambda = med_PAR$Potomac$lambda,
-                         s = med_PAR$Potomac$s,
-                         c = med_PAR$Potomac$c, 
-                         sig_p = med_PAR$Potomac$sig_p,
-                         sig_o = med_PAR$Potomac$sig_o, 
-                         df = ex, light_version = ex$light_rel_PAR)
-Pot_GPP_PPFD <- PM_Ricker(r = med_PPFD$Potomac$r,
-                         lambda = med_PPFD$Potomac$lambda,
-                         s = med_PPFD$Potomac$s,
-                         c = med_PPFD$Potomac$c, 
-                         sig_p = med_PPFD$Potomac$sig_p,
-                         sig_o = med_PPFD$Potomac$sig_o, 
-                         df = ex, light_version = ex$light_rel_PPFD)
-Paint_GPP_PAR <- PM_Ricker(r = med_PAR$`Paint Branch`$r,
-                         lambda = med_PAR$`Paint Branch`$lambda,
-                         s = med_PAR$`Paint Branch`$s,
-                         c = med_PAR$`Paint Branch`$c, 
-                         sig_p = med_PAR$`Paint Branch`$sig_p,
-                         sig_o = med_PAR$`Paint Branch`$sig_o, 
-                         df = ex2, light_version = ex2$light_rel_PAR)
-Paint_GPP_PPFD <- PM_Ricker(r = med_PPFD$`Paint Branch`$r,
-                          lambda = med_PPFD$`Paint Branch`$lambda,
-                          s = med_PPFD$`Paint Branch`$s,
-                          c = med_PPFD$`Paint Branch`$c, 
-                          sig_p = med_PPFD$`Paint Branch`$sig_p,
-                          sig_o = med_PPFD$`Paint Branch`$sig_o, 
-                          df = ex2, light_version = ex2$light_rel_PPFD)
-
-
-## Plot comparison (better agreement)
-plot(ex$GPP, pch=19)
-lines(Pot_GPP_PAR, col="blue")
-lines(Pot_GPP_PPFD, col="red")
-
-
-## Plot comparison (worse agreement)
-plot(ex2$GPP, pch=19)
-lines(Paint_GPP_PAR, col="blue")
-lines(Paint_GPP_PPFD, col="red") #better
 
 #############################################################################
-## Replace original GPP with predicted GPP in data list and fit model again
+## Replace original GPP with predicted mean and sd GPP in data list and fit model again
 #############################################################################
 #create copies of data lists
 stan_data_PAR_v2 <- stan_data_PAR
 stan_data_PPFD_v2 <- stan_data_PPFD
-#replace
-stan_data_PAR_v2$Potomac$GPP <- Pot_GPP_PAR
-stan_data_PAR_v2$`Paint Branch`$GPP <- Paint_GPP_PAR
-
-
-
+#replace GPP for PAR
+stan_data_PAR_v2$Potomac$GPP <- sim_PAR[which(sim_PAR$SiteID == "Potomac"),]$mean_GPP_PAR
+stan_data_PAR_v2$`Paint Branch`$GPP <- sim_PAR[which(sim_PAR$SiteID == "Paint Branch"),]$mean_GPP_PAR
+stan_data_PAR_v2$Potomac$GPP_sd <- sim_PAR[which(sim_PAR$SiteID == "Potomac"),]$sd_GPP_PAR
+stan_data_PAR_v2$`Paint Branch`$GPP_sd <- sim_PAR[which(sim_PAR$SiteID == "Paint Branch"),]$sd_GPP_PAR
+#replace GPP for PPFD
+stan_data_PPFD_v2$Potomac$GPP <- sim_PPFD[which(sim_PPFD$SiteID == "Potomac"),]$mean_GPP_PPFD
+stan_data_PPFD_v2$`Paint Branch`$GPP <- sim_PPFD[which(sim_PPFD$SiteID == "Paint Branch"),]$mean_GPP_PPFD
+stan_data_PPFD_v2$Potomac$GPP_sd <- sim_PPFD[which(sim_PPFD$SiteID == "Potomac"),]$sd_GPP_PPFD
+stan_data_PPFD_v2$`Paint Branch`$GPP_sd <- sim_PPFD[which(sim_PPFD$SiteID == "Paint Branch"),]$sd_GPP_PPFD
 
 
 #Fit models again
+rstan_options(auto_write=TRUE)
+options(mc.cores=6)#parallel::detectCores())
+
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 1.5)
+}
+
 Ricker_output_PAR_v2 <- lapply(stan_data_PAR_v2,
                             function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
                                              data=x,chains=3,iter=5000,init = init_Ricker,
