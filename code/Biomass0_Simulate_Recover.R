@@ -132,11 +132,19 @@ Ricker_sim_fxn <- function(x){
 Ricker_sim_PAR <- lapply(PAR_list, function(x) Ricker_sim_fxn(x))
 Ricker_sim_PPFD <- lapply(PPFD_list, function(x) Ricker_sim_fxn(x))
 
-# For every day extract mean and sd of GPP
-mean_sim_PAR <- ldply(lapply(Ricker_sim_PAR, function(z) apply(z, 1, function(x) mean(x))), data.frame)
+# For every day extract sd of GPP predictions
+#mean_sim_PAR <- ldply(lapply(Ricker_sim_PAR, function(z) apply(z, 1, function(x) mean(x))), data.frame)
 sd_sim_PAR <- ldply(lapply(Ricker_sim_PAR, function(z) apply(z, 1, function(x) sd(x))), data.frame)
-mean_sim_PPFD <- ldply(lapply(Ricker_sim_PPFD, function(z) apply(z, 1, function(x) mean(x))), data.frame)
+#mean_sim_PPFD <- ldply(lapply(Ricker_sim_PPFD, function(z) apply(z, 1, function(x) mean(x))), data.frame)
 sd_sim_PPFD <- ldply(lapply(Ricker_sim_PPFD, function(z) apply(z, 1, function(x) sd(x))), data.frame)
+
+
+
+
+
+
+
+
 #rename PAR colnames
 sim_PAR <- cbind(mean_sim_PAR, sd_sim_PAR[,2])
 colnames(sim_PAR) <- c("SiteID", "mean_GPP_PAR","sd_GPP_PAR")
@@ -151,6 +159,69 @@ ggplot(sim_PAR, aes(order, mean_GPP_PAR))+
 ggplot(sim_PPFD, aes(order, mean_GPP_PPFD))+
   geom_line()+facet_wrap(~SiteID, nrow=1, scales="free_x")
 
+############################################
+## Simulate final GPP ts using
+############################################
+#extract
+p_PAR<- lapply(Ricker_output_PAR, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
+p_PPFD<- lapply(Ricker_output_PPFD, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
+#median
+mean_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) mean(y)))
+mean_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) mean(y)))
+
+## simulate GPP again for final data set
+Pot_GPP_PAR <- PM_Ricker(r = mean_PAR$Potomac$r,
+                         lambda = mean_PAR$Potomac$lambda,
+                         s = mean_PAR$Potomac$s,
+                         c = mean_PAR$Potomac$c, 
+                         sig_p = mean_PAR$Potomac$sig_p,
+                         sig_o = mean_PAR$Potomac$sig_o, 
+                         df = ex, light_version = ex$light_rel_PAR)
+Pot_GPP_PPFD <- PM_Ricker(r = mean_PPFD$Potomac$r,
+                          lambda = mean_PPFD$Potomac$lambda,
+                          s = mean_PPFD$Potomac$s,
+                          c = mean_PPFD$Potomac$c, 
+                          sig_p = mean_PPFD$Potomac$sig_p,
+                          sig_o = mean_PPFD$Potomac$sig_o, 
+                          df = ex, light_version = ex$light_rel_PPFD)
+Paint_GPP_PAR <- PM_Ricker(r = mean_PAR$`Paint Branch`$r,
+                           lambda = mean_PAR$`Paint Branch`$lambda,
+                           s = mean_PAR$`Paint Branch`$s,
+                           c = mean_PAR$`Paint Branch`$c, 
+                           sig_p = mean_PAR$`Paint Branch`$sig_p,
+                           sig_o = mean_PAR$`Paint Branch`$sig_o, 
+                           df = ex2, light_version = ex2$light_rel_PAR)
+Paint_GPP_PPFD <- PM_Ricker(r = mean_PPFD$`Paint Branch`$r,
+                            lambda = mean_PPFD$`Paint Branch`$lambda,
+                            s = mean_PPFD$`Paint Branch`$s,
+                            c = mean_PPFD$`Paint Branch`$c, 
+                            sig_p = mean_PPFD$`Paint Branch`$sig_p,
+                            sig_o = mean_PPFD$`Paint Branch`$sig_o, 
+                            df = ex2, light_version = ex2$light_rel_PPFD)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #############################################################################
 ## Replace original GPP with predicted mean and sd GPP in data list and fit model again
@@ -158,6 +229,11 @@ ggplot(sim_PPFD, aes(order, mean_GPP_PPFD))+
 #create copies of data lists
 stan_data_PAR_v2 <- stan_data_PAR
 stan_data_PPFD_v2 <- stan_data_PPFD
+
+
+
+
+
 #replace GPP for PAR
 stan_data_PAR_v2$Potomac$GPP <- sim_PAR[which(sim_PAR$SiteID == "Potomac"),]$mean_GPP_PAR
 stan_data_PAR_v2$`Paint Branch`$GPP <- sim_PAR[which(sim_PAR$SiteID == "Paint Branch"),]$mean_GPP_PAR
@@ -188,12 +264,24 @@ Ricker_output_PPFD_v2 <- lapply(stan_data_PPFD_v2,
                                               control=list(max_treedepth=12)))
 sim_Ricker_output_v2 <- list(Ricker_output_PAR_v2, Ricker_output_PPFD_v2)
 
-saveRDS(sim_Ricker_output_v2, "./rds files/sim_Ricker_output_v2_2022_01_03.rds")
+saveRDS(sim_Ricker_output_v2, "./rds files/sim_Ricker_output_v2_2022_01_14.rds")
 
 #################################################################################
 ## Compare parameters from simulation to posterior distributions
 ################################################################################
 
+test <- Ricker_output_PAR$Potomac
+orig_pars<-ldply(extract(test, c("r","lambda","s","c","sig_p","sig_o")),data.frame)
+colnames(orig_pars) <- c("parameter","value")
+
+refit <- Ricker_output_PAR_v2$Potomac
+rec_pars<-ldply(extract(test, c("r","lambda","s","c","sig_p","sig_o")), data.frame)
+colnames(rec_pars) <- c("parameter","value")
+
+ggplot(pars_df, aes(value))+
+  geom_density()+
+  geom_density(data=rec_pars, aes(value), fill="blue", alpha=0.4)+
+  facet_wrap(~parameter, scales = "free")
 
 
 
