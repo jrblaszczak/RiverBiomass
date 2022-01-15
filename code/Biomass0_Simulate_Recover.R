@@ -138,7 +138,16 @@ sd_sim_PAR <- ldply(lapply(Ricker_sim_PAR, function(z) apply(z, 1, function(x) s
 #mean_sim_PPFD <- ldply(lapply(Ricker_sim_PPFD, function(z) apply(z, 1, function(x) mean(x))), data.frame)
 sd_sim_PPFD <- ldply(lapply(Ricker_sim_PPFD, function(z) apply(z, 1, function(x) sd(x))), data.frame)
 
+## Take mean and sd of GPP_sd estimates
 
+
+
+#extract
+p_PAR<- lapply(Ricker_output_PAR, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
+p_PPFD<- lapply(Ricker_output_PPFD, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
+#median
+mean_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) mean(y)))
+mean_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) mean(y)))
 
 
 
@@ -162,12 +171,7 @@ ggplot(sim_PPFD, aes(order, mean_GPP_PPFD))+
 ############################################
 ## Simulate final GPP ts using
 ############################################
-#extract
-p_PAR<- lapply(Ricker_output_PAR, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
-p_PPFD<- lapply(Ricker_output_PPFD, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
-#median
-mean_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) mean(y)))
-mean_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) mean(y)))
+
 
 ## simulate GPP again for final data set
 Pot_GPP_PAR <- PM_Ricker(r = mean_PAR$Potomac$r,
