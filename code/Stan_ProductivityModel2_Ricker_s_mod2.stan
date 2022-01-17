@@ -56,8 +56,8 @@ model {
   sig_o ~ normal(mean(GPP_sd), sd(GPP_sd))T[0,];
   
   // Param priors
-  c ~ normal(0.5,1)T[0,];
-  s ~ normal(1.5,2)T[0,];
+  c ~ normal(0.5,0.25)T[0,];
+  s ~ normal(1.5,1)T[0,];
   r ~ normal(0,1);
   lambda ~ normal(0,1)T[,0];
   

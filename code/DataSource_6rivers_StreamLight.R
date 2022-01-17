@@ -6,7 +6,6 @@
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
          "lubridate","tidyverse", "reshape2",
-         "PerformanceAnalytics","jpeg","grid",
          "rstan","bayesplot","shinystan"), require, character.only=T)
 
 ##############################
