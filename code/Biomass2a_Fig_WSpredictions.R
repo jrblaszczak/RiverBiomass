@@ -42,7 +42,7 @@ df_sim1$short_name <- factor(df_sim1$short_name, levels=site_order_list)
 df_sim1_plot <- ggplot(df_sim1, aes(Date, GPP))+
   geom_point(size=2, color="black")+
   geom_line(aes(Date, sim_GPP), color=PM_AR.col, size=1.2)+
-  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM1: STS")+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="Within-Sample S-TS Model GPP Predictions")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM_AR.col, alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
@@ -61,7 +61,7 @@ df_sim1_plot
 ###############################
 ## Model 2 Output - Ricker
 ###############################
-simmat3_list <- readRDS("./rds files/Sim_6riv_Ricker_ws.rds")
+simmat3_list <- readRDS("./rds files/Sim_6riv_Ricker_ws_2022_01_23.rds")
 
 # For every day extract median and CI
 median_simmat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
@@ -84,7 +84,7 @@ df_sim3$short_name <- factor(df_sim3$short_name, levels=site_order_list)
 df_sim3_plot <- ggplot(df_sim3, aes(Date, GPP))+
   geom_point(size=2, color="black")+
   geom_line(aes(Date, sim_GPP), color=PM_Ricker.col, size=1.2)+
-  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="PM2: LB - Ricker")+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="Within-Sample LB-TS Ricker Model GPP Predictions")+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
               fill=PM_Ricker.col, alpha=0.2, show.legend = FALSE)+
   theme(legend.position = "none",
@@ -117,14 +117,9 @@ ggplot(df_sim3, aes(Date, GPP))+
         strip.background = element_rect(fill="white", color="black"),
         strip.text = element_text(size=15))+
   #coord_cartesian(ylim=c(0,max(df_sim1$GPP)*1.5))+
-  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),
+       title="Within-Sample S-TS & LB-TS Model GPP Predictions")+
   facet_wrap(~short_name, scales = "free", ncol = 2)
-
-
-
-
-
-
 
 
 
@@ -153,7 +148,7 @@ df_modB3 <- df_bio3
 ## plot latent biomass model predictions
 df_modB3_plot <- ggplot(df_modB3, aes(Date, exp(B)))+
   geom_line(size=1.2, color="chartreuse4")+
-  labs(y="Latent Biomass",title="PM3: Ricker")+
+  labs(y="Latent Biomass",title="Within-Sample LB-TS Ricker Model Latent Biomass Predictions")+
   geom_ribbon(aes(ymin=exp(B_lower),ymax=exp(B_upper)),
               fill="chartreuse4", alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
@@ -165,11 +160,6 @@ df_modB3_plot <- ggplot(df_modB3, aes(Date, exp(B)))+
   coord_cartesian(ylim=c(0,30))+
   facet_wrap(~short_name, scales = "free_x", ncol = 2)
 df_modB3_plot
-
-
-
-
-
 
 
 
