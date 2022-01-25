@@ -10,7 +10,7 @@ source("DataSource_6rivers_StreamLight.R")
 source("StanParameterExtraction_Source.R")
 
 ## Import stan Ricker model fit
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_06_01.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_01_23.rds")
 
 ##################
 ## Plot biomass
@@ -34,7 +34,7 @@ df_modB3$short_name <- factor(df_modB3$short_name, levels=site_order_list)
 ## Plot latent biomass predictions
 ggplot(df_modB3, aes(Date, exp(B)))+
   geom_line(size=1.2, color="chartreuse4")+
-  labs(y="Latent Biomass",title="LB-TS Year 1")+
+  labs(y="Latent Biomass",title="Within???Sample LB???TS Ricker Model Estimates")+
   geom_ribbon(aes(ymin=exp(B_lower),ymax=exp(B_upper)),
               fill="chartreuse4", alpha=0.3, show.legend = FALSE)+
   theme(legend.position = "none",
