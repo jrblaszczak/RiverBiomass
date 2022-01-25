@@ -18,7 +18,7 @@ rstan_options(auto_write=TRUE)
 options(mc.cores=6)#parallel::detectCores())
 
 stan_data_compile <- function(x){
-  data <- list(Ndays=length(x$GPP), light = x$light_rel, GPP = x$GPP,
+  data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
                GPP_sd = x$GPP_sd, tQ = x$tQ)
   return(data)
 }
@@ -38,34 +38,24 @@ launch_shinystan(test_ar)
 
 #Ricker - P reparameterized
 init_Ricker <- function(...) {
-  list(c = 5, s = 1)
+  list(c = 0.5, s = 1.5)
 }
-test_ricker <- stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
-                    data=stan_data_l$nwis_01649190,
-                    init = init_Ricker,
-                    chains=3,iter=5000, control=list(max_treedepth=12,
-                                                     adapt_delta=0.99))
-launch_shinystan(test_ricker)
 
-#Ricker - orig
-init_Ricker <- function(...) {
-  list(c = 0.5, s = 150)
-}
-test_ricker_orig <- stan("Stan_ProductivityModel2_Ricker_fixedinit_obserr.stan",
-                    data=stan_data_l$nwis_01649190,
-                    init = init_Ricker,
-                    chains=3,iter=5000, control=list(max_treedepth=12,
-                                                     adapt_delta=0.99))
-launch_shinystan(test_ricker_orig)
+test_ricker <- stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                    data=stan_data_l$nwis_01608500,
+                    init = init_Ricker,chains=3,iter=5000,
+                    control=list(max_treedepth=12, adapt_delta=0.95))
+launch_shinystan(test_ricker)
 
 #Gompertz
 init_Gompertz <- function(...) {
-  list(c = 0.5, s = 100)
+  list(c = 0.5, s = 1.5)
 }
-test_Gompertz <- stan("Stan_ProductivityModel3_Gompertz_fixedinit_obserr.stan",
+
+test_Gompertz <- stan("Stan_ProductivityModel3_Gompertz.stan",
                     data=stan_data_l$nwis_01608500,
-                    init = init_Gompertz,
-                    chains=3,iter=5000, control=list(max_treedepth=12))
+                    init = init_Gompertz,chains=3,iter=5000,
+                    control=list(max_treedepth=12, adapt_delta=0.95))
 launch_shinystan(test_Gompertz)
 
 
@@ -76,40 +66,65 @@ launch_shinystan(test_Gompertz)
 ## PM 1 - Standard time series
 PM_outputlist_AR <- lapply(stan_data_l,
                            function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
-                                                   data=x,chains=3,iter=5000, control=list(max_treedepth=12)))
-PM_AR_elapsedtime <- lapply(PM_outputlist_AR, function(x) return(get_elapsed_time(x)))
-saveRDS(PM_outputlist_AR, "./rds files/stan_6riv_output_AR_2021_08_12.rds")
-saveRDS(PM_AR_elapsedtime, "./rds files/stan_6riv_AR_time_2021_08_12.rds")
+                                                   data=x, chains=3, iter=5000,
+                                                   control=list(max_treedepth=12, adapt_delta=0.95)))
+saveRDS(PM_outputlist_AR, "./rds files/stan_6riv_output_AR_2022_01_23.rds")
+
 
 ## PM 2 - Latent Biomass (Ricker)
 init_Ricker <- function(...) {
   list(c = 0.5, s = 0.5)
 }
-
 PM_outputlist_Ricker <- lapply(stan_data_l,
-                               function(x) stan("Stan_ProductivityModel2_Ricker_s_modification.stan",
-                                                data=x,chains=3,iter=5000,init = init_Ricker,
+                               function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                                                data=x, init = init_Ricker, chains=3, iter=5000,
                                                 control=list(max_treedepth=12, adapt_delta=0.95)))
-PM_Ricker_elapsedtime <- lapply(PM_outputlist_Ricker, function(x) return(get_elapsed_time(x)))
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_output_Ricker_2021_08_23.rds")
-saveRDS(PM_Ricker_elapsedtime, "./rds files/stan_6riv_Ricker_time_2021_08_23.rds")
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_output_Ricker_2022_01_23.rds")
+
+
+## PM 3 - Latent Biomass (Gompertz)
+init_Gompertz <- function(...) {
+  list(c = 0.5, s = 1.5)
+}
+PM_outputlist_Gompertz <- lapply(stan_data_l,
+                               function(x) stan("Stan_ProductivityModel3_Gompertz.stan",
+                                                data=x, init = init_Gompertz, chains=3, iter=5000,
+                                                control=list(max_treedepth=12, adapt_delta=0.95)))
+saveRDS(PM_outputlist_Gompertz, "./rds files/stan_6riv_output_Gompertz_2022_01_23.rds")
+
+
+
+PM_outputlist_AR <- readRDS("./rds files/stan_6riv_output_AR_2022_01_23.rds")
+PM_outputlist_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_01_23.rds")
+PM_outputlist_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz_2022_01_23.rds")
+
+launch_shinystan(PM_outputlist_AR$nwis_11044000)
+## 01608500 (South Branch Potomac) - 0 divergent transitions
+## 01649190 (Paint Branch) - 0 divergent transitions
+## 02336526 (Proctor Creek) - 0 divergent transitions
+## 07191222 (Beatty Creek) - 0 divergent transitions
+## 08447300 (Pecos River) - 0 divergent transitions
+## 11044000 (Santa Margarita) - 0 divergent transitions
 
 launch_shinystan(PM_outputlist_Ricker$nwis_11044000)
-## 01649190 (Paint Branch) - 252 divergent transitions
-## 02336526 (Proctor Creek) - 151 divergent transitions
-## 08447300 (Pecos River) - 346 divergent transitions
-## 11044000 (Santa Margarita) - 75 divergent transitions
+## 01608500 (South Branch Potomac) - 0 divergent transitions
+## 01649190 (Paint Branch) - 70 divergent transitions
+## 02336526 (Proctor Creek) - 14 divergent transitions
+## 07191222 (Beatty Creek) - 0 divergent transitions
+## 08447300 (Pecos River) - 298 divergent transitions
+## 11044000 (Santa Margarita) - 4 divergent transitions
+
+launch_shinystan(PM_outputlist_Gompertz$nwis_11044000)
+## 01608500 (South Branch Potomac) - 0 divergent transitions
+## 01649190 (Paint Branch) - 0 divergent transitions
+## 02336526 (Proctor Creek) - 3 divergent transitions
+## 07191222 (Beatty Creek) - 0 divergent transitions
+## 08447300 (Pecos River) - 1 divergent transitions - c not converging
+## 11044000 (Santa Margarita) - 10 divergent transitions - c not converging
 
 #####################################
 ## View & check acceptance criteria
 #####################################
-stan_model_output_AR <- readRDS("./rds files/stan_6riv_output_AR_2021_08_12.rds")
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_08_12.rds")
 
-
-traceplot(stan_model_output_AR$nwis_01608500, pars = c("phi","alpha","beta","sig_p","sig_o"))
-stan_dens(stan_model_output_AR$nwis_01608500, pars = c("phi","alpha","beta","sig_p","sig_o"))
-
-launch_shinystan(stan_model_output_Ricker$nwis_01649190)
 
 

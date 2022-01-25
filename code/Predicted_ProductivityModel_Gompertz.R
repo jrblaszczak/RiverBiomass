@@ -6,7 +6,7 @@ PM_Gompertz <- function(beta_0, beta_1, s, c, sig_p, sig_o, df) {
   Ndays<-length(df$GPP)
   GPP <- df$GPP
   GPP_sd <- df$GPP_sd
-  light <- df$light_rel
+  light <- df$light_rel_PAR
   tQ <- df$tQ # discharge standardized to max value
 
   
@@ -14,7 +14,7 @@ PM_Gompertz <- function(beta_0, beta_1, s, c, sig_p, sig_o, df) {
   P <- numeric(Ndays)
   P[1] <- 1
   for(i in 2:length(tQ)){
-    P[i] = exp(-exp(s*(tQ[i] - c)))
+    P[i] = exp(-exp(s*100*(tQ[i] - c)))
   }
   
   B<-numeric(Ndays)
@@ -28,7 +28,7 @@ PM_Gompertz <- function(beta_0, beta_1, s, c, sig_p, sig_o, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0.01)
   }
   
   return(pred_GPP)
@@ -49,7 +49,7 @@ PM_Gompertz_B <- function(beta_0, beta_1, s, c, sig_p, sig_o, df) {
   P <- numeric(Ndays)
   P[1] <- 1
   for(i in 2:length(tQ)){
-    P[i] = exp(-exp(s*(tQ[i] - c)))
+    P[i] = exp(-exp(s*100*(tQ[i] - c)))
   }
   
   B<-numeric(Ndays)
@@ -63,7 +63,7 @@ PM_Gompertz_B <- function(beta_0, beta_1, s, c, sig_p, sig_o, df) {
   }
   
   for (i in 2:Ndays){
-    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0)
+    pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = light[i]*exp(B[i]), sd = sig_o, lower=0.01)
   }
   
   return(B)

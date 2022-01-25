@@ -20,7 +20,7 @@ PM_Gompertz.col <- "#1C474D"
 ##########################
 ## Model 1 Output - AR
 #########################
-simmat1_list <- readRDS("./rds files/Sim_6riv_AR_ws.rds")
+simmat1_list <- readRDS("./rds files/Sim_6riv_AR_ws_2022_01_23.rds")
 
 # For every day extract median and CI
 median_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)

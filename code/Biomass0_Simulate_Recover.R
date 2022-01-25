@@ -79,14 +79,16 @@ init_Ricker <- function(...) {
 Ricker_output_PAR <- lapply(stan_data_PAR,
                             function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
                                              data=x,chains=3,iter=5000,init = init_Ricker,
-                                             control=list(max_treedepth=12)))
+                                             control=list(max_treedepth=12, adapt_delta = 0.95)))
 Ricker_output_PPFD <- lapply(stan_data_PPFD,
                              function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
                                               data=x,chains=3,iter=5000,init = init_Ricker,
-                                              control=list(max_treedepth=12)))
+                                              control=list(max_treedepth=12, adapt_delta = 0.95)))
 sim_Ricker_output <- list(Ricker_output_PAR, Ricker_output_PPFD)
 
-saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_01_14.rds")
+launch_shinystan(Ricker_output_PPFD$`Paint Branch`)
+
+saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_01_18_ad.rds")
 
 
 ################################################
@@ -94,7 +96,7 @@ saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_01_14.rds")
 ################################################
 
 ## Extract parameter estimates from simulation
-sim_Ricker_output <- readRDS("./rds files/sim_Ricker_output_2021_01_14.rds")
+#sim_Ricker_output <- readRDS("./rds files/sim_Ricker_output_2021_01_18_ad.rds")
 Ricker_output_PAR <- sim_Ricker_output[[1]]
 Ricker_output_PPFD <- sim_Ricker_output[[2]]
 

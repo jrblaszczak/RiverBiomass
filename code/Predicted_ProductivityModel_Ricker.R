@@ -34,30 +34,13 @@ PM_Ricker_lv <- function(r, lambda, s, c, sig_p, sig_o, df, light_version) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df) {
   
   ## Data
   Ndays<-length(df$GPP)
   GPP <- df$GPP
   #GPP_sd <- df$GPP_sd
-  light <- df$light
+  light <- df$light_rel_PAR
   tQ <- df$tQ # discharge standardized to max value
 
   ## Vectors for model output of P, B, pred_GPP
@@ -84,6 +67,8 @@ PM_Ricker <- function(r, lambda, s, c, sig_p, sig_o, df) {
   return(pred_GPP)
 }
 
+
+
 ## Biomass
 PM_Ricker_B <- function(r, lambda, s, c, sig_p, sig_o, df) {
   
@@ -91,14 +76,14 @@ PM_Ricker_B <- function(r, lambda, s, c, sig_p, sig_o, df) {
   Ndays<-length(df$GPP)
   GPP <- df$GPP
   GPP_sd <- df$GPP_sd
-  light <- df$light_rel
+  light <- df$light_rel_PAR
   tQ <- df$tQ # discharge standardized to max value
   
   ## Vectors for model output of P, B, pred_GPP
   P <- numeric(Ndays)
   P[1] <- 1
   for(i in 2:length(tQ)){
-    P[i] = exp(-exp(s*(tQ[i] - c)))
+    P[i] = exp(-exp(s*100*(tQ[i] - c)))
   }
   
   B<-numeric(Ndays)
@@ -117,6 +102,9 @@ PM_Ricker_B <- function(r, lambda, s, c, sig_p, sig_o, df) {
   
   return(B)
 }
+
+
+
 
 ## Ricker light modification
 PM_Ricker_Lmod <- function(r, lambda, alpha, s, c, sig_p, sig_o, df) {

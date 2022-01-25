@@ -21,8 +21,9 @@ PM_Ricker.col <- "#7570b3"
 PM_Gompertz.col <- "#1C474D"
 
 ## Import stan fits - simulate one at a time
-stan_model_output_AR <- readRDS("./rds files/stan_6riv_output_AR_2021_08_12.rds")
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_08_12.rds")
+stan_model_output_AR <- readRDS("./rds files/stan_6riv_output_AR_2022_01_23.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_01_23.rds")
+stan_model_output_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz_2022_01_23.rds")
 
 
 ##########################
@@ -53,11 +54,10 @@ AR_sim_fxn <- function(x){
 }
 
 #test <- AR_sim_fxn(AR_list$nwis_01608500)
-
 AR_sim <- lapply(AR_list, function(x) AR_sim_fxn(x))
 
 ## Save simulation
-saveRDS(AR_sim, "./rds files/Sim_6riv_AR_ws.rds")
+saveRDS(AR_sim, "./rds files/Sim_6riv_AR_ws_2022_01_23.rds")
 
 
 ###############################
@@ -91,7 +91,7 @@ Ricker_sim_fxn <- function(x){
 Ricker_sim <- lapply(Ricker_list, function(x) Ricker_sim_fxn(x))
 
 ## Save simulation
-saveRDS(Ricker_sim, "./rds files/Sim_6riv_Ricker_ws.rds")
+saveRDS(Ricker_sim, "./rds files/Sim_6riv_Ricker_ws_2022_01_23.rds")
 
 
 ###############################
@@ -125,4 +125,4 @@ Gompertz_sim_fxn <- function(x){
 Gompertz_sim <- lapply(Gompertz_list, function(x) Gompertz_sim_fxn(x))
 
 ## Save simulation
-saveRDS(Gompertz_sim, "./rds files/Sim_6riv_Gompertz_ws.rds")
+saveRDS(Gompertz_sim, "./rds files/Sim_6riv_Gompertz_ws_2022_01_23.rds")
