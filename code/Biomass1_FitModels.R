@@ -98,7 +98,7 @@ PM_outputlist_AR <- readRDS("./rds files/stan_6riv_output_AR_2022_01_23.rds")
 PM_outputlist_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_01_23.rds")
 PM_outputlist_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz_2022_01_23.rds")
 
-launch_shinystan(PM_outputlist_AR$nwis_11044000)
+launch_shinystan(PM_outputlist_AR$nwis_08447300)
 ## 01608500 (South Branch Potomac) - 0 divergent transitions
 ## 01649190 (Paint Branch) - 0 divergent transitions
 ## 02336526 (Proctor Creek) - 0 divergent transitions
@@ -106,7 +106,7 @@ launch_shinystan(PM_outputlist_AR$nwis_11044000)
 ## 08447300 (Pecos River) - 0 divergent transitions
 ## 11044000 (Santa Margarita) - 0 divergent transitions
 
-launch_shinystan(PM_outputlist_Ricker$nwis_11044000)
+launch_shinystan(PM_outputlist_Ricker$nwis_08447300)
 ## 01608500 (South Branch Potomac) - 0 divergent transitions
 ## 01649190 (Paint Branch) - 70 divergent transitions
 ## 02336526 (Proctor Creek) - 14 divergent transitions

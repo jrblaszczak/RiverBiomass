@@ -1,12 +1,12 @@
 ##==============================================================================
 ## Script for compiling and formatting data with stream light for stan
+## First Year (within sample)
 ## Code author: J.R. Blaszczak
 ##==============================================================================
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
-         "lubridate","tidyverse", "reshape2",
-         "rstan","bayesplot","shinystan"), require, character.only=T)
+         "lubridate","tidyverse", "reshape2"), require, character.only=T)
 
 ##############################
 ## Data Import & Processing ##
@@ -66,18 +66,8 @@ data[which(data$GPP < 0),]$GPP <- sample(exp(-3):exp(-2), 1)
 ## Create a GPP SD; SD = (CI - mean)/1.96
 data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
 
-## visualize
-ggplot(data, aes(date, GPP))+
-  geom_point()+geom_line()+
-  facet_wrap(~site_name,scales = "free_x")
-
-ggplot(data, aes(date, PAR_surface))+
-  geom_point()+geom_line()+
-  facet_wrap(~site_name,scales = "free_x")
-
 ## split list by ID
 l <- split(data, data$site_name)
-
 
 rel_LQT <- function(x){
   x$light_rel_PPFD <- x$light/max(x$light)
@@ -93,17 +83,4 @@ dat <- lapply(l, function(x) rel_LQT(x))
 df <- dat
 
 rm(data, l, SL, data_siteyears, dat)
-
-
-
-
-
-
-
-
-
-
-
-
-
 

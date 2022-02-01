@@ -1,4 +1,9 @@
-## 6 rivers seccond year data source
+##==============================================================================
+## Script for compiling and formatting data with stream light for stan
+## Second Year (out of sample)
+## Code author: J.R. Blaszczak
+##==============================================================================
+
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot",
          "lubridate","tidyverse", "reshape2"), require, character.only=T)
@@ -33,8 +38,6 @@ site_order_list <- c("Proctor Creek, GA",
                      "S. Br. Potomac River, WV",
                      "Santa Margarita River, CA",
                      "Pecos River, TX")
-
-
 
 ## How many days of data per site per year
 data$year <- year(data$date)
@@ -74,7 +77,7 @@ oos_relativize <- function(prev_max, post_dat, id){
   max.vals <- prev_max[which(prev_max$site_name == id),]
   dat <- post_dat[which(post_dat$site_name == id),]
   
-  dat$light_rel <- dat$PAR_surface/max.vals$PAR_surface
+  dat$light_rel_PAR <- dat$PAR_surface/max.vals$PAR_surface
   dat$tQ <- dat$Q/max.vals$Q
   
   dat <- dat[order(dat$date),]
