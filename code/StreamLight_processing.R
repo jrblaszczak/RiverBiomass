@@ -65,9 +65,6 @@ site_subset_split <- split(site_subset, site_subset$.id)
 lapply(site_subset_split, function(x) sum(is.na(x$PAR_surface))) # all 0
 lapply(site_subset_split, function(x) sum(is.na(x$PAR_turb))) # 108, 126, 153, 46
 
-
-
-
 ####################################################
 ## For remaining sites - Santa Margarita and Pecos
 ####################################################
@@ -113,6 +110,20 @@ MOD_unpack <- AppEEARS_unpack_QC(zip_file = "biomass-rivers.zip",
 MOD_processed <- AppEEARS_proc(unpacked_LAI = MOD_unpack,
                                fit_method = "Gu",
                                plot=TRUE)
+
+## Gu methods prevents the interpolation of the final ~30 days of 2016 in nwis11044000
+## fill in the missing LAI_proc data with a final simple linear interpolation
+MOD_processed$nwis11044000[which(MOD_processed$nwis11044000$Date == "2017-01-01"),]$LAI_proc <- 0.2
+nrow(MOD_processed$nwis11044000[which(MOD_processed$nwis11044000$Date >= "2016-12-02" & MOD_processed$nwis11044000$Date <= "2017-01-01"),])
+
+
+interp_LAI <- rev(approx(x = c(MOD_processed$nwis11044000[which(MOD_processed$nwis11044000$Date == "2016-12-02"),]$LAI_proc,
+             MOD_processed$nwis11044000[which(MOD_processed$nwis11044000$Date == "2017-01-01"),]$LAI_proc),
+       y = c(0,0),
+       n = 31)$x)
+## replace
+MOD_processed$nwis11044000[which(MOD_processed$nwis11044000$Date >= "2016-12-02" & MOD_processed$nwis11044000$Date <= "2017-01-01"),]$LAI_proc <- interp_LAI
+View(MOD_processed$nwis11044000) ## scroll to bottom to confirm
 
 ######################
 ## Use stream_light
