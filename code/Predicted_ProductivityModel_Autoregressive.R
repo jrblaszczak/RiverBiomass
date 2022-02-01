@@ -20,7 +20,7 @@ PM_AR <- function(phi, alpha, beta, sig_p, sig_o, df) {
   }
   
   for (i in 2:Ndays){
-  pred_GPP[i] <- rtnorm(1, mean = exp(l_pred_GPP[i]), sd = sig_o, lower=0.01)
+  pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = exp(l_pred_GPP[i]), sd = sig_o, lower=0.01, upper = 50)
   }
   
   return(pred_GPP)
