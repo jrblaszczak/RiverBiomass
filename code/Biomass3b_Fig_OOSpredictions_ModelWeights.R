@@ -1,4 +1,7 @@
-## Out-of-sample predictions
+##==============================================================================
+## Script for out-of-sample prediction model weight comparison
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
@@ -50,8 +53,8 @@ GPP_oos_preds_ts <- function(preds, df){
 
 }
 
-STS_simdat <- GPP_oos_preds_ts("./rds files/Sim_6riv_AR_oos.rds",df)
-LB_simdat <- GPP_oos_preds_ts("./rds files/Sim_6riv_Ricker_oos.rds",df)
+STS_simdat <- GPP_oos_preds_ts("./rds files/Sim_6riv_AR_oos_2022_02_01.rds",df)
+LB_simdat <- GPP_oos_preds_ts("./rds files/Sim_6riv_Ricker_oos_2022_02_01.rds",df)
 
 
 #############################################
@@ -83,8 +86,8 @@ GPP_oos_preds_mw <- function(preds, df, mean_mod, se_mod){
   
 }
 
-STS_oos_mw <- GPP_oos_preds_mw("./rds files/Sim_6riv_AR_oos.rds", df, "mean_p_GPP_STS", "se_p_GPP_STS")
-LB_oos_mw <- GPP_oos_preds_mw("./rds files/Sim_6riv_Ricker_oos.rds", df, "mean_p_GPP_LB", "se_p_GPP_LB")
+STS_oos_mw <- GPP_oos_preds_mw("./rds files/Sim_6riv_AR_oos_2022_02_01.rds", df, "mean_p_GPP_STS", "se_p_GPP_STS")
+LB_oos_mw <- GPP_oos_preds_mw("./rds files/Sim_6riv_Ricker_oos_2022_02_01.rds", df, "mean_p_GPP_LB", "se_p_GPP_LB")
 
 ## Combine
 oos_preds_mw <- merge(STS_oos_mw, LB_oos_mw[,c("site_name","Date","mean_p_GPP_LB", "se_p_GPP_LB")])
@@ -136,8 +139,10 @@ overlainGPP_plot <- function(y){
   inset_plot <- ggplot(support, aes(Date, STS_support))+
     geom_line(color=PM_AR.col,size=0.9)+
     geom_line(aes(Date, LB_support),color=PM_Ricker.col,size=0.9)+
-    labs(y="Model Weight")+theme(axis.title.x = element_blank(),
-                                 axis.text.x = element_blank())+
+    labs(y="Model Weight")+
+    theme_bw(base_size = 8)+
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank())+
     scale_y_continuous(labels=scaleFUN)
   
   main_plot <- ggplot(STS_simdat_site, aes(Date, GPP))+

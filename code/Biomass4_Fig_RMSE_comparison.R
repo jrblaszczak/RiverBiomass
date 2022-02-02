@@ -13,19 +13,19 @@ PM_Gompertz.col <- "#743731" # Gompertz
 ## Import and combine by site
 ################################
 ## Import within sample data
-source("DataSource_6rivers.R")
+source("DataSource_6rivers_StreamLight.R")
 dat_ws <- df
 
 # Within-sample predictions
-ws_AR <- readRDS("./rds files/Sim_6riv_AR_ws.rds")
-ws_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_ws.rds")
+ws_AR <- readRDS("./rds files/Sim_6riv_AR_ws_2022_01_23.rds")
+ws_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_ws_2022_01_23.rds")
 
 ## Import within sample data
-source("DataSource_6rivers_oos.R")
+source("DataSource_6rivers_oos_StreamLight.R")
 
 # Out-of-sample predictions
-oos_AR <- readRDS("./rds files/Sim_6riv_AR_oos.rds")
-oos_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_oos.rds")
+oos_AR <- readRDS("./rds files/Sim_6riv_AR_oos_2022_02_01.rds")
+oos_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_oos_2022_02_01.rds")
 
 ##################################
 ## Extract and calculate RMSE
@@ -59,7 +59,7 @@ RMSE_oos_Ricker <- RMSE_extract(oos_Ricker,"OOS","Ricker")
 
 RMSE_all <- rbind(RMSE_ws_AR, RMSE_oos_AR, RMSE_ws_Ricker, RMSE_oos_Ricker)
 
-saveRDS(RMSE_all, "./rds files/RMSE_all_2021_05_17.rds")
+saveRDS(RMSE_all, "./rds files/RMSE_all_2022_02_01.rds")
 
 ###########################################################################
 ## Figure out RMSE if just using last year's data to predict this year
@@ -130,7 +130,7 @@ OOS_prev_yr_plot <-ggplot(RMSE_OOS_wide, aes(RMSE_among_yrs, median, color=short
   geom_abline(slope=1, intercept = 0)+
   facet_wrap(~model_type)+
   labs(x="Previous year prediction RMSE",y="Out-of-sample prediction RMSE")+
-  coord_cartesian(ylim = c(0,20))
+  coord_cartesian(ylim = c(0,12))
 OOS_prev_yr_plot
 
 
@@ -159,7 +159,7 @@ WS_plot <- ggplot(RMSE_WS_wide, aes(short_name, median))+
   labs(x="Previous year prediction RMSE",y="Within-sample prediction RMSE")+
   coord_cartesian(ylim = c(0,20))
 
-plot_grid(WS_plot, OOS_prev_yr_plot, align = "hv", nrow=1)
+plot_grid(WS_plot, OOS_prev_yr_plot+theme(legend.position = "none"), align = "hv", nrow=2)
 
 ################################
 ## AR vs Ricker OOS comparison
@@ -174,21 +174,14 @@ oos_biplot_AR <- spread(oos_biplot_AR, key = quant, value=RMSE)
 colnames(oos_biplot_AR) <- c("site_name","model_type","AR_lowerCI","AR_median","AR_upperCI")
 
 oos_biplot <- merge(oos_biplot_AR, oos_biplot_R, by="site_name")
-
-oos_biplot$short_name <- revalue(as.character(oos_biplot$site_name), replace = c("nwis_05406457"="Black Earth Creek, WI",
-                                                                                 "nwis_01656903"="Fatlick Branch, VA",
-                                                                                 "nwis_07191222"="Beaty Creek, OK",
-                                                                                 "nwis_14206950"="Fanno Creek, OR",
-                                                                                 "nwis_01608500"="South Branch Potomac River, WV",
-                                                                                 "nwis_11273400"="San Joaquin River, CA"))
-
+oos_biplot <- merge(oos_biplot, site_info, by="site_name")
 
 six_RMSE_plot <- ggplot(oos_biplot, aes(AR_median, Ricker_median, color=short_name))+
   geom_abline(slope = 1, intercept = 0)+
   geom_point(size=3)+
   geom_errorbar(aes(ymin=Ricker_lowerCI, ymax=Ricker_upperCI, color=short_name), size=0.5)+
   geom_errorbarh(aes(xmin=AR_lowerCI, xmax=AR_upperCI, color=short_name), size=0.5)+
-  coord_cartesian(xlim = c(0,10),y=c(0,10))+
+  coord_cartesian(xlim = c(0,12),y=c(0,12))+
   scale_x_continuous(expand = c(0,0))+scale_y_continuous(expand = c(0,0))+
   theme_bw()+
   labs(x="Phenomenological model OOS RMSE",

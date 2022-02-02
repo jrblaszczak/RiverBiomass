@@ -1,4 +1,7 @@
-## Out-of-sample predictions
+##==============================================================================
+## Script for out-of-sample prediction comparison
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
@@ -50,8 +53,8 @@ GPP_oos_preds <- function(preds, df){
 
 }
 
-STS_simdat <- GPP_oos_preds("./rds files/Sim_6riv_AR_oos.rds",df)
-LB_simdat <- GPP_oos_preds("./rds files/Sim_6riv_Ricker_oos.rds",df)
+STS_simdat <- GPP_oos_preds("./rds files/Sim_6riv_AR_oos_2022_02_01.rds",df)
+LB_simdat <- GPP_oos_preds("./rds files/Sim_6riv_Ricker_oos_2022_02_01.rds",df)
 
 ### Overlain
 scaleFUN <- function(x) sprintf("%.1f", x)
@@ -107,14 +110,6 @@ x.grob <- textGrob("Date",
 
 #add to plot
 grid.arrange(arrangeGrob(all_plot, left = y.grob, bottom = x.grob))
-
-
-
-
-
-
-
-
 
 
 ###############################
@@ -248,26 +243,3 @@ ggplot(STS_simdat, aes(GPP, sim_GPP))+
 
 
 
-########
-## OLD
-#######
-
-
-
-blank_data <- data.frame(group = c("Proctor Creek, GA","Proctor Creek, GA",
-                                   "Paint Branch, MD","Paint Branch, MD",
-                                   "Beaty Creek, OK","Beaty Creek, OK",
-                                   "S. Br. Potomac River, WV","S. Br. Potomac River, WV",
-                                   "Santa Margarita River, CA","Santa Margarita River, CA",
-                                   "Pecos River, TX", "Pecos River, TX"),
-                         x = 0, y = c(0,8,
-                                      0,40,
-                                      0,50,
-                                      0,20,
-                                      0,20,
-                                      0,30))
-
-## Plot it in ggplot
-ggplot() + geom_point(data = foo.dat, aes(x = x, y = y, colour = group), size = 4) + 
-  geom_blank(data = blank_data, aes(x = x, y = y)) + facet_wrap(~group, scales = "free_y") + 
-  expand_limits(y = 0) + scale_y_continuous(expand = c(0, 0)) + theme_bw()

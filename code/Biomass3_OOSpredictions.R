@@ -89,8 +89,7 @@ Ricker_sim_fxn <- function(x){
   
 }
 
-plot(PM_Ricker(r = 0.4, lambda = -0.02, s = 1.2, c = 0.5, sig_p = 0.2, sig_o = 0.5, df = df$nwis_11044000))
-
+#plot(PM_Ricker(r = 0.4, lambda = -0.02, s = 1.2, c = 0.5, sig_p = 0.2, sig_o = 0.5, df = df$nwis_11044000))
 
 Ricker_sim <- lapply(Ricker_list, function(x) Ricker_sim_fxn(x))
 
