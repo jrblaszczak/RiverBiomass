@@ -16,11 +16,11 @@ PM_AR <- function(phi, alpha, beta, sig_p, sig_o, df) {
   
   ## Process model
   for (j in 2:Ndays) {
-    l_pred_GPP[j] = MCMCglmm::rtnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p, lower=-5, upper=5)
+    l_pred_GPP[j] = MCMCglmm::rtnorm(1, mean=phi*l_pred_GPP[j-1] + alpha*light[j] + beta*tQ[j], sd = sig_p, upper=5)
   }
   
   for (i in 2:Ndays){
-  pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = exp(l_pred_GPP[i]), sd = sig_o, lower=0.01, upper = 50)
+  pred_GPP[i] <- MCMCglmm::rtnorm(1, mean = exp(l_pred_GPP[i]), sd = sig_o, lower=0.01)
   }
   
   return(pred_GPP)

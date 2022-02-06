@@ -1,6 +1,6 @@
 ##==============================================================================
 ## Script for compiling and formatting data with stream light for stan
-## Second Year (out of sample)
+## Second Year - out of sample prediction
 ## Code author: J.R. Blaszczak
 ##==============================================================================
 
@@ -92,4 +92,7 @@ for(i in 1:nrow(prev_max)){
 }
 names(dat_oos) <- prev_max$site_name
 
-rm(data, data_siteyears, prev_max, prev_dat, post_dat, prev_post, i, oos_relativize)
+rm(data, SL, data_siteyears, prev_max, prev_dat, post_dat, prev_post, i, oos_relativize)
+
+#lapply(dat_oos, function(x) ggplot(x, aes(date, tQ))+geom_line())
+
