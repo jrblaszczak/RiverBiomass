@@ -31,6 +31,17 @@ oos_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_oos_2022_02_01.rds")
 ## Extract and calculate RMSE
 ##################################
 
+
+
+hist(ws_AR$nwis_01608500[[2]])
+abline(v = mean(ws_AR$nwis_01608500[[2]]))
+abline(v = median(ws_AR$nwis_01608500[[2]]))
+
+
+
+
+
+
 ## extract RMSE summary stats
 RMSE_extract <- function(pred_rmse_list,WS_or_OOS,model.type){
   
@@ -59,7 +70,7 @@ RMSE_oos_Ricker <- RMSE_extract(oos_Ricker,"OOS","Ricker")
 
 RMSE_all <- rbind(RMSE_ws_AR, RMSE_oos_AR, RMSE_ws_Ricker, RMSE_oos_Ricker)
 
-saveRDS(RMSE_all, "./rds files/RMSE_all_2022_02_01.rds")
+#saveRDS(RMSE_all, "./rds files/RMSE_all_2022_02_01.rds")
 
 ###########################################################################
 ## Figure out RMSE if just using last year's data to predict this year
