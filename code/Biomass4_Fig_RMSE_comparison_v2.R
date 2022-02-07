@@ -54,19 +54,26 @@ rmse_calcs <- function(dat_source, p, pred_type){
   rmse_df <- as.data.frame(cbind(names(dat_ws), rmse_list))
   colnames(rmse_df) <- c("site_name", "rmse")
   rmse_df$pred_type <- pred_type
+  rmse_df$rmse <- as.numeric(rmse_df$rmse)
   return(rmse_df)
 }
 
 rmse_values <- rbind(rmse_calcs(dat_ws, med_preds$ws_AR, "Within-Sample S-TS"),
                      rmse_calcs(dat_ws, med_preds$ws_Ricker, "Within-Sample LB-TS"),
-                     rmse_calcs(dat_oos, med_preds$oos_AR, "Out-Of-Sample S-TS"),
-                     rmse_calcs(dat_oos, med_preds$oos_Ricker, "Out-Of-Sample LB-TS"))
+                     rmse_calcs(dat_oos, med_preds$oos_AR, "Out-of-Sample S-TS"),
+                     rmse_calcs(dat_oos, med_preds$oos_Ricker, "Out-of-Sample LB-TS"))
 
 
+rmse_spread <- spread(data = rmse_values, key = pred_type, value = rmse)
 
+ggplot(rmse_spread, aes(`Within-Sample S-TS`, `Within-Sample LB-TS`, color = factor(site_name)))+
+  geom_abline(slope = 1, intercept = 0)+
+  geom_point(size=4)+
+  theme_bw()
 
-
-
-
+ggplot(rmse_spread, aes(`Out-of-Sample S-TS`, `Out-of-Sample LB-TS`, color = factor(site_name)))+
+  geom_abline(slope = 1, intercept = 0)+
+  geom_point(size=4)+
+  theme_bw()
 
 
