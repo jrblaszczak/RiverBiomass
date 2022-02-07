@@ -31,19 +31,8 @@ oos_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_oos_2022_02_01.rds")
 ## Extract and calculate RMSE
 ##################################
 
-
-
-hist(ws_AR$nwis_01608500[[2]])
-abline(v = mean(ws_AR$nwis_01608500[[2]]))
-abline(v = median(ws_AR$nwis_01608500[[2]]))
-
-
-
-
-
-
 ## extract RMSE summary stats
-RMSE_extract <- function(pred_rmse_list,WS_or_OOS,model.type){
+RMSE_extract <- function(pred_rmse_list, WS_or_OOS, model.type){
   
   rmsemat <- ldply(lapply(pred_rmse_list, function(x) return(x[[2]])), data.frame)
   colnames(rmsemat) <- c("site_name","RMSE")
@@ -63,10 +52,10 @@ RMSE_extract <- function(pred_rmse_list,WS_or_OOS,model.type){
 }
 
 ## Summarize for each model
-RMSE_ws_AR <- RMSE_extract(ws_AR,"WS","AR")
+RMSE_ws_AR <- RMSE_extract(ws_AR, "WS","AR")
 RMSE_oos_AR <- RMSE_extract(oos_AR,"OOS","AR")
-RMSE_ws_Ricker <- RMSE_extract(ws_Ricker,"WS","Ricker")
-RMSE_oos_Ricker <- RMSE_extract(oos_Ricker,"OOS","Ricker")
+RMSE_ws_Ricker <- RMSE_extract(ws_Ricker, "WS","Ricker")
+RMSE_oos_Ricker <- RMSE_extract(oos_Ricker, "OOS","Ricker")
 
 RMSE_all <- rbind(RMSE_ws_AR, RMSE_oos_AR, RMSE_ws_Ricker, RMSE_oos_Ricker)
 
