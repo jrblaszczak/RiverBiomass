@@ -22,7 +22,7 @@ PM_Gompertz.col <- "#1C474D"
 ## Extract 
 ###################################################
 ## Import stan fits - simulate one at a time
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2021_06_01.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_01_23.rds")
 #2nd yr
 #stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2021_06_15.rds")
 #source("DataSource_6rivers_2ndYr_StreamLight.R")
@@ -73,7 +73,6 @@ persistence_list <- function(y, data){
 P_R <- persistence_list(par_Ricker, df)
 #P_G <- persistence_list(par_Gompertz, df)
 
-
 ## plot
 plotting_P_dat <- function(x){
   pq <- seq(x$range[1],x$range[2], length=length(x$s))
@@ -82,7 +81,7 @@ plotting_P_dat <- function(x){
   p_down <- numeric()
   name <- substring(deparse(substitute(x)),7)
   for(i in 1:length(pq)){
-    temp <- exp(-exp(x$s*(pq[i]-x$c)))
+    temp <- exp(-exp(x$s*100*(pq[i]-x$c)))
     p_median[i] <- median(temp)
     p_up[i] <- quantile(temp, probs = 0.975)
     p_down[i] <- quantile(temp, probs = 0.025)
@@ -194,7 +193,8 @@ ggplot(test, aes(Q, fill = short_name))+
   geom_density(color="black")+
   scale_fill_viridis("Site", discrete = TRUE, alpha=0.6, option="A") +
   scale_x_continuous(trans="log")+
-  theme(axis.text.x = element_text(angle=45, hjust=1))
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  theme_bw()
 
 
 #########################
@@ -217,7 +217,7 @@ sc_plotting <- function(z, t){
           axis.title = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15))+
-    facet_wrap(~short_name, ncol = 2)+
+    facet_wrap(~short_name, ncol = 2, scales = "free_y")+
     labs(title = t)
   
 }
