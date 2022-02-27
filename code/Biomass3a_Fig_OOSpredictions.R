@@ -53,8 +53,8 @@ GPP_oos_preds <- function(preds, df){
 
 }
 
-STS_simdat <- GPP_oos_preds("./rds files/Sim_6riv_AR_oos_2022_02_01.rds",df)
-LB_simdat <- GPP_oos_preds("./rds files/Sim_6riv_Ricker_oos_2022_02_01.rds",df)
+STS_simdat <- GPP_oos_preds("./rds files/Sim_6riv_AR_oos_2022_02_27.rds",df)
+LB_simdat <- GPP_oos_preds("./rds files/Sim_6riv_Ricker_oos_2022_02_27.rds",df)
 
 ### Overlain
 scaleFUN <- function(x) sprintf("%.1f", x)
@@ -66,7 +66,7 @@ overlainGPP_plot <- function(y){
   LB_simdat_site <- LB_simdat[which(LB_simdat$short_name == site),]
   
   plot <- ggplot(STS_simdat_site, aes(Date, GPP))+
-    geom_point(size=2, color="black")+
+    geom_point(size=1.5, color="black")+
     
     geom_line(aes(Date, sim_GPP), color=PM_AR.col, size=1.2)+
     geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
@@ -82,7 +82,7 @@ overlainGPP_plot <- function(y){
           axis.title.y = element_blank(), axis.text.x = element_text(angle=25, hjust = 1),
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15))+
-    coord_cartesian(ylim=c(0,max(LB_simdat_site$sim_GPP_upper)*1.2))+
+    #coord_cartesian(ylim=c(0,max(LB_simdat_site$sim_GPP_upper)*1.2))+
     scale_y_continuous(labels=scaleFUN)+
     #labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
     facet_wrap(~short_name, scales = "free", ncol = 2)

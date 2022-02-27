@@ -21,15 +21,15 @@ source("DataSource_6rivers_StreamLight.R")
 dat_ws <- df
 
 # Within-sample predictions
-ws_AR <- readRDS("./rds files/Sim_6riv_AR_ws_2022_01_23.rds")
-ws_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_ws_2022_01_23.rds")
+ws_AR <- readRDS("./rds files/Sim_6riv_AR_ws_2022_02_27.rds")
+ws_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_ws_2022_02_27.rds")
 
 ## Import within sample data
 source("DataSource_6rivers_oos_StreamLight.R")
 
 # Out-of-sample predictions
-oos_AR <- readRDS("./rds files/Sim_6riv_AR_oos_2022_02_01.rds")
-oos_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_oos_2022_02_01.rds")
+oos_AR <- readRDS("./rds files/Sim_6riv_AR_oos_2022_02_27.rds")
+oos_Ricker <- readRDS("./rds files/Sim_6riv_Ricker_oos_2022_02_27.rds")
 
 ########################################
 ## Extract median daily GPP predictions
