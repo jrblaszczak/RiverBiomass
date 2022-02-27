@@ -1,4 +1,7 @@
-## Figure - Persistence Curves
+##==============================================================================
+## Script for persistence curve plots
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
@@ -22,7 +25,7 @@ PM_Gompertz.col <- "#1C474D"
 ## Extract 
 ###################################################
 ## Import stan fits - simulate one at a time
-stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_01_23.rds")
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_02_27.rds")
 #2nd yr
 #stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2021_06_15.rds")
 #source("DataSource_6rivers_2ndYr_StreamLight.R")
@@ -222,7 +225,7 @@ sc_plotting <- function(z, t){
   
 }
 
-sc_plotting(sc_R, "Productivity Model: Ricker")
+sc_plotting(sc_R, "LB-TS Productivity Model")
 #sc_plotting(sc_G, "PM4: Gompertz")
 
 

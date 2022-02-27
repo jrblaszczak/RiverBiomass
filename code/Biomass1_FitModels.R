@@ -1,5 +1,5 @@
 ##==============================================================================
-## Script for fitting stan models to data
+## Script for fitting stan models to first year of 2 year data
 ## Code author: J.R. Blaszczak
 ##==============================================================================
 
