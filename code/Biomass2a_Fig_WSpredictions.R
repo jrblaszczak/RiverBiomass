@@ -1,4 +1,7 @@
-## Within-sample predictions
+##==============================================================================
+## Script for within-sample predictions figure
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
@@ -20,7 +23,7 @@ PM_Gompertz.col <- "#1C474D"
 ##########################
 ## Model 1 Output - AR
 #########################
-simmat1_list <- readRDS("./rds files/Sim_6riv_AR_ws_2022_01_23.rds")
+simmat1_list <- readRDS("./rds files/Sim_6riv_AR_ws_2022_02_27.rds")
 
 # For every day extract median and CI
 median_simmat1 <- ldply(lapply(simmat1_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)
@@ -61,7 +64,7 @@ df_sim1_plot
 ###############################
 ## Model 2 Output - Ricker
 ###############################
-simmat3_list <- readRDS("./rds files/Sim_6riv_Ricker_ws_2022_01_23.rds")
+simmat3_list <- readRDS("./rds files/Sim_6riv_Ricker_ws_2022_02_27.rds")
 
 # For every day extract median and CI
 median_simmat3 <- ldply(lapply(simmat3_list, function(z) apply(z[[1]], 1, function(x) median(x))), data.frame)

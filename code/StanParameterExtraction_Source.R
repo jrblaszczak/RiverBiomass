@@ -2,16 +2,15 @@
 ## Extract Stan Parameter Estimates 
 #######################################
 
-## For phenomenological model (Model 1) with GPP on a log scale
+## For S-TS
 
-phenom_extract_medians <- function(PM_par){
+STS_extract_medians <- function(PM_par){
   
   ## Summarize parameters
   med_par_PM <- function(par) {
     
     ## Find the med of all
     med_par <- lapply(par, function(x) median(x))
-    sd_par <- lapply(par, function(x) median(x))
     
     ## med of ts parameters
     med_pred_GPP_ts <- apply(exp(par$l_pred_GPP),2,median)
@@ -31,16 +30,15 @@ phenom_extract_medians <- function(PM_par){
 }
 
 
-## For mechanistic model 2 with latent biomass
+## For LB-TS model
 
-mechB_extract_medians <- function(PM_par){
+LBTS_extract_medians <- function(PM_par){
   
   ## Summarize parameters
   med_par_PM <- function(par) {
     
     ## Find the med of all
     med_par <- lapply(par, function(x) median(x))
-    sd_par <- lapply(par, function(x) median(x))
     
     ## med of ts parameters
     med_pred_GPP_ts <- apply(par$pred_GPP,2,median)
@@ -71,7 +69,7 @@ mechB_extract_medians <- function(PM_par){
 ## For mechanistic model 2 with latent biomass
 # random parameter set to simulate data
 
-mechB_randpar <- function(PM_par){
+LBTS_randpar <- function(PM_par){
   
   ## Summarize parameters
   rand_par_PM <- function(par) {
