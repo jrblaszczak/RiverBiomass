@@ -13,8 +13,18 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
 
 
 ######################
-## S-TS description
+## LB-TS description
 ######################
+
+
+#############################################
+## Persistence and critical flow thresholds
+#############################################
+## Import stan model fit
+stan_model_output_STS <- readRDS("./rds files/stan_6riv_output_AR_2022_02_22.rds")
+
+
+
 
 
 
