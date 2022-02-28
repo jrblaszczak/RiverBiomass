@@ -48,7 +48,3 @@ PM_outputlist_Ricker <- lapply(stan_data_l,
 saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_2ndYr_output_Ricker_2022_02_27.rds")
 
 
-
-
-
-
