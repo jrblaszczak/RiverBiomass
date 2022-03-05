@@ -93,10 +93,11 @@ crits$Q_2yrRI_cms <- crits$RI_2yr_Q/35.314666212661
 maxQ_obs <- ldply(lapply(df, function(x) max(x$Q)), data.frame)
 colnames(maxQ_obs) <- c("site_name","Q_maxobs_cms")
 crits <- merge(crits,maxQ_obs,by="site_name")
+sapply(crits,class)
+crits$Qc_cms <- as.numeric(crits$Qc_cms)
 
 ## visualize
 Qc_plot_df <- gather(crits[,c("short_name","Qc_cms","Q_2yrRI_cms","Q_maxobs_cms")], Q_type, Q_cms, Qc_cms:Q_maxobs_cms)
-Qc_plot_df$Q_cms <- as.numeric(Qc_plot_df$Q_cms)
 ##order
 Qc_plot_df$short_name <- factor(Qc_plot_df$short_name, levels= site_order_list)
 Qc_plot_df$Q_type <- factor(Qc_plot_df$Q_type, levels= c("Qc_cms","Q_maxobs_cms","Q_2yrRI_cms"))
@@ -123,9 +124,28 @@ ggplot(Qc_plot_df, aes(fill=Q_type, y=Q_cms+1, x=short_name)) +
         legend.text = element_text(size=18), legend.position = c(0.85,0.85),
         axis.title = element_text(size=20))
 
+## Quantify differences
+crits$Qc_Qmax_pct <- crits$Qc_cms/crits$Q_maxobs_cms
+crits$Qc_Q2yr_pct <- crits$Qc_cms/crits$Q_2yrRI_cms
+## ranges
+range(crits$Qc_Qmax_pct)*100; median(crits$Qc_Qmax_pct)*100 # range: 14 - 101%; median: 36%
+range(crits$Qc_Q2yr_pct)*100; median(crits$Qc_Q2yr_pct)*100 # range: 3 - 72%; median: 16%
+## are smaller or larger streams more sensitive? which sites have trouble converging c
+c_eval <- merge(crits, c_sites, by="site_name")
 
 
+## visualize
+Qc_pct_df <- gather(crits[,c("short_name","Qc_Qmax_pct","Qc_Q2yr_pct")], pct_type, Pct, Qc_Qmax_pct:Qc_Q2yr_pct)
 
+Qc_pct_df$short_name <- factor(Qc_pct_df$short_name, levels= site_order_list)
+ggplot(Qc_pct_df, aes(x=short_name,y=Pct, fill = pct_type)) + 
+  geom_bar(position="dodge", stat="identity", color="black")+
+  theme(panel.background = element_rect(fill = "white", color="black"),
+        panel.grid = element_line(color = "gray85", linetype = "dashed", size = 0.2),
+        axis.text.x = element_text(size=15, angle=45, hjust=1), 
+        axis.text.y = element_text(size=15),
+        legend.text = element_text(size=18), legend.position = c(0.85,0.85),
+        axis.title = element_text(size=20))
 
 
 
