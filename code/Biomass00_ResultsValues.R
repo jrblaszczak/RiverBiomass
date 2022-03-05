@@ -7,6 +7,9 @@
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
          "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
 
+## Source data
+source("DataSource_6rivers_StreamLight.R")
+
 ########################################
 ## Parameter summaries
 ########################################
@@ -56,14 +59,51 @@ RI_2 <- read.csv("../data/RI_2yr_flood_6riv.csv", header=T)
 sapply(RI_2, class)
 site_info <- merge(site_info, RI_2, by="site_name")
 
+## Reimport c estimates (within-sample) if not already loaded
+pLBTS_sub <- read.csv("./tables/LBTS_ws_posteriorsubset_sum.csv", header=T)
+c_sites <- pLBTS_sub[which(pLBTS_sub$pars == "c"),]
+colnames(c_sites)[2] <- "site_name"
 
+## Convert c estimate to discharge
+c_Qc <- function(site, df, site_info, c_sites){
+  
+  Q_sub <- df[[site]]
+  
+  ## critical Q based on velocity
+  crit_Q <- site_info[which(site_info$site_name == site),]$RI_2yr_Q
+  
+  ## convert c to critical Q based on GPP (Qc)
+  Qc <- c_sites[which(c_sites$site_name == site),]$X50.*max(Q_sub$Q, na.rm = T)
+  Qc <- as.data.frame(cbind(Qc, site))
+  
+  return(Qc)
 
+}
 
+## convert across all sites
+site_list <- levels(as.factor(site_info$site_name))
+Qc_all <- ldply(lapply(site_list, function(x) c_Qc(x,df,site_info,c_sites)), data.frame)
+colnames(Qc_all) <- c("Qc_cms", "site_name")
 
+## merge with site_info, convert 2 year flood to cms (divide by 35.314666212661), and calculate differences
+crits <- merge(site_info[,c("site_name","RI_2yr_Q","short_name")],Qc_all, by="site_name")
+crits$Q_2yrRI_cms <- crits$RI_2yr_Q/35.314666212661
+## what is the max Q observed in the site
+maxQ_obs <- ldply(lapply(df, function(x) max(x$Q)), data.frame)
+colnames(maxQ_obs) <- c("site_name","Q_maxobs_cms")
+crits <- merge(crits,maxQ_obs,by="site_name")
 
+## visualize
+Qc_plot_df <- gather(crits[,c("short_name","Qc_cms","Q_2yrRI_cms","Q_maxobs_cms")], Q_type, Q_cms, Qc_cms:Q_maxobs_cms)
+Qc_plot_df$Q_cms <- as.numeric(Qc_plot_df$Q_cms)
+##order
+Qc_plot_df$short_name <- factor(Qc_plot_df$short_name, levels= site_order_list)
+Qc_plot_df$Q_type <- factor(Qc_plot_df$Q_type, levels= c("Qc_cms","Q_maxobs_cms","Q_2yrRI_cms"))
 
-
-
+ggplot(Qc_plot_df, aes(fill=Q_type, y=Q_cms+1, x=short_name)) + 
+  geom_bar(position="dodge", stat="identity")+
+  scale_y_continuous(trans="log")+
+  theme_bw()
 
 
 
