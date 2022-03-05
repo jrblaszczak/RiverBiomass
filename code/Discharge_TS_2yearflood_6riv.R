@@ -1,4 +1,7 @@
-## Discharge Data Retrieval
+##==============================================================================
+## Script for estimating 2 year flood at each river
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
