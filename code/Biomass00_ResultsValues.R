@@ -5,7 +5,8 @@
 
 # load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
-         "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm"), require, character.only=T)
+         "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm",
+         "wesanderson"), require, character.only=T)
 
 ## Source data
 source("DataSource_6rivers_StreamLight.R")
@@ -99,11 +100,46 @@ Qc_plot_df$Q_cms <- as.numeric(Qc_plot_df$Q_cms)
 ##order
 Qc_plot_df$short_name <- factor(Qc_plot_df$short_name, levels= site_order_list)
 Qc_plot_df$Q_type <- factor(Qc_plot_df$Q_type, levels= c("Qc_cms","Q_maxobs_cms","Q_2yrRI_cms"))
+## colors
+Qcol <- c(wes_palette("Moonrise2")[2],wes_palette("Moonrise2")[1],wes_palette("Moonrise2")[4])
 
+## plot
 ggplot(Qc_plot_df, aes(fill=Q_type, y=Q_cms+1, x=short_name)) + 
-  geom_bar(position="dodge", stat="identity")+
-  scale_y_continuous(trans="log")+
-  theme_bw()
+  geom_bar(position="dodge", stat="identity", color="black")+
+  scale_y_continuous(trans="log", breaks=c(0+1, 10+1, 100+1, 1000+1),
+                     labels=c("0", "10", "100","1,000"),
+                     limits = c(0+1, 1000+1))+
+  xlab("River") + ylab("Discharge (cms)")+
+  scale_fill_manual("", values = c("Qc_cms" = Qcol[1],
+                                        "Q_maxobs_cms" = Qcol[2],
+                                        "Q_2yrRI_cms" = Qcol[3]),
+                    labels = c("Qc_cms" = expression(paste("Estimated ",Q[c])),
+                               "Q_maxobs_cms" = expression(paste("Observed ",Q[max])),
+                               "Q_2yrRI_cms" = "2-year RI Q"))+
+  theme(panel.background = element_rect(fill = "white", color="black"),
+        panel.grid = element_line(color = "gray85", linetype = "dashed", size = 0.2),
+        axis.text.x = element_text(size=15, angle=45, hjust=1), 
+        axis.text.y = element_text(size=15),
+        legend.text = element_text(size=18), legend.position = c(0.85,0.85),
+        axis.title = element_text(size=20))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
