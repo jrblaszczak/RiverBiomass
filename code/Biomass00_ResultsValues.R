@@ -167,9 +167,6 @@ ggplot(Qc_pct_df, aes(x=short_name,y=Pct, fill = pct_type)) +
         legend.text = element_text(size=18), legend.position = c(0.15,0.85),
         axis.title = element_text(size=20))
 
-## Create a table
-
-
 
 
 ## evaluate patterns in s
@@ -177,9 +174,11 @@ s_sites <- pLBTS_sub[which(pLBTS_sub$pars == "s"),]
 colnames(s_sites)[2] <- "site_name"
 s_sites <- merge(s_sites, site_info[,c("site_name","short_name")], by="site_name")
 
+## visualize
+s_sites$short_name <- factor(s_sites$short_name, levels= site_order_list)
 
-
-
+ggplot(s_sites, aes(x = short_name, y = X50.))+
+  geom_bar(stat = "identity")
 
 
 
