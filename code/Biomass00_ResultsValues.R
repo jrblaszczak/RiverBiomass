@@ -75,16 +75,18 @@ c_Qc <- function(site, df, site_info, c_sites){
   
   ## convert c to critical Q based on GPP (Qc)
   Qc <- c_sites[which(c_sites$site_name == site),]$X50.*max(Q_sub$Q, na.rm = T)
-  Qc <- as.data.frame(cbind(Qc, site))
+  Qc_lower <- c_sites[which(c_sites$site_name == site),]$X2.5.*max(Q_sub$Q, na.rm = T)
+  Qc_upper <- c_sites[which(c_sites$site_name == site),]$X97.5.*max(Q_sub$Q, na.rm = T)
+  Qc_lmu <- as.data.frame(cbind(Qc,Qc_lower, Qc_upper, site))
   
-  return(Qc)
+  return(Qc_lmu)
 
 }
 
 ## convert across all sites
 site_list <- levels(as.factor(site_info$site_name))
 Qc_all <- ldply(lapply(site_list, function(x) c_Qc(x,df,site_info,c_sites)), data.frame)
-colnames(Qc_all) <- c("Qc_cms", "site_name")
+colnames(Qc_all) <- c("Qc_cms","Qc_lower_cms","Qc_upper_cms", "site_name")
 
 ## merge with site_info, convert 2 year flood to cms (divide by 35.314666212661), and calculate differences
 crits <- merge(site_info[,c("site_name","RI_2yr_Q","short_name")],Qc_all, by="site_name")
@@ -94,10 +96,15 @@ maxQ_obs <- ldply(lapply(df, function(x) max(x$Q)), data.frame)
 colnames(maxQ_obs) <- c("site_name","Q_maxobs_cms")
 crits <- merge(crits,maxQ_obs,by="site_name")
 sapply(crits,class)
-crits$Qc_cms <- as.numeric(crits$Qc_cms)
+crits[,c("Qc_cms","Qc_lower_cms","Qc_upper_cms")] <- apply(crits[,c("Qc_cms","Qc_lower_cms","Qc_upper_cms")], 2, function(x) as.numeric(x))
 
 ## visualize
 Qc_plot_df <- gather(crits[,c("short_name","Qc_cms","Q_2yrRI_cms","Q_maxobs_cms")], Q_type, Q_cms, Qc_cms:Q_maxobs_cms)
+## Add in uncertainty estimates
+cUI <- crits[,c("short_name","Qc_lower_cms","Qc_upper_cms")]
+cUI$Q_type <- "Qc_cms"
+Qc_plot_df <- merge(Qc_plot_df, cUI, by=c("short_name","Q_type"), all = TRUE)
+
 ##order
 Qc_plot_df$short_name <- factor(Qc_plot_df$short_name, levels= site_order_list)
 Qc_plot_df$Q_type <- factor(Qc_plot_df$Q_type, levels= c("Qc_cms","Q_maxobs_cms","Q_2yrRI_cms"))
@@ -106,7 +113,9 @@ Qcol <- c(wes_palette("Moonrise2")[2],wes_palette("Moonrise2")[1],wes_palette("M
 
 ## plot
 ggplot(Qc_plot_df, aes(fill=Q_type, y=Q_cms+1, x=short_name)) + 
-  geom_bar(position="dodge", stat="identity", color="black")+
+  geom_bar(position=position_dodge(), stat="identity", color="black")+
+  geom_errorbar(aes(ymin = (Qc_lower_cms+1), ymax = (Qc_upper_cms+1)),
+                width=0.2, position = position_dodge(0.9), size=0.8)+
   scale_y_continuous(trans="log", breaks=c(0+1, 10+1, 100+1, 1000+1),
                      labels=c("0", "10", "100","1,000"),
                      limits = c(0+1, 1000+1))+
@@ -114,15 +123,17 @@ ggplot(Qc_plot_df, aes(fill=Q_type, y=Q_cms+1, x=short_name)) +
   scale_fill_manual("", values = c("Qc_cms" = Qcol[1],
                                         "Q_maxobs_cms" = Qcol[2],
                                         "Q_2yrRI_cms" = Qcol[3]),
-                    labels = c("Qc_cms" = expression(paste("Estimated ",Q[c])),
+                    labels = c("Qc_cms" = expression(paste("Median Est. ",Q[c])),
                                "Q_maxobs_cms" = expression(paste("Observed ",Q[max])),
                                "Q_2yrRI_cms" = "2-year RI Q"))+
-  theme(panel.background = element_rect(fill = "white", color="black"),
+    theme(panel.background = element_rect(fill = "white", color="black"),
         panel.grid = element_line(color = "gray85", linetype = "dashed", size = 0.2),
         axis.text.x = element_text(size=15, angle=45, hjust=1), 
         axis.text.y = element_text(size=15),
         legend.text = element_text(size=18), legend.position = c(0.85,0.85),
         axis.title = element_text(size=20))
+
+
 
 ## Quantify differences
 crits$Qc_Qmax_pct <- crits$Qc_cms/crits$Q_maxobs_cms
@@ -136,23 +147,35 @@ c_eval <- merge(crits, c_sites, by="site_name")
 
 ## visualize
 Qc_pct_df <- gather(crits[,c("short_name","Qc_Qmax_pct","Qc_Q2yr_pct")], pct_type, Pct, Qc_Qmax_pct:Qc_Q2yr_pct)
-
 Qc_pct_df$short_name <- factor(Qc_pct_df$short_name, levels= site_order_list)
-ggplot(Qc_pct_df, aes(x=short_name,y=Pct, fill = pct_type)) + 
+Qc_pct_df$pct_type <- factor(Qc_pct_df$pct_type, levels= c("Qc_Qmax_pct","Qc_Q2yr_pct"))
+
+Qpct_col <- c(wes_palette("Moonrise2")[1],wes_palette("Moonrise2")[4])
+
+ggplot(Qc_pct_df, aes(x=short_name,y=Pct, fill = pct_type)) +
   geom_bar(position="dodge", stat="identity", color="black")+
+  scale_y_continuous(labels = function(x) paste0(x * 100, '%'))+
+  xlab("River") + ylab("Percent")+
+  scale_fill_manual("", values = c("Qc_Qmax_pct" = Qpct_col[1],
+                                   "Qc_Q2yr_pct" = Qpct_col[2]),
+                    labels = c("Qc_Qmax_pct" = expression(paste("% ",Q[c],"/",Q[max])),
+                               "Qc_Q2yr_pct" = expression(paste("%",Q[c],"/",Q["2yr"]))))+
   theme(panel.background = element_rect(fill = "white", color="black"),
         panel.grid = element_line(color = "gray85", linetype = "dashed", size = 0.2),
         axis.text.x = element_text(size=15, angle=45, hjust=1), 
         axis.text.y = element_text(size=15),
-        legend.text = element_text(size=18), legend.position = c(0.85,0.85),
+        legend.text = element_text(size=18), legend.position = c(0.15,0.85),
         axis.title = element_text(size=20))
 
+## Create a table
 
 
 
 
-
-
+## evaluate patterns in s
+s_sites <- pLBTS_sub[which(pLBTS_sub$pars == "s"),]
+colnames(s_sites)[2] <- "site_name"
+s_sites <- merge(s_sites, site_info[,c("site_name","short_name")], by="site_name")
 
 
 
