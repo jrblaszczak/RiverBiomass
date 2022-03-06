@@ -55,6 +55,11 @@ write.csv(pLBTS_sub, "./tables/LBTS_ws_posteriorsubset_sum.csv")
 #############################################
 ## Critical flow thresholds and sensitivity
 #############################################
+
+##
+## 1 - Magnitude of c relative to other flow metrics
+##
+
 ## Import and merge bankfull discharge with site info
 RI_2 <- read.csv("../data/RI_2yr_flood_6riv.csv", header=T)
 sapply(RI_2, class)
@@ -167,18 +172,73 @@ ggplot(Qc_pct_df, aes(x=short_name,y=Pct, fill = pct_type)) +
         legend.text = element_text(size=18), legend.position = c(0.15,0.85),
         axis.title = element_text(size=20))
 
-
+##
+## 2 - Patterns in s
+##
 
 ## evaluate patterns in s
 s_sites <- pLBTS_sub[which(pLBTS_sub$pars == "s"),]
 colnames(s_sites)[2] <- "site_name"
 s_sites <- merge(s_sites, site_info[,c("site_name","short_name")], by="site_name")
+range(s_sites$X50.); median(s_sites$X50.) # range: 1.26 - 1.74; median: 1.5
+
 
 ## visualize
 s_sites$short_name <- factor(s_sites$short_name, levels= site_order_list)
-
 ggplot(s_sites, aes(x = short_name, y = X50.))+
   geom_bar(stat = "identity")
+
+##
+## 3 - Change in c between first and second year
+##
+
+## Import 2nd year stan model fit
+Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_02_27.rds")
+Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_02_27.rds")
+## need stan_psum function from above
+
+pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
+#STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
+write.csv(pSTS2, "./tables/STS_ws_posterior_sum_Yr2.csv")
+pSTS2_sub <- pSTS2[which(pSTS2$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
+write.csv(pSTS2_sub, "./tables/STS_ws_posteriorsubset_sum_Yr2.csv")
+
+pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
+#LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
+write.csv(pLBTS2, "./tables/LBTS_ws_posterior_sum_Yr2.csv")
+pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
+write.csv(pLBTS2_sub, "./tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################
+## Hysteresis
+######################
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

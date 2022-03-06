@@ -34,7 +34,7 @@ PM_outputlist_AR <- lapply(stan_data_l,
                            function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
                                                    data=x, chains=4, iter=5000,
                                                    control=list(max_treedepth=12, adapt_delta=0.95)))
-saveRDS(PM_outputlist_AR, "stan_6riv_2ndYr_output_AR_2022_02_27.rds")
+saveRDS(PM_outputlist_AR, "stan_6riv_2ndYr_output_AR_2022_03_06.rds")
 
 
 ## PM 2 - Latent Biomass (Ricker)
@@ -45,6 +45,6 @@ PM_outputlist_Ricker <- lapply(stan_data_l,
                                function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
                                                 data=x, init = init_Ricker, chains=4, iter=5000,
                                                 control=list(max_treedepth=12, adapt_delta=0.95)))
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_2ndYr_output_Ricker_2022_02_27.rds")
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_2ndYr_output_Ricker_2022_03_06.rds")
 
 
