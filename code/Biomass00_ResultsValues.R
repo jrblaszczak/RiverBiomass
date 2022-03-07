@@ -186,15 +186,17 @@ range(s_sites$X50.); median(s_sites$X50.) # range: 1.26 - 1.74; median: 1.5
 ## visualize
 s_sites$short_name <- factor(s_sites$short_name, levels= site_order_list)
 ggplot(s_sites, aes(x = short_name, y = X50.))+
-  geom_bar(stat = "identity")
+  geom_bar(stat = "identity")+
+  geom_errorbar(aes(ymin=X2.5., ymax=X97.5.), width=0.2)+
+  theme_bw()
 
 ##
 ## 3 - Change in c between first and second year
 ##
 
 ## Import 2nd year stan model fit
-Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_02_27.rds")
-Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_02_27.rds")
+Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_03_06.rds")
+Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_03_06.rds")
 ## need stan_psum function from above
 
 pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
@@ -209,23 +211,21 @@ write.csv(pLBTS2, "./tables/LBTS_ws_posterior_sum_Yr2.csv")
 pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
 write.csv(pLBTS2_sub, "./tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
 
+## Create df with Yr1 and Yr2 median c values
+c1 <- pLBTS_sub[which(pLBTS_sub$pars == "c"), c(".id","X50.","n_eff_less10pct")]
+colnames(c1) <- c("site_name","median_c1","c1_nless10pct")
+c2 <- pLBTS2_sub[which(pLBTS2_sub$pars == "c"), c(".id","X50.","n_eff_less10pct")]
+colnames(c2) <- c("site_name","median_c2","c2_nless10pct")
 
-
-
-
-
-
-
-
-
-
-
-
+c12 <- merge(c1, c2, by="site_name")
+c12$c12_diff <- c12$median_c1 - c12$median_c2
 
 
 ######################
 ## Hysteresis
 ######################
+## See hysteresis code
+
 
 
 
