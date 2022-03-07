@@ -30,6 +30,9 @@ stan_psum <- function(x){
   
 }
 
+##
+## YEAR 1 ##
+##
 pSTS <- ldply(lapply(stan_model_output_STS, function(z) stan_psum(z)), data.frame)
 #STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
 write.csv(pSTS, "./tables/STS_ws_posterior_sum.csv")
@@ -41,6 +44,25 @@ pLBTS <- ldply(lapply(stan_model_output_LBTS, function(z) stan_psum(z)), data.fr
 write.csv(pLBTS, "./tables/LBTS_ws_posterior_sum.csv")
 pLBTS_sub <- pLBTS[which(pLBTS$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
 write.csv(pLBTS_sub, "./tables/LBTS_ws_posteriorsubset_sum.csv")
+
+##
+## YEAR 2 ##
+##
+Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_03_06.rds")
+Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_03_06.rds")
+## need stan_psum function from above
+
+pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
+#STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
+write.csv(pSTS2, "./tables/STS_ws_posterior_sum_Yr2.csv")
+pSTS2_sub <- pSTS2[which(pSTS2$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
+write.csv(pSTS2_sub, "./tables/STS_ws_posteriorsubset_sum_Yr2.csv")
+
+pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
+#LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
+write.csv(pLBTS2, "./tables/LBTS_ws_posterior_sum_Yr2.csv")
+pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
+write.csv(pLBTS2_sub, "./tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
 
 ######################
 ## S-TS description
@@ -55,7 +77,6 @@ write.csv(pLBTS_sub, "./tables/LBTS_ws_posteriorsubset_sum.csv")
 #############################################
 ## Critical flow thresholds and sensitivity
 #############################################
-
 ##
 ## 1 - Magnitude of c relative to other flow metrics
 ##
@@ -117,15 +138,15 @@ Qc_plot_df$Q_type <- factor(Qc_plot_df$Q_type, levels= c("Qc_cms","Q_maxobs_cms"
 Qcol <- c(wes_palette("Moonrise2")[2],wes_palette("Moonrise2")[1],wes_palette("Moonrise2")[4])
 
 ## plot
-ggplot(Qc_plot_df, aes(fill=Q_type, y=Q_cms+1, x=short_name)) + 
-  geom_bar(position=position_dodge(), stat="identity", color="black")+
+ggplot(Qc_plot_df, aes(color=Q_type, y=Q_cms+1, x=short_name)) + 
+  geom_point(size=4)+
   geom_errorbar(aes(ymin = (Qc_lower_cms+1), ymax = (Qc_upper_cms+1)),
-                width=0.2, position = position_dodge(0.9), size=0.8)+
-  scale_y_continuous(trans="log", breaks=c(0+1, 10+1, 100+1, 1000+1),
-                     labels=c("0", "10", "100","1,000"),
-                     limits = c(0+1, 1000+1))+
+                width=0.2, size=0.8)+
+  scale_y_continuous(trans="log", breaks=c(0.1+1, 10+1, 100+1, 1000+1),
+                     labels=c("0.1", "10", "100","1,000"),
+                     limits = c(0.1+1, 1000+1))+
   xlab("River") + ylab("Discharge (cms)")+
-  scale_fill_manual("", values = c("Qc_cms" = Qcol[1],
+  scale_color_manual("", values = c("Qc_cms" = Qcol[1],
                                         "Q_maxobs_cms" = Qcol[2],
                                         "Q_2yrRI_cms" = Qcol[3]),
                     labels = c("Qc_cms" = expression(paste("Median Est. ",Q[c])),
@@ -135,7 +156,11 @@ ggplot(Qc_plot_df, aes(fill=Q_type, y=Q_cms+1, x=short_name)) +
         panel.grid = element_line(color = "gray85", linetype = "dashed", size = 0.2),
         axis.text.x = element_text(size=15, angle=45, hjust=1), 
         axis.text.y = element_text(size=15),
-        legend.text = element_text(size=18), legend.position = c(0.85,0.85),
+        legend.title = element_blank(),
+        legend.text = element_text(size=15),
+        legend.position = c(0.85,0.85),
+        legend.text.align = 0,
+        legend.box.background = element_rect(color = "black"),
         axis.title = element_text(size=20))
 
 
@@ -182,7 +207,6 @@ colnames(s_sites)[2] <- "site_name"
 s_sites <- merge(s_sites, site_info[,c("site_name","short_name")], by="site_name")
 range(s_sites$X50.); median(s_sites$X50.) # range: 1.26 - 1.74; median: 1.5
 
-
 ## visualize
 s_sites$short_name <- factor(s_sites$short_name, levels= site_order_list)
 ggplot(s_sites, aes(x = short_name, y = X50.))+
@@ -194,31 +218,41 @@ ggplot(s_sites, aes(x = short_name, y = X50.))+
 ## 3 - Change in c between first and second year
 ##
 
-## Import 2nd year stan model fit
-Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_03_06.rds")
-Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_03_06.rds")
-## need stan_psum function from above
+## Import stan_model_output_LBTS (Year 1) and Yr2_output_LBTS (Year 2) model fits
+## Calculate median values and convert to discharge
 
-pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
-#STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
-write.csv(pSTS2, "./tables/STS_ws_posterior_sum_Yr2.csv")
-pSTS2_sub <- pSTS2[which(pSTS2$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
-write.csv(pSTS2_sub, "./tables/STS_ws_posteriorsubset_sum_Yr2.csv")
+## Year 1
+Qc_all_Yr1 <- Qc_all
+Qc_all_Yr1$Year <- "Year 1"
+## Year 2
+## Source data - will overwrite year 1, re-import year 1
+source("DataSource_6rivers_2ndYr_StreamLight.R")
+df_yr2 <- df
+source("DataSource_6rivers_StreamLight.R")
+df_yr1 <- df
 
-pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
-#LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
-write.csv(pLBTS2, "./tables/LBTS_ws_posterior_sum_Yr2.csv")
-pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
-write.csv(pLBTS2_sub, "./tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
+## Use c_Qc function to convert Year 2 data
+Qc_all_Yr2 <- ldply(lapply(site_list, function(x) c_Qc(x,df_yr2,site_info,c_sites)), data.frame)
+colnames(Qc_all_Yr2) <- c("Qc_cms","Qc_lower_cms","Qc_upper_cms", "site_name")
+Qc_all_Yr2$Year <- "Year 2"
 
-## Create df with Yr1 and Yr2 median c values
-c1 <- pLBTS_sub[which(pLBTS_sub$pars == "c"), c(".id","X50.","n_eff_less10pct")]
-colnames(c1) <- c("site_name","median_c1","c1_nless10pct")
-c2 <- pLBTS2_sub[which(pLBTS2_sub$pars == "c"), c(".id","X50.","n_eff_less10pct")]
-colnames(c2) <- c("site_name","median_c2","c2_nless10pct")
+# Combine and restructure
+Qc_all_Yrs <- rbind(Qc_all_Yr1, Qc_all_Yr2)
+Qc_all_Yrs <- Qc_all_Yrs[,c("site_name", "Year","Qc_cms")]
+Qc_wide <- spread(Qc_all_Yrs, Year, Qc_cms)
+Qc_wide[,c("Year 1","Year 2")] <- apply(Qc_wide[,c("Year 1","Year 2")], 2, function(x) as.numeric(x))
 
-c12 <- merge(c1, c2, by="site_name")
-c12$c12_diff <- c12$median_c1 - c12$median_c2
+Qc_wide$diff <- Qc_wide$`Year 2` - Qc_wide$`Year 1`
+Qc_wide$pct.diff <- (Qc_wide$diff/Qc_wide$`Year 1`)*100
+Qc_wide <- merge(Qc_wide, site_info, by="site_name")
+
+ggplot(Qc_wide, aes(short_name, pct.diff))+geom_point()
+
+## Plot differences in posterior c distributions
+
+
+
+
 
 
 ######################
