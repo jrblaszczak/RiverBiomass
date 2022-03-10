@@ -22,7 +22,7 @@ stan_psum <- function(x){
   
   s_init <- as.data.frame(summary(x)$summary)
   s_init$pars <- row.names(s_init)
-  s_init$n_eff_pct <- s_init$n_eff/20000  ## effective samples are the number of independent samples with the same estimation power as the N autocorrelated samples
+  s_init$n_eff_pct <- s_init$n_eff/10000  ## effective samples are the number of independent samples with the same estimation power as the N autocorrelated samples
   s_init$n_eff_less10pct <- ifelse(s_init$n_eff_pct < 0.10, yes = "true", no = "false") # 10% is often used as a threshold, below which the chains for a parameter did not properly converge
   s <- s_init[,c("pars","50%", "2.5%", "97.5%","Rhat","n_eff","n_eff_less10pct")]
 
@@ -182,11 +182,11 @@ Qc_pct_df$pct_type <- factor(Qc_pct_df$pct_type, levels= c("Qc_Qmax_pct","Qc_Q2y
 
 Qpct_col <- c(wes_palette("Moonrise2")[1],wes_palette("Moonrise2")[4])
 
-ggplot(Qc_pct_df, aes(x=short_name,y=Pct, fill = pct_type)) +
-  geom_bar(position="dodge", stat="identity", color="black")+
+ggplot(Qc_pct_df, aes(x=short_name,y=Pct, color = pct_type)) +
+  geom_point(size=4)+#, position = position_dodge(width=0.2))+
   scale_y_continuous(labels = function(x) paste0(x * 100, '%'))+
   xlab("River") + ylab("Percent")+
-  scale_fill_manual("", values = c("Qc_Qmax_pct" = Qpct_col[1],
+  scale_color_manual("", values = c("Qc_Qmax_pct" = Qpct_col[1],
                                    "Qc_Q2yr_pct" = Qpct_col[2]),
                     labels = c("Qc_Qmax_pct" = expression(paste("% ",Q[c],"/",Q[max])),
                                "Qc_Q2yr_pct" = expression(paste("%",Q[c],"/",Q["2yr"]))))+
@@ -250,8 +250,8 @@ ggplot(Qc_wide, aes(short_name, pct.diff))+geom_point()
 
 ## Plot differences in posterior c distributions
 
-
-
+Yr1_c_ppd <- lapply(stan_model_output_LBTS, function(x) extract(x, c("c")))
+Yr2_c_ppd <- lapply(Yr2_output_LBTS, function(x) extract(x, c("c")))
 
 
 
