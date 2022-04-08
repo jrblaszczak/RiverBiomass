@@ -149,7 +149,7 @@ ggplot(Qc_plot_df, aes(color=Q_type, y=Q_cms+1, x=short_name)) +
   scale_color_manual("", values = c("Qc_cms" = Qcol[1],
                                         "Q_maxobs_cms" = Qcol[2],
                                         "Q_2yrRI_cms" = Qcol[3]),
-                    labels = c("Qc_cms" = expression(paste("Median ",Q[c])),
+                    labels = c("Qc_cms" = expression(paste(Q[c])),
                                "Q_maxobs_cms" = expression(paste("Observed ",Q[max])),
                                "Q_2yrRI_cms" = expression(paste("Estimated ",Q["2yr"]))))+
     theme(panel.background = element_rect(fill = "white", color="black"),

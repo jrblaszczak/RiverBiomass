@@ -88,7 +88,7 @@ sim_Ricker_output <- list(Ricker_output_PAR, Ricker_output_PPFD)
 
 launch_shinystan(Ricker_output_PPFD$`Paint Branch`)
 
-saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_01_18_ad.rds")
+#saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_01_18_ad.rds")
 
 
 ################################################
@@ -96,7 +96,7 @@ saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2021_01_18_ad.rds")
 ################################################
 
 ## Extract parameter estimates from simulation
-#sim_Ricker_output <- readRDS("./rds files/sim_Ricker_output_2021_01_18_ad.rds")
+sim_Ricker_output <- readRDS("./rds files/sim_Ricker_output_2021_01_18_ad.rds")
 Ricker_output_PAR <- sim_Ricker_output[[1]]
 Ricker_output_PPFD <- sim_Ricker_output[[2]]
 
@@ -189,17 +189,158 @@ Ricker_sim_output <- lapply(stan_sim_list,
                                              data=x,chains=3,iter=5000,init = init_Ricker,
                                              control=list(max_treedepth=12)))
 
-saveRDS(Ricker_sim_output, "./rds files/Ricker_recover_output.rds")
+#saveRDS(Ricker_sim_output, "./rds files/Ricker_recover_output.rds")
 
 
 #################################################################################
 ## Compare parameters from simulation to posterior distributions
 ################################################################################
 
-#Ricker_sim_output <- readRDS("./rds files/Ricker_recover_output.rds")
+Ricker_sim_output <- readRDS("./rds files/Ricker_recover_output.rds")
 
 ## extract parameters from fit to simulated GPP
 sim_recparams <- lapply(Ricker_sim_output, function(x) ldply(extract(x, c("r","lambda","s","c","sig_p","sig_o")),data.frame))
+
+vis_recovery <- function(final_distributions, used_parameters,plot.title){
+  
+  ## distributions of most recent fit
+  recpars <- final_distributions
+  colnames(recpars) <- c("parameter","value")
+  
+  ## params used to simulate
+  orig_meanpars <- ldply(used_parameters, data.frame)
+  colnames(orig_meanpars) <- c("parameter","value")
+  
+  ## labels
+  recpars$parameter <- factor(recpars$parameter,
+                              levels = c("r","lambda","s","c","sig_p","sig_o"),
+                              ordered = TRUE, labels = c("r",expression(lambda),
+                                                         "s","c",
+                                                         expression(paste(sigma["proc"])),
+                                                         expression(paste(sigma["obs"]))))
+  orig_meanpars$parameter <- factor(orig_meanpars$parameter,
+                              levels = c("r","lambda","s","c","sig_p","sig_o"),
+                              ordered = TRUE, labels = c("r",expression(lambda),
+                                                         "s","c",
+                                                         expression(paste(sigma["proc"])),
+                                                         expression(paste(sigma["obs"]))))
+  
+  ggplot(recpars, aes(value))+
+    geom_density(fill="chartreuse4", alpha=0.2)+
+    facet_wrap(~parameter, scales = "free", labeller = label_parsed)+
+    geom_vline(data=orig_meanpars,aes(xintercept = value))+
+    labs(x="Value",y="Density",title=plot.title)+
+    theme(legend.position = "none",
+          #panel.background = element_rect(color = "black", fill=NA, size=1),
+          strip.background = element_rect(fill="white", color="black"),
+          strip.text = element_text(size=14),
+          axis.text.x = element_text(size=12, angle = 45, hjust = 0.5),
+          axis.text.y = element_text(size=12),
+          axis.title = element_text(size=14), title = element_text(size=14))
+}
+
+vis_recovery(sim_recparams$Potomac_PAR, mean_PAR$Potomac,"Potomac - PAR light")
+#vis_recovery(sim_recparams$Potomac_PPFD, mean_PPFD$Potomac)
+vis_recovery(sim_recparams$PaintBranch_PAR, mean_PAR$`Paint Branch`,"Paint Branch - PAR light")
+#vis_recovery(sim_recparams$PaintBranch_PPFD, mean_PPFD$`Paint Branch`)
+
+
+
+
+ggplot(sim_recparams$PaintBranch_PAR[which(sim_recparams$PaintBranch_PAR$.id == "c"),], aes(X..i..))+
+  geom_density()
+
+
+min(sim_recparams$PaintBranch_PAR[which(sim_recparams$PaintBranch_PAR$.id == "c"),]$X..i..)
+
+#####################################
+#####################################
+## Repeat with AR model - no PPFD
+#####################################
+#####################################
+
+###############
+## Fit AR model
+###############
+## Stan prep
+rstan_options(auto_write=TRUE)
+options(mc.cores=6)#parallel::detectCores())
+
+AR_output_PAR <- lapply(stan_data_PAR,
+                        function(x) stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
+                                         data=x,chains=4,iter=5000,
+                                         control=list(max_treedepth=12, adapt_delta = 0.95)))
+
+saveRDS(AR_output_PAR, "./rds files/sim_AR_output_2022_03_27.rds")
+
+
+################################################
+## Extract parameter estimates
+################################################
+## Extract parameter estimates from simulation
+#AR_output_PAR <- readRDS("./rds files/sim_AR_output_2022_03_27.rds")
+
+#extract
+AR_p_PAR<- lapply(AR_output_PAR, function(x) extract(x, c("phi","alpha","beta","sig_p","sig_o")))
+#mean and sd
+AR_mean_PAR <- lapply(AR_p_PAR, function(x) lapply(x, function(y) mean(y)))
+AR_sd_PAR <- lapply(AR_p_PAR, function(x) lapply(x, function(y) sd(y)))
+
+
+############################################
+## Simulate final GPP ts using extracted parameter estimates
+############################################
+## Bring in simulation code
+source("Predicted_ProductivityModel_Autoregressive.R") 
+
+## simulate GPP again for final data set
+
+Pot_AR_GPP <- PM_AR(phi=AR_mean_PAR$Potomac$phi,
+                    alpha=AR_mean_PAR$Potomac$alpha,
+                    beta=AR_mean_PAR$Potomac$beta,
+                    sig_p=AR_mean_PAR$Potomac$sig_p,
+                    sig_o=AR_mean_PAR$Potomac$sig_o, df=ex)
+Paint_AR_GPP <- PM_AR(phi=AR_mean_PAR$`Paint Branch`$phi,
+                    alpha=AR_mean_PAR$`Paint Branch`$alpha,
+                    beta=AR_mean_PAR$`Paint Branch`$beta,
+                    sig_p=AR_mean_PAR$`Paint Branch`$sig_p,
+                    sig_o=AR_mean_PAR$`Paint Branch`$sig_o, df=ex2)
+
+plot(1:352, Pot_AR_GPP, type="l")
+plot(1:312, Paint_AR_GPP, type="l")
+
+## compile for Stan again
+stan_simPot_AR <- list(Ndays=length(Pot_AR_GPP), light=ex$light_rel_PAR, GPP = Pot_AR_GPP,
+                        prior_sig_o_mean = AR_mean_PAR$Potomac$sig_o,
+                        prior_sig_o_sd = AR_sd_PAR$Potomac$sig_o, tQ = ex$tQ)
+stan_simPaint_AR <- list(Ndays=length(Paint_AR_GPP), light=ex2$light_rel_PAR, GPP = Paint_AR_GPP,
+                          prior_sig_o_mean = AR_mean_PAR$`Paint Branch`$sig_o,
+                          prior_sig_o_sd = AR_sd_PAR$`Paint Branch`$sig_o, tQ = ex2$tQ)
+
+
+stan_ARsim_list <- list("Potomac_AR"=stan_simPot_AR,
+                      "PaintBranch_AR"=stan_simPaint_AR)
+
+#Fit models again
+rstan_options(auto_write=TRUE)
+options(mc.cores=6)#parallel::detectCores())
+
+simAR_output <- lapply(stan_ARsim_list,
+                        function(x) stan("Stan_ProductivityModel1_Autoregressive_obserr_simulation.stan",
+                                         data=x,chains=4,iter=5000,
+                                         control=list(max_treedepth=12, adapt_delta = 0.95)))
+
+#saveRDS(simAR_output, "./rds files/AR_recover_output.rds")
+
+
+#################################################################################
+## Compare parameters from simulation to posterior distributions
+################################################################################
+
+simAR_output <- readRDS("./rds files/AR_recover_output.rds")
+
+## extract parameters from fit to simulated GPP
+ARsim_recparams <- lapply(simAR_output, function(x) ldply(extract(x, c("phi","alpha","beta","sig_p","sig_o")),data.frame))
 
 vis_recovery <- function(final_distributions, used_parameters){
   
@@ -220,24 +361,8 @@ vis_recovery <- function(final_distributions, used_parameters){
     theme()
 }
 
-vis_recovery(sim_recparams$Potomac_PAR, mean_PAR$Potomac)
-vis_recovery(sim_recparams$Potomac_PPFD, mean_PPFD$Potomac)
-
-vis_recovery(sim_recparams$PaintBranch_PPFD, mean_PPFD$`Paint Branch`)
-vis_recovery(sim_recparams$PaintBranch_PAR, mean_PAR$`Paint Branch`)
-
-
-
-test <- Ricker_sim_output$PaintBranch_PAR
-launch_shinystan(Ricker_output_PPFD$`Paint Branch`)
-
-
-
-
-
-
-
-
+vis_recovery(ARsim_recparams$Potomac_AR, AR_mean_PAR$Potomac)
+vis_recovery(ARsim_recparams$PaintBranch_AR, AR_mean_PAR$`Paint Branch`)
 
 
 
