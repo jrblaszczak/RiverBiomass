@@ -69,6 +69,12 @@ calc_gof_metrics <- function(x, mod){
   
   ts_sub <- x
   
+  ##RMSE
+  rmse <- sqrt(sum((ts_sub$sim_GPP-ts_sub$GPP)^2)/length(ts_sub$GPP))
+  
+  ##NRMSE
+  nrmse <- rmse/(max(ts_sub$GPP)-min(ts_sub$GPP))
+  
   ## RRMSE
   rrmse_pre <- sum(((ts_sub$sim_GPP-ts_sub$GPP)/ts_sub$GPP)^2)
   rrmse <- sqrt(rrmse_pre*(100/length(ts_sub$GPP)))
@@ -83,7 +89,7 @@ calc_gof_metrics <- function(x, mod){
   cov_pct <- (sum(ts_sub$c_yn)/length(ts_sub$c_yn))*100
   
   ## Compile
-  metrics <- as.data.frame(cbind(rrmse, mre, cov_pct,mod))
+  metrics <- as.data.frame(cbind(rmse, nrmse, rrmse, mre, cov_pct,mod))
   return(metrics)
   
 }
