@@ -4,7 +4,7 @@ PM_AR <- function(phi, alpha, beta, sig_p, sig_o, df) {
   ## Data
   Ndays<-length(df$GPP)
   GPP <- df$GPP
-  GPP_sd <- df$GPP_sd
+  #GPP_sd <- df$GPP_sd
   light <- df$light_rel_PAR
   tQ <- df$tQ # discharge standardized to max value
   
