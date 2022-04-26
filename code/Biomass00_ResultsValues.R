@@ -49,7 +49,7 @@ write.csv(pLBTS_sub, "./tables/LBTS_ws_posteriorsubset_sum.csv")
 ## YEAR 2 ##
 ##
 Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_03_06.rds")
-Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_03_06.rds")
+Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09.rds")
 ## need stan_psum function from above
 
 pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
