@@ -104,9 +104,14 @@ P_df <- P_dat_R
 #####################
 
 ## Import and merge bankfull discharge with site info
-#RI_2 <- read.csv("../data/RI_2yr_flood_6riv.csv", header=T)
-#sapply(RI_2, class)
-#site_info <- merge(site_info, RI_2, by="site_name")
+RI_2 <- read.csv("../data/RI_2yr_flood_6riv.csv", header=T)
+sapply(RI_2, class)
+site_info <- merge(site_info, RI_2, by="site_name")
+## merge with site_info, convert 2 year flood to cms (divide by 35.314666212661), and calculate differences
+#crits <- merge(site_info[,c("site_name","RI_2yr_Q","short_name")],Qc_all, by="site_name")
+#crits$Q_2yrRI_cms <- crits$RI_2yr_Q/35.314666212661
+
+
 
 ## join by river name
 P_df <- left_join(P_df, site_info[,c("site_name","short_name")], by="site_name")
@@ -121,6 +126,7 @@ Persistence_plots <- function(site, df, site_info, P_df){
   
   ## critical Q based on velocity
   crit_Q <- site_info[which(site_info$site_name == site),]$RI_2yr_Q
+  crit_Q <- crit_Q/35.314666212661
   
   ## convert relativized Q to original values
   P <- P_df[which(P_df$site_name == site),]
@@ -147,8 +153,8 @@ Persistence_plots <- function(site, df, site_info, P_df){
     #         x = 1.2*c, 
     #         y= 0.9, size=3.75, hjust=0)+
     labs(x="Range of Standardized Discharge",y="Persistence")+
-    scale_y_continuous(limits=c(0,1))+
-    #geom_vline(xintercept = crit_Q, size=1, linetype="dotted", color="grey25")+
+    scale_y_continuous(limits=c(0,1), labels = function(x) paste0(x*100, '%'))+
+    geom_vline(xintercept = crit_Q, size=1, linetype="dotted", color="grey25")+
     geom_vline(xintercept = c, size=1, linetype="dashed")
   
   
@@ -175,7 +181,7 @@ grid.arrange(
                          plots$nwis_08447300),
               ncol = 2,
               bottom=textGrob("Discharge (cms)", gp=gpar(fontsize=16)), 
-              left=textGrob("Biomass Persistence", gp=gpar(fontsize=16), rot=90)),
+              left=textGrob("Day-to-Day Biomass Persistence", gp=gpar(fontsize=16), rot=90)),
   widths=c(9,1)
 )
 

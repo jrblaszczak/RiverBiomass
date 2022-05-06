@@ -99,18 +99,46 @@ LB_gof <- ldply(lapply(LB_simdat_l, function(x) calc_gof_metrics(x,"LB-TS")), da
 
 gof <- rbind(STS_gof, LB_gof)
 ## export table
-write.csv(gof, "../figures and tables/2022 Figures and Tables/tables/TableS_OOS_gof.csv")
+#write.csv(gof, "../figures and tables/2022 Figures and Tables/tables/TableS_OOS_gof.csv")
 
 
+########################
+## GOF figure for JASM
+########################
+names(gof)
+gof_sub <- gof[,c(".id","nrmse","cov_pct","mod")]
+colnames(gof_sub)[1] <- "site_name"
+gof_sub <- left_join(gof_sub, site_info, by="site_name")
+sapply(gof_sub, class)
+gof_sub$nrmse <- as.numeric(gof_sub$nrmse)
+gof_sub$cov_pct <- as.numeric(gof_sub$cov_pct)
 
 
+gofplot_nrmse <- ggplot(gof_sub, aes(mod, nrmse, color = mod))+
+  geom_boxplot()+
+  geom_jitter(width = 0.2, aes(size=ORD_STRA))+
+  labs(x="Model",y="NRMSE")+
+  scale_color_manual(values = c("S-TS" = PM_AR.col,
+                                "LB-TS" = PM_Ricker.col))+
+  theme(panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(),axis.title = element_text(size=12),
+        axis.text = element_text(size=12))
 
+gofplot_cov_pct <- ggplot(gof_sub, aes(mod, cov_pct, color = mod))+
+  geom_boxplot()+
+  geom_jitter(width = 0.2, aes(size=ORD_STRA))+
+  labs(x="Model",y="Coverage (%)")+
+  scale_y_continuous(labels = function(x) paste0(x, '%'))+
+  scale_color_manual(values = c("S-TS" = PM_AR.col,
+                                "LB-TS" = PM_Ricker.col))+
+  theme(panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(),axis.title = element_text(size=12),
+        axis.text = element_text(size=12))
 
-
-
-
-
-
+plot_grid(gofplot_nrmse+theme(legend.position = "none"),
+          gofplot_cov_pct+theme(legend.position = "none"),
+          nrow=2, align = "hv")
+plot_grid(get_legend(gofplot_nrmse))
 
 
 
