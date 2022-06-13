@@ -1,5 +1,7 @@
-## Subset data from hypoxia database that is already linked to NHD
-## JRB
+##==============================================================================
+## Script for selecting two years of semi-continuous GPP data
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
