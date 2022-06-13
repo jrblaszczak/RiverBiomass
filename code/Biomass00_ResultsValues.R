@@ -45,6 +45,15 @@ write.csv(pLBTS, "./tables/LBTS_ws_posterior_sum.csv")
 pLBTS_sub <- pLBTS[which(pLBTS$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
 write.csv(pLBTS_sub, "./tables/LBTS_ws_posteriorsubset_sum.csv")
 
+## Median latent biomass estimates by site
+pLBTS$par_id <- substring(pLBTS$pars, 1, 1)
+pLBTS_LB <- pLBTS[which(pLBTS$par_id == "B"),]
+
+med_LB_yr1 <- pLBTS_LB %>%
+  group_by(.id) %>%
+  summarize_at(.vars = c("X50."), .funs = median)
+
+
 ##
 ## YEAR 2 ##
 ##
@@ -63,6 +72,14 @@ pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
 write.csv(pLBTS2, "./tables/LBTS_ws_posterior_sum_Yr2.csv")
 pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
 write.csv(pLBTS2_sub, "./tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
+
+## Median latent biomass estimates by site
+pLBTS2$par_id <- substring(pLBTS2$pars, 1, 1)
+pLBTS2_LB <- pLBTS2[which(pLBTS2$par_id == "B"),]
+
+med_LB_yr2 <- pLBTS_LB2 %>%
+  group_by(.id) %>%
+  summarize_at(.vars = c("X50."), .funs = median)
 
 ######################
 ## S-TS description

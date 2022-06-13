@@ -1,0 +1,173 @@
+---
+title: "Productivity Model Parameter Recovery"
+author: "J.R. Blaszczak"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load packages
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
+         "parallel","tidyverse","rstan","devtools","shinystan",
+         "MCMCglmm"), require, character.only=T)
+
+theme_set(theme(legend.position = "none",
+                  panel.background = element_rect(color = "black", fill=NA, size=1),
+                  axis.text = element_text(size=12),
+                  axis.title = element_text(size=12)))
+
+source("DataSource_6rivers_StreamLight.R")
+```
+
+### Compare contrasting sites and light sources
+
+```{r}
+## Choose example data
+ex <- df$nwis_01608500
+ex2 <- df$nwis_01649190
+  
+## Visualize GPP
+plot_grid(
+  ggplot(ex, aes(date, GPP))+
+    geom_line(color="chartreuse4")+
+    geom_point(color="chartreuse4", size=2)+
+    labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), title="South Branch Potomac, WV"),
+  
+  ggplot(ex2, aes(date, GPP))+
+    geom_line(color="chartreuse4")+
+    geom_point(color="chartreuse4", size=2)+
+    labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), title="Paint Branch, MD"),
+  ncol=2)
+
+## Visualize light_rel differences
+plot_grid(
+  ggplot(ex, aes(date, light_rel_PPFD))+
+    geom_line()+
+    geom_line(aes(date, light_rel_PAR), color="blue")+
+    labs(title="South Branch Potomac, WV"),
+  ggplot(ex2, aes(date, light_rel_PPFD))+
+    geom_line()+
+    geom_line(aes(date, light_rel_PAR), color="blue")+
+    labs(title="Paint Branch, MD"),
+  ncol=2
+)
+```
+
+```{r}
+########################################################
+## Stan data prep for initial fit
+########################################################
+stan_data_compile_PAR <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
+               GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+stan_data_compile_PPFD <- function(x){
+  data <- list(Ndays=length(x$GPP), light = x$light_rel_PPFD, GPP = x$GPP,
+               GPP_sd = x$GPP_sd, tQ = x$tQ)
+  return(data)
+}
+
+stan_data_PAR <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PAR(x))
+stan_data_PPFD <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PPFD(x))
+
+```
+
+
+```{r}
+###########################
+## Fit data to models
+##########################
+## Stan prep
+rstan_options(auto_write=TRUE)
+options(mc.cores=6)#parallel::detectCores())
+
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 1.5)
+}
+
+Ricker_output_PAR <- lapply(stan_data_PAR,
+                            function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                                             data=x,chains=4,iter=5000,init = init_Ricker,
+                                             control=list(max_treedepth=12, adapt_delta = 0.95)))
+Ricker_output_PPFD <- lapply(stan_data_PPFD,
+                             function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                                              data=x,chains=4,iter=5000,init = init_Ricker,
+                                              control=list(max_treedepth=12, adapt_delta = 0.95)))
+sim_Ricker_output <- list(Ricker_output_PAR, Ricker_output_PPFD)
+
+
+################################################
+## Extract parameter estimates
+################################################
+
+## Extract parameter estimates from simulation
+Ricker_output_PAR <- sim_Ricker_output[[1]]
+Ricker_output_PPFD <- sim_Ricker_output[[2]]
+
+#extract
+p_PAR<- lapply(Ricker_output_PAR, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
+p_PPFD<- lapply(Ricker_output_PPFD, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
+#mean and sd
+mean_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) mean(y)))
+sd_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) sd(y)))
+mean_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) mean(y)))
+sd_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) sd(y)))
+
+############################################
+## Simulate final GPP ts using extracted parameter estimates
+############################################
+
+## Bring in simulation code
+source("Predicted_ProductivityModel_Ricker.R") # parameters: r, lambda, s, c, sig_p
+
+## simulate GPP again for final data set
+Pot_GPP_PAR <- PM_Ricker_lv(r = mean_PAR$Potomac$r,
+                         lambda = mean_PAR$Potomac$lambda,
+                         s = mean_PAR$Potomac$s,
+                         c = mean_PAR$Potomac$c, 
+                         sig_p = mean_PAR$Potomac$sig_p,
+                         sig_o = mean_PAR$Potomac$sig_o, 
+                         df = ex, light_version = ex$light_rel_PAR)
+Pot_GPP_PPFD <- PM_Ricker_lv(r = mean_PPFD$Potomac$r,
+                          lambda = mean_PPFD$Potomac$lambda,
+                          s = mean_PPFD$Potomac$s,
+                          c = mean_PPFD$Potomac$c, 
+                          sig_p = mean_PPFD$Potomac$sig_p,
+                          sig_o = mean_PPFD$Potomac$sig_o, 
+                          df = ex, light_version = ex$light_rel_PPFD)
+Paint_GPP_PAR <- PM_Ricker_lv(r = mean_PAR$`Paint Branch`$r,
+                           lambda = mean_PAR$`Paint Branch`$lambda,
+                           s = mean_PAR$`Paint Branch`$s,
+                           c = mean_PAR$`Paint Branch`$c, 
+                           sig_p = mean_PAR$`Paint Branch`$sig_p,
+                           sig_o = mean_PAR$`Paint Branch`$sig_o, 
+                           df = ex2, light_version = ex2$light_rel_PAR)
+Paint_GPP_PPFD <- PM_Ricker_lv(r = mean_PPFD$`Paint Branch`$r,
+                            lambda = mean_PPFD$`Paint Branch`$lambda,
+                            s = mean_PPFD$`Paint Branch`$s,
+                            c = mean_PPFD$`Paint Branch`$c, 
+                            sig_p = mean_PPFD$`Paint Branch`$sig_p,
+                            sig_o = mean_PPFD$`Paint Branch`$sig_o, 
+                            df = ex2, light_version = ex2$light_rel_PPFD)
+
+plot(1:352, Pot_GPP_PAR, type="l")
+lines(1:352, Pot_GPP_PPFD, type="l", col="blue")
+
+plot(1:312, Paint_GPP_PAR, type="l")
+lines(1:312, Paint_GPP_PPFD, type="l", col="blue")
+
+```
+
+
+
+
+
+
+
+
+
+
+
