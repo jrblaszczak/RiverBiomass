@@ -69,9 +69,9 @@ write.csv(pSTS2_sub, "./tables/STS_ws_posteriorsubset_sum_Yr2.csv")
 
 pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
 #LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
-write.csv(pLBTS2, "./tables/LBTS_ws_posterior_sum_Yr2.csv")
+write.csv(pLBTS2, "../figures and tables/LBTS_ws_posterior_sum_Yr2.csv")
 pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
-write.csv(pLBTS2_sub, "./tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
+write.csv(pLBTS2_sub, "../figures and tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
 
 ## Median latent biomass estimates by site
 pLBTS2$par_id <- substring(pLBTS2$pars, 1, 1)
