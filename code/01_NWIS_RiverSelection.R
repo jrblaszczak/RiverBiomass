@@ -12,6 +12,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 ############################
 
 ## Import site data from Appling
+# https://www.sciencebase.gov/catalog/item/59bff507e4b091459a5e0982
 site <- fread("../data/site_data.csv")
 colnames(site)
 
@@ -21,7 +22,7 @@ SL <- read.table("../data/StreamLight_site information and parameters.txt", head
 colnames(SL)[colnames(SL) == "Site_ID"] <- "site_name"
 
 ## Secondary stream order source from hypoxia data set
-#https://www.sciencebase.gov/catalog/item/606f60afd34ef99870188ee5
+# https://www.sciencebase.gov/catalog/item/606f60afd34ef99870188ee5
 hyp <- fread("../data/GRDO_GEE_HA_NHD.csv")
 hyp <- hyp[which(hyp$DB_Source == "PC"), c("SiteID","ORD_STRA","NHD_STREAMORDE")]
 colnames(hyp)[which(colnames(hyp) == "SiteID")] <- "site_name"
@@ -63,10 +64,10 @@ NWIS <- read.table("../data/daily_predictions.tsv", sep='\t', header = TRUE)
 NWIS$date <- as.POSIXct(as.character(NWIS$date), format="%Y-%m-%d")
 head(NWIS)
 
-s <- NWIS[which(NWIS$GPP.Rhat < 1.05),]
-s <- s[which(s$K600.Rhat < 1.05),]
-length(levels(factor(s$site_name)))
-length(levels(factor(r$site_name)))
+NWIS <- NWIS[which(NWIS$GPP.Rhat < 1.05),]
+NWIS <- NWIS[which(r$K600.Rhat < 1.05),]
+length(levels(factor(NWIS$site_name))) ## 355
+
 
 ## Subset columns and sites
 NWIS_sub <- NWIS[,c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.Rhat",
@@ -79,7 +80,7 @@ colnames(NWIS_sub) <- c("site_name","date","GPP","GPP.lower","GPP.upper", "GPP.R
 ## Subset to sites in high_sites (sites with high confidence rating and limited dam interference)
 NWIS_sub <- NWIS_sub[which(NWIS_sub$site_name %in% s$site_name),]
 # Confirm
-length(levels(as.factor(NWIS_sub$site_name))) ## 97 when subsetting for s
+length(levels(as.factor(NWIS_sub$site_name))) ## 97
 
 ## Identify which sites have the most continuous data
 NWIS_sub$doy <- yday(NWIS_sub$date)
@@ -105,7 +106,7 @@ sub_by_gap <- merge(sub_by_gap, dat_per_year, by=c("site_name","year"))
 sub_by_gap <- sub_by_gap[which(sub_by_gap$n >= 275),]
 
 sub_by_gap_sum <- sub_by_gap %>% group_by(site_name) %>% count()
-high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 2),] # 41
+high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 2),] # 41 when tight dam restriction
 
 ## Subset NWIS_sub
 TS <- NWIS_sub[which(NWIS_sub$site_name %in% high_q$site_name),] ## only sites with two or more years
@@ -118,7 +119,7 @@ TS_site <- s[which(s$site_name %in% high_q$site_name),]
 
 ## Attach the median GPP
 TS$GPP_temp <- TS$GPP
-TS[which(TS$GPP < 0),]$GPP_temp <- sample(exp(-6):exp(-4), 1)
+TS[which(TS$GPP < 0),]$GPP_temp <- sample(exp(-3):exp(-3), 1)
 TS_gpp <- TS %>%
   group_by(site_name) %>%
   summarise_at(.vars = "GPP_temp", .funs = c(mean, max))
@@ -141,9 +142,10 @@ View(TS_site[which(TS_site$order_group == "mid"),])
 View(TS_site[which(TS_site$order_group == "large"),])
 
 ## plot
-sid <- "nwis_08447300"
-two_years <- c(2012,2013)
+sid <- "nwis_13213000"
+two_years <- c(2014,2016) ## Boise River near Parma, ID alternative
 TS_site[which(TS_site$site_name == sid),]
+head(TS[which(TS$site_name == sid),]); tail(TS[which(TS$site_name == sid),])
 
 plot_grid(
   ggplot(TS[which(TS$site_name == sid),], aes(date, GPP_temp))+
