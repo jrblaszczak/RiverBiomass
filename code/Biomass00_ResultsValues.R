@@ -35,15 +35,15 @@ stan_psum <- function(x){
 ##
 pSTS <- ldply(lapply(stan_model_output_STS, function(z) stan_psum(z)), data.frame)
 #STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
-write.csv(pSTS, "./tables/STS_ws_posterior_sum.csv")
+write.csv(pSTS, "../figures and tables/2022 Tables/STS_ws_posterior_sum.csv")
 pSTS_sub <- pSTS[which(pSTS$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
-write.csv(pSTS_sub, "./tables/STS_ws_posteriorsubset_sum.csv")
+write.csv(pSTS_sub, "../figures and tables/2022 Tables/STS_ws_posteriorsubset_sum.csv")
 
 pLBTS <- ldply(lapply(stan_model_output_LBTS, function(z) stan_psum(z)), data.frame)
 #LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
-write.csv(pLBTS, "./tables/LBTS_ws_posterior_sum.csv")
+write.csv(pLBTS, "../figures and tables/2022 Tables/LBTS_ws_posterior_sum.csv")
 pLBTS_sub <- pLBTS[which(pLBTS$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
-write.csv(pLBTS_sub, "./tables/LBTS_ws_posteriorsubset_sum.csv")
+write.csv(pLBTS_sub, "../figures and tables/2022 Tables/LBTS_ws_posteriorsubset_sum.csv")
 
 ## Median latent biomass estimates by site
 pLBTS$par_id <- substring(pLBTS$pars, 1, 1)
@@ -63,9 +63,9 @@ Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09
 
 pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
 #STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
-write.csv(pSTS2, "./tables/STS_ws_posterior_sum_Yr2.csv")
+write.csv(pSTS2, "../figures and tables/2022 Tables/STS_ws_posterior_sum_Yr2.csv")
 pSTS2_sub <- pSTS2[which(pSTS2$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
-write.csv(pSTS2_sub, "./tables/STS_ws_posteriorsubset_sum_Yr2.csv")
+write.csv(pSTS2_sub, "../figures and tables/2022 Tables/STS_ws_posteriorsubset_sum_Yr2.csv")
 
 pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
 #LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
@@ -104,7 +104,7 @@ sapply(RI_2, class)
 site_info <- merge(site_info, RI_2, by="site_name")
 
 ## Reimport c estimates (within-sample) if not already loaded
-pLBTS_sub <- read.csv("./tables/LBTS_ws_posteriorsubset_sum.csv", header=T)
+pLBTS_sub <- read.csv("../figures and tables/2022 Tables/LBTS_ws_posteriorsubset_sum.csv", header=T)
 c_sites <- pLBTS_sub[which(pLBTS_sub$pars == "c"),]
 colnames(c_sites)[2] <- "site_name"
 

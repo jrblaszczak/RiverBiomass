@@ -63,7 +63,7 @@ plotting_covar <- function(x) {
   
 }
 
-plotting_covar(df$nwis_08447300)
+plotting_covar(df$nwis_07191222)
 
 
 
