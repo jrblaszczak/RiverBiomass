@@ -14,7 +14,7 @@ theme_set(theme(legend.position = "none",
                   axis.title = element_text(size=12)))
 
 #############################
-## Source & visualize data
+## (1) Source & visualize data
 #############################
 source("DataSource_6rivers_StreamLight.R")
 
@@ -35,7 +35,7 @@ plot_grid(
     labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), title="Paint Branch, MD"),
   ncol=2)
 
-## Visualize light_rel differences
+## Visualize light_rel differences - using light_rel_PAR
 plot_grid(
   ggplot(ex, aes(date, light_rel_PPFD))+
     geom_line()+
@@ -49,300 +49,168 @@ plot_grid(
 )
 
 ########################################################
-## Stan data prep for initial fit
+## (2) Stan data prep for initial fit
 ########################################################
 stan_data_compile_PAR <- function(x){
   data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
                GPP_sd = x$GPP_sd, tQ = x$tQ)
   return(data)
 }
-stan_data_compile_PPFD <- function(x){
-  data <- list(Ndays=length(x$GPP), light = x$light_rel_PPFD, GPP = x$GPP,
-               GPP_sd = x$GPP_sd, tQ = x$tQ)
-  return(data)
-}
 
 stan_data_PAR <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PAR(x))
-stan_data_PPFD <- lapply(list("Potomac" = ex, "Paint Branch" = ex2), function(x) stan_data_compile_PPFD(x))
 
 ###########################
-## Fit data to models
+## (3) Fit models to data
 ##########################
 ## Stan prep
 rstan_options(auto_write=TRUE)
-options(mc.cores=6)#parallel::detectCores())
+options(mc.cores= 8) #parallel::detectCores())
 
-init_Ricker <- function(...) {
-  list(c = 0.5, s = 1.5)
-}
-
-Ricker_output_PAR <- lapply(stan_data_PAR,
-                            function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
-                                             data=x,chains=4,iter=5000,init = init_Ricker,
-                                             control=list(max_treedepth=12, adapt_delta = 0.95)))
-Ricker_output_PPFD <- lapply(stan_data_PPFD,
-                             function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
-                                              data=x,chains=4,iter=5000,init = init_Ricker,
-                                              control=list(max_treedepth=12, adapt_delta = 0.95)))
-sim_Ricker_output <- list(Ricker_output_PAR, Ricker_output_PPFD)
-
-#launch_shinystan(Ricker_output_PPFD$`Paint Branch`)
-
-saveRDS(sim_Ricker_output, "./rds files/sim_Ricker_output_2022_05_10_paramrec.rds")
-
-
-################################################
-## Extract parameter estimates
-################################################
-
-## Extract parameter estimates from simulation
-sim_Ricker_output <- readRDS("./rds files/sim_Ricker_output_2022_05_10_paramrec.rds")
-Ricker_output_PAR <- sim_Ricker_output[[1]]
-Ricker_output_PPFD <- sim_Ricker_output[[2]]
-
-#extract
-p_PAR<- lapply(Ricker_output_PAR, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
-p_PPFD<- lapply(Ricker_output_PPFD, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
-#mean and sd
-mean_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) mean(y)))
-sd_PAR <- lapply(p_PAR, function(x) lapply(x, function(y) sd(y)))
-mean_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) mean(y)))
-sd_PPFD <- lapply(p_PPFD, function(x) lapply(x, function(y) sd(y)))
-
-############################################
-## Simulate final GPP ts using extracted parameter estimates
-############################################
-
-## Bring in simulation code
-source("Predicted_ProductivityModel_Ricker.R") # parameters: r, lambda, s, c, sig_p
-
-## simulate GPP again for final data set
-Pot_GPP_PAR <- PM_Ricker_lv(r = mean_PAR$Potomac$r,
-                         lambda = mean_PAR$Potomac$lambda,
-                         s = mean_PAR$Potomac$s,
-                         c = mean_PAR$Potomac$c, 
-                         sig_p = mean_PAR$Potomac$sig_p,
-                         sig_o = mean_PAR$Potomac$sig_o, 
-                         df = ex, light_version = ex$light_rel_PAR)
-Pot_GPP_PPFD <- PM_Ricker_lv(r = mean_PPFD$Potomac$r,
-                          lambda = mean_PPFD$Potomac$lambda,
-                          s = mean_PPFD$Potomac$s,
-                          c = mean_PPFD$Potomac$c, 
-                          sig_p = mean_PPFD$Potomac$sig_p,
-                          sig_o = mean_PPFD$Potomac$sig_o, 
-                          df = ex, light_version = ex$light_rel_PPFD)
-Paint_GPP_PAR <- PM_Ricker_lv(r = mean_PAR$`Paint Branch`$r,
-                           lambda = mean_PAR$`Paint Branch`$lambda,
-                           s = mean_PAR$`Paint Branch`$s,
-                           c = mean_PAR$`Paint Branch`$c, 
-                           sig_p = mean_PAR$`Paint Branch`$sig_p,
-                           sig_o = mean_PAR$`Paint Branch`$sig_o, 
-                           df = ex2, light_version = ex2$light_rel_PAR)
-Paint_GPP_PPFD <- PM_Ricker_lv(r = mean_PPFD$`Paint Branch`$r,
-                            lambda = mean_PPFD$`Paint Branch`$lambda,
-                            s = mean_PPFD$`Paint Branch`$s,
-                            c = mean_PPFD$`Paint Branch`$c, 
-                            sig_p = mean_PPFD$`Paint Branch`$sig_p,
-                            sig_o = mean_PPFD$`Paint Branch`$sig_o, 
-                            df = ex2, light_version = ex2$light_rel_PPFD)
-
-plot(1:352, Pot_GPP_PAR, type="l")
-lines(1:352, Pot_GPP_PPFD, type="l", col="blue")
-
-plot(1:312, Paint_GPP_PAR, type="l")
-lines(1:312, Paint_GPP_PPFD, type="l", col="blue")
-
-
-#############################################################################
-## Replace original GPP with predicted GPP in data list and fit model again
-#############################################################################
-
-stan_simPot_PAR <- list(Ndays=length(Pot_GPP_PAR), light=ex$light_rel_PAR, GPP = Pot_GPP_PAR,
-                        prior_sig_o_mean = mean_PAR$Potomac$sig_o,
-                        prior_sig_o_sd = sd_PAR$Potomac$sig_o, tQ = ex$tQ)
-stan_simPot_PPFD <- list(Ndays=length(Pot_GPP_PPFD), light=ex$light_rel_PPFD, GPP = Pot_GPP_PPFD,
-                        prior_sig_o_mean = mean_PPFD$Potomac$sig_o,
-                        prior_sig_o_sd = sd_PPFD$Potomac$sig_o, tQ = ex$tQ)
-
-stan_simPaint_PAR <- list(Ndays=length(Paint_GPP_PAR), light=ex2$light_rel_PAR, GPP = Paint_GPP_PAR,
-                        prior_sig_o_mean = mean_PAR$`Paint Branch`$sig_o,
-                        prior_sig_o_sd = sd_PAR$`Paint Branch`$sig_o, tQ = ex2$tQ)
-stan_simPaint_PPFD <- list(Ndays=length(Paint_GPP_PPFD), light=ex2$light_rel_PPFD, GPP = Paint_GPP_PPFD,
-                         prior_sig_o_mean = mean_PPFD$`Paint Branch`$sig_o,
-                         prior_sig_o_sd = sd_PPFD$`Paint Branch`$sig_o, tQ = ex2$tQ)
-
-stan_sim_list <- list("Potomac_PAR"=stan_simPot_PAR,
-                      "Potomac_PPFD"=stan_simPot_PPFD,
-                      "PaintBranch_PAR"=stan_simPaint_PAR,
-                      "PaintBranch_PPFD"=stan_simPaint_PPFD)
-
-#Fit models again
-rstan_options(auto_write=TRUE)
-options(mc.cores=6)#parallel::detectCores())
-
-init_Ricker <- function(...) {
-  list(c = 0.5, s = 1.5)
-}
-
-Ricker_sim_output <- lapply(stan_sim_list,
-                            function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2_simulation.stan",
-                                             data=x,chains=3,iter=5000,init = init_Ricker,
-                                             control=list(max_treedepth=12)))
-
-#saveRDS(Ricker_sim_output, "./rds files/Ricker_recover_output.rds")
-
-
-#################################################################################
-## Compare parameters from simulation to posterior distributions
-################################################################################
-
-Ricker_sim_output <- readRDS("./rds files/Ricker_recover_output.rds")
-
-## extract parameters from fit to simulated GPP
-sim_recparams <- lapply(Ricker_sim_output, function(x) ldply(extract(x, c("r","lambda","s","c","sig_p","sig_o")),data.frame))
-
-vis_recovery <- function(final_distributions, used_parameters,plot.title){
-  
-  ## distributions of most recent fit
-  recpars <- final_distributions
-  colnames(recpars) <- c("parameter","value")
-  
-  ## params used to simulate
-  orig_meanpars <- ldply(used_parameters, data.frame)
-  colnames(orig_meanpars) <- c("parameter","value")
-  
-  ## labels
-  recpars$parameter <- factor(recpars$parameter,
-                              levels = c("r","lambda","s","c","sig_p","sig_o"),
-                              ordered = TRUE, labels = c("r",expression(lambda),
-                                                         "s","c",
-                                                         expression(paste(sigma["proc"])),
-                                                         expression(paste(sigma["obs"]))))
-  orig_meanpars$parameter <- factor(orig_meanpars$parameter,
-                              levels = c("r","lambda","s","c","sig_p","sig_o"),
-                              ordered = TRUE, labels = c("r",expression(lambda),
-                                                         "s","c",
-                                                         expression(paste(sigma["proc"])),
-                                                         expression(paste(sigma["obs"]))))
-  
-  ggplot(recpars, aes(value))+
-    geom_density(fill="chartreuse4", alpha=0.2)+
-    facet_wrap(~parameter, scales = "free", labeller = label_parsed)+
-    geom_vline(data=orig_meanpars,aes(xintercept = value))+
-    labs(x="Value",y="Density",title=plot.title)+
-    theme(legend.position = "none",
-          #panel.background = element_rect(color = "black", fill=NA, size=1),
-          strip.background = element_rect(fill="white", color="black"),
-          strip.text = element_text(size=14),
-          axis.text.x = element_text(size=12, angle = 45, hjust = 0.5),
-          axis.text.y = element_text(size=12),
-          axis.title = element_text(size=14), title = element_text(size=14))
-}
-
-vis_recovery(sim_recparams$Potomac_PAR, mean_PAR$Potomac,"Potomac - PAR light")
-#vis_recovery(sim_recparams$Potomac_PPFD, mean_PPFD$Potomac)
-vis_recovery(sim_recparams$PaintBranch_PAR, mean_PAR$`Paint Branch`,"Paint Branch - PAR light")
-#vis_recovery(sim_recparams$PaintBranch_PPFD, mean_PPFD$`Paint Branch`)
-
-
-
-
-ggplot(sim_recparams$PaintBranch_PAR[which(sim_recparams$PaintBranch_PAR$.id == "c"),], aes(X..i..))+
-  geom_density()
-
-
-min(sim_recparams$PaintBranch_PAR[which(sim_recparams$PaintBranch_PAR$.id == "c"),]$X..i..)
-
-#####################################
-#####################################
-## Repeat with AR model - no PPFD
-#####################################
-#####################################
-
-###############
-## Fit AR model
-###############
-## Stan prep
-rstan_options(auto_write=TRUE)
-options(mc.cores=6)#parallel::detectCores())
-
-AR_output_PAR <- lapply(stan_data_PAR,
+## S-TS model
+STS_output_PAR <- lapply(stan_data_PAR,
                         function(x) stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
                                          data=x,chains=4,iter=5000,
                                          control=list(max_treedepth=12, adapt_delta = 0.95)))
 
-saveRDS(AR_output_PAR, "./rds files/sim_AR_output_2022_03_27.rds")
+## LB-TS model
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 1.5)
+}
 
+LBTS_output_PAR <- lapply(stan_data_PAR,
+                            function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
+                                             data=x,chains=4,iter=5000,init = init_Ricker,
+                                             control=list(max_treedepth=12, adapt_delta = 0.95)))
 
-################################################
-## Extract parameter estimates
-################################################
+## Save initial model fit
+init_model_output <- list(STS_output_PAR, LBTS_output_PAR)
+saveRDS(init_model_output, "./rds files/Param_Rec_Test_init_output_2022_07_10.rds")
+rm(init_model_output); rm(STS_output_PAR); rm(LBTS_output_PAR)
+
+################################################################
+## (4) Extract parameter estimates from initial model fit
+###############################################################
+
 ## Extract parameter estimates from simulation
-#AR_output_PAR <- readRDS("./rds files/sim_AR_output_2022_03_27.rds")
+init_model_output <- readRDS("./rds files/Param_Rec_Test_init_output_2022_07_10.rds")
+STS_output_PAR <- init_model_output[[1]]
+LBTS_output_PAR <- init_model_output[[2]]
 
 #extract
-AR_p_PAR<- lapply(AR_output_PAR, function(x) extract(x, c("phi","alpha","beta","sig_p","sig_o")))
+p_STS <- lapply(STS_output_PAR, function(x) extract(x, c("phi","alpha","beta","sig_p","sig_o")))
+p_LBTS<- lapply(LBTS_output_PAR, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
+
 #mean and sd
-AR_mean_PAR <- lapply(AR_p_PAR, function(x) lapply(x, function(y) mean(y)))
-AR_sd_PAR <- lapply(AR_p_PAR, function(x) lapply(x, function(y) sd(y)))
+mean_STS <- lapply(p_STS, function(x) lapply(x, function(y) mean(y)))
+sd_STS <- lapply(p_STS, function(x) lapply(x, function(y) sd(y)))
+mean_LBTS <- lapply(p_LBTS, function(x) lapply(x, function(y) mean(y)))
+sd_LBTS <- lapply(p_LBTS, function(x) lapply(x, function(y) sd(y)))
 
+##############################################################
+## (5) Simulate GPP ts using extracted parameter estimates
+##############################################################
 
-############################################
-## Simulate final GPP ts using extracted parameter estimates
-############################################
 ## Bring in simulation code
 source("Predicted_ProductivityModel_Autoregressive.R") 
+source("Predicted_ProductivityModel_Ricker.R")
 
-## simulate GPP again for final data set
+## STS - simulate GPP again for recovery test data set
+Pot_STS_GPP <- PM_AR(phi=mean_STS$Potomac$phi,
+                    alpha=mean_STS$Potomac$alpha,
+                    beta=mean_STS$Potomac$beta,
+                    sig_p=mean_STS$Potomac$sig_p,
+                    sig_o=mean_STS$Potomac$sig_o, df=ex)
+Paint_STS_GPP <- PM_AR(phi=mean_STS$`Paint Branch`$phi,
+                      alpha=mean_STS$`Paint Branch`$alpha,
+                      beta=mean_STS$`Paint Branch`$beta,
+                      sig_p=mean_STS$`Paint Branch`$sig_p,
+                      sig_o=mean_STS$`Paint Branch`$sig_o, df=ex2)
+plot(1:length(Pot_STS_GPP), Pot_STS_GPP, type="l")
+points(ex$GPP) #good
+plot(1:length(Paint_STS_GPP), Paint_STS_GPP, type="l")
+points(ex2$GPP) #divergent fall peak in predicted (line) GPP
 
-Pot_AR_GPP <- PM_AR(phi=AR_mean_PAR$Potomac$phi,
-                    alpha=AR_mean_PAR$Potomac$alpha,
-                    beta=AR_mean_PAR$Potomac$beta,
-                    sig_p=AR_mean_PAR$Potomac$sig_p,
-                    sig_o=AR_mean_PAR$Potomac$sig_o, df=ex)
-Paint_AR_GPP <- PM_AR(phi=AR_mean_PAR$`Paint Branch`$phi,
-                    alpha=AR_mean_PAR$`Paint Branch`$alpha,
-                    beta=AR_mean_PAR$`Paint Branch`$beta,
-                    sig_p=AR_mean_PAR$`Paint Branch`$sig_p,
-                    sig_o=AR_mean_PAR$`Paint Branch`$sig_o, df=ex2)
-
-plot(1:352, Pot_AR_GPP, type="l")
-plot(1:312, Paint_AR_GPP, type="l")
-
-## compile for Stan again
-stan_simPot_AR <- list(Ndays=length(Pot_AR_GPP), light=ex$light_rel_PAR, GPP = Pot_AR_GPP,
-                        prior_sig_o_mean = AR_mean_PAR$Potomac$sig_o,
-                        prior_sig_o_sd = AR_sd_PAR$Potomac$sig_o, tQ = ex$tQ)
-stan_simPaint_AR <- list(Ndays=length(Paint_AR_GPP), light=ex2$light_rel_PAR, GPP = Paint_AR_GPP,
-                          prior_sig_o_mean = AR_mean_PAR$`Paint Branch`$sig_o,
-                          prior_sig_o_sd = AR_sd_PAR$`Paint Branch`$sig_o, tQ = ex2$tQ)
+## LBTS - simulate GPP again for recovery test data set
+Pot_LBTS_GPP <- PM_Ricker(r = mean_LBTS$Potomac$r,
+                            lambda = mean_LBTS$Potomac$lambda,
+                            s = mean_LBTS$Potomac$s,
+                            c = mean_LBTS$Potomac$c, 
+                            sig_p = mean_LBTS$Potomac$sig_p,
+                            sig_o = mean_LBTS$Potomac$sig_o, df = ex)
+Paint_LBTS_GPP <- PM_Ricker(r = mean_LBTS$`Paint Branch`$r,
+                              lambda = mean_LBTS$`Paint Branch`$lambda,
+                              s = mean_LBTS$`Paint Branch`$s,
+                              c = mean_LBTS$`Paint Branch`$c, 
+                              sig_p = mean_LBTS$`Paint Branch`$sig_p,
+                              sig_o = mean_LBTS$`Paint Branch`$sig_o, df = ex2)
+plot(1:length(Pot_LBTS_GPP), Pot_LBTS_GPP, type="l")
+points(ex$GPP) #good
+plot(1:length(Paint_LBTS_GPP), Paint_LBTS_GPP, type="l")
+points(ex2$GPP) #much better than S-TS prediction, just delayed spring peak
 
 
-stan_ARsim_list <- list("Potomac_AR"=stan_simPot_AR,
-                      "PaintBranch_AR"=stan_simPaint_AR)
+#############################################################################
+## (6) Replace original GPP with predicted GPP in stan data list
+#############################################################################
 
-#Fit models again
+## Compile for Stan again
+# STS
+stan_simPot_STS <- list(Ndays=length(Pot_STS_GPP), light=ex$light_rel_PAR, GPP = Pot_STS_GPP,
+                        prior_sig_o_mean = mean_STS$Potomac$sig_o,
+                        prior_sig_o_sd = sd_STS$Potomac$sig_o, tQ = ex$tQ)
+stan_simPaint_STS <- list(Ndays=length(Paint_STS_GPP), light=ex2$light_rel_PAR, GPP = Paint_STS_GPP,
+                          prior_sig_o_mean = mean_STS$`Paint Branch`$sig_o,
+                          prior_sig_o_sd = sd_STS$`Paint Branch`$sig_o, tQ = ex2$tQ)
+stan_STS_sim_list <- list("Potomac_STS"=stan_simPot_STS,
+                         "PaintBranch_STS"=stan_simPaint_STS)
+#LBTS
+stan_simPot_LBTS <- list(Ndays=length(Pot_LBTS_GPP), light=ex$light_rel_PAR, GPP = Pot_LBTS_GPP,
+                        prior_sig_o_mean = mean_LBTS$Potomac$sig_o,
+                        prior_sig_o_sd = sd_LBTS$Potomac$sig_o, tQ = ex$tQ)
+stan_simPaint_LBTS <- list(Ndays=length(Paint_LBTS_GPP), light=ex2$light_rel_PAR, GPP = Paint_LBTS_GPP,
+                          prior_sig_o_mean = mean_LBTS$`Paint Branch`$sig_o,
+                          prior_sig_o_sd = sd_LBTS$`Paint Branch`$sig_o, tQ = ex2$tQ)
+stan_LBTS_sim_list <- list("Potomac_LBTS"=stan_simPot_LBTS,
+                      "PaintBranch_LBTS"=stan_simPaint_LBTS)
+
+###########################################################################
+## (7) Fit models to simulated data from initial parameter estimates
+###########################################################################
 rstan_options(auto_write=TRUE)
-options(mc.cores=6)#parallel::detectCores())
+options(mc.cores=8)#parallel::detectCores())
+#STS
+recov_STS_output <- lapply(stan_STS_sim_list,
+                       function(x) stan("Stan_ProductivityModel1_Autoregressive_obserr_simulation.stan",
+                                        data=x,chains=4,iter=5000,
+                                        control=list(max_treedepth=12, adapt_delta = 0.95)))
 
-simAR_output <- lapply(stan_ARsim_list,
-                        function(x) stan("Stan_ProductivityModel1_Autoregressive_obserr_simulation.stan",
-                                         data=x,chains=4,iter=5000,
-                                         control=list(max_treedepth=12, adapt_delta = 0.95)))
+#LBTS
+init_Ricker <- function(...) {
+  list(c = 0.5, s = 1.5)
+}
+recov_LBTS_output <- lapply(stan_LBTS_sim_list,
+                            function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2_simulation.stan",
+                                             data=x,chains=4,iter=5000,init = init_Ricker,
+                                             control=list(max_treedepth=12)))
 
-#saveRDS(simAR_output, "./rds files/AR_recover_output.rds")
+## Save parameter recovery model fit
+recovery_model_output <- list(recov_STS_output, recov_LBTS_output)
+saveRDS(recovery_model_output, "./rds files/Param_Rec_Test_recovery_output_2022_07_10.rds")
+rm(recovery_model_output); rm(recov_STS_output); rm(recov_LBTS_output)
 
 
 #################################################################################
-## Compare parameters from simulation to posterior distributions
+## (8) Compare parameters from simulation to posterior distributions
 ################################################################################
 
-simAR_output <- readRDS("./rds files/AR_recover_output.rds")
+recovery_model_output <- readRDS("./rds files/Param_Rec_Test_recovery_output_2022_07_10.rds")
+recov_STS_output <- recovery_model_output[[1]]
+recov_LBTS_output <- recovery_model_output[[2]]
 
-## extract parameters from fit to simulated GPP
-ARsim_recparams <- lapply(simAR_output, function(x) ldply(extract(x, c("phi","alpha","beta","sig_p","sig_o")),data.frame))
-
-vis_recovery <- function(final_distributions, used_parameters){
+## STS - vis_recovery
+STS_sim_recp <- lapply(recov_STS_output, function(x) ldply(extract(x, c("phi","alpha","beta","sig_p","sig_o")),data.frame))
+# need STS_sim_recp, and mean_STS from part 4
+STS_vis_recovery <- function(final_distributions, used_parameters, plot.title){
   
   ## distributions of most recent fit
   recpars <- final_distributions
@@ -357,12 +225,50 @@ vis_recovery <- function(final_distributions, used_parameters){
     geom_density(fill="red", alpha=0.2)+
     facet_wrap(~parameter, scales = "free")+
     geom_vline(data=orig_meanpars,aes(xintercept = value))+
-    theme_bw()+
-    theme()
+    labs(x="Value",y="Density",title=plot.title)+
+    theme(legend.position = "none",
+          strip.background = element_rect(fill="white", color="black"),
+          strip.text = element_text(size=14),
+          axis.text.x = element_text(size=12, angle = 45, hjust = 0.5),
+          axis.text.y = element_text(size=12),
+          axis.title = element_text(size=14), title = element_text(size=14))
 }
 
-vis_recovery(ARsim_recparams$Potomac_AR, AR_mean_PAR$Potomac)
-vis_recovery(ARsim_recparams$PaintBranch_AR, AR_mean_PAR$`Paint Branch`)
+STS_vis_recovery(STS_sim_recp$Potomac_STS, mean_STS$Potomac, "S-TS Potomac Parameter Recovery")
+STS_vis_recovery(STS_sim_recp$PaintBranch_STS, mean_STS$`Paint Branch`, "S-TS Paint Branch Parameter Recovery")
+
+
+## LBTS - vis_recovery
+LBTS_sim_recp <- lapply(recov_LBTS_output, function(x) ldply(extract(x, c("r","lambda","s","c","sig_p","sig_o")),data.frame))
+# need LBTS_sim_recp, and mean_LBTS from part 4
+LBTS_vis_recovery <- function(final_distributions, used_parameters, plot.title){
+  
+  ## distributions of most recent fit
+  recpars <- final_distributions
+  colnames(recpars) <- c("parameter","value")
+  
+  ## params used to simulate
+  orig_meanpars <- ldply(used_parameters, data.frame)
+  colnames(orig_meanpars) <- c("parameter","value")
+  
+  
+  ggplot(recpars, aes(value))+
+    geom_density(fill="red", alpha=0.2)+
+    facet_wrap(~parameter, scales = "free")+
+    geom_vline(data=orig_meanpars,aes(xintercept = value))+
+    labs(x="Value",y="Density",title=plot.title)+
+    theme(legend.position = "none",
+          strip.background = element_rect(fill="white", color="black"),
+          strip.text = element_text(size=14),
+          axis.text.x = element_text(size=12, angle = 45, hjust = 0.5),
+          axis.text.y = element_text(size=12),
+          axis.title = element_text(size=14), title = element_text(size=14))
+}
+
+LBTS_vis_recovery(LBTS_sim_recp$Potomac_LBTS, mean_LBTS$Potomac, "LB-TS Potomac Parameter Recovery")
+LBTS_vis_recovery(LBTS_sim_recp$PaintBranch_LBTS, mean_LBTS$`Paint Branch`, "LB-TS Paint Branch Parameter Recovery")
+
+
 
 
 
