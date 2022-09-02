@@ -52,43 +52,20 @@ pLBTS_LB <- pLBTS[which(pLBTS$par_id == "B"),]
 med_LB_yr1 <- pLBTS_LB %>%
   group_by(.id) %>%
   summarize_at(.vars = c("X50."), .funs = median)
+colnames(med_LB_yr1) <- c("site_name","median_LB") 
+med_LB_yr1 <- left_join(med_LB_yr1, site_info, by="site_name")
+write.csv(med_LB_yr1, "../figures and tables/2022 Tables/LBTS_medianLB_Yr1.csv")
+
+###############################################
+## GPP - LB Covariance
+###############################################
 
 
-##
-## YEAR 2 ##
-##
-Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_03_06.rds")
-Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09.rds")
-## need stan_psum function from above
 
-pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
-#STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
-write.csv(pSTS2, "../figures and tables/2022 Tables/STS_ws_posterior_sum_Yr2.csv")
-pSTS2_sub <- pSTS2[which(pSTS2$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
-write.csv(pSTS2_sub, "../figures and tables/2022 Tables/STS_ws_posteriorsubset_sum_Yr2.csv")
-
-pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
-#LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
-write.csv(pLBTS2, "../figures and tables/LBTS_ws_posterior_sum_Yr2.csv")
-pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
-write.csv(pLBTS2_sub, "../figures and tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
-
-## Median latent biomass estimates by site
-pLBTS2$par_id <- substring(pLBTS2$pars, 1, 1)
-pLBTS2_LB <- pLBTS2[which(pLBTS2$par_id == "B"),]
-
-med_LB_yr2 <- pLBTS_LB2 %>%
-  group_by(.id) %>%
-  summarize_at(.vars = c("X50."), .funs = median)
-
-######################
-## S-TS description
-######################
+  
+  
 
 
-######################
-## LB-TS description
-######################
 
 
 #############################################
@@ -282,7 +259,37 @@ Yr2_c_ppd <- lapply(Yr2_output_LBTS, function(x) extract(x, c("c")))
 
 
 
+#########
+## OLD
+#########
 
+## REASON: No longer evaluating Year 2 model fit
+##
+## YEAR 2 ##
+##
+Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_03_06.rds")
+Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09.rds")
+## need stan_psum function from above
+
+pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
+#STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
+write.csv(pSTS2, "../figures and tables/2022 Tables/STS_ws_posterior_sum_Yr2.csv")
+pSTS2_sub <- pSTS2[which(pSTS2$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
+write.csv(pSTS2_sub, "../figures and tables/2022 Tables/STS_ws_posteriorsubset_sum_Yr2.csv")
+
+pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
+#LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
+write.csv(pLBTS2, "../figures and tables/LBTS_ws_posterior_sum_Yr2.csv")
+pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
+write.csv(pLBTS2_sub, "../figures and tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
+
+## Median latent biomass estimates by site
+pLBTS2$par_id <- substring(pLBTS2$pars, 1, 1)
+pLBTS2_LB <- pLBTS2[which(pLBTS2$par_id == "B"),]
+
+med_LB_yr2 <- pLBTS_LB2 %>%
+  group_by(.id) %>%
+  summarize_at(.vars = c("X50."), .funs = median)
 
 
 
