@@ -59,12 +59,34 @@ write.csv(med_LB_yr1, "../figures and tables/2022 Tables/LBTS_medianLB_Yr1.csv")
 ###############################################
 ## GPP - LB Covariance
 ###############################################
+levels(as.factor(pLBTS$par_id))
+pLBTS$pars_day <- sub(".*\\[([^][]+)].*", "\\1", pLBTS$pars)
+pLBTS_LB <- pLBTS[which(pLBTS$par_id %in% c("B")),]
+colnames(pLBTS_LB) <- c("site_name","pars_B","LB_50","LB_2.5","LB_97.5","LB_Rhat","LB_neff","LB_neff_10pct","par_id","pars_day")
+pLBTS_predGPP <- pLBTS[which(pLBTS$par_id %in% c("p")),]
+colnames(pLBTS_predGPP) <- c("site_name","pars_pG","pG_50","pG_2.5","pG_97.5","pG_Rhat","pG_neff","pG_neff_10pct","par_id","pars_day")
 
+## merge based on site_id and day so that aligned properly
+LB_predGPP <- merge(pLBTS_LB, pLBTS_predGPP, by=c("site_name","pars_day"))
+LB_predGPP <- merge(LB_predGPP, site_info, by="site_name")
 
+## Arrange rivers by river order
+LB_predGPP$short_name <- factor(LB_predGPP$short_name, levels=site_order_list)
 
-  
-  
-
+## visualize
+ggplot(LB_predGPP, aes(pG_50, exp(LB_50)))+
+  geom_point()+
+  geom_errorbar(aes(ymin = exp(LB_2.5), ymax = exp(LB_97.5)))+
+  geom_errorbarh(aes(xmin = pG_2.5, xmax = pG_97.5))+
+  facet_wrap(~short_name, ncol=2)+
+  labs(x=expression('Fit GPP (g '*~O[2]~ m^-2~d^-1*')'),
+       y="Median Latent Biomass")+
+  theme(panel.background = element_rect(fill = "white", color="black"),
+        panel.grid = element_line(color = "gray85", linetype = "dashed", size = 0.2),
+        axis.text = element_text(size=13), 
+        axis.title = element_text(size=15),
+        strip.background = element_rect(fill="white", color="black"),
+        strip.text = element_text(size=13))
 
 
 
