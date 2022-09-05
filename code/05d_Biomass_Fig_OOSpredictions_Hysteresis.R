@@ -105,8 +105,7 @@ LBpreds_oos_df <- merge(LBpred_light, LB_LBpreds, by=c("site_name","Date","short
 ## Find storm events and recovery curves
 l <- split(LBpreds_oos_df, LBpreds_oos_df$short_name)
 
-
-
+## explore data
 ggplot(l$`S. Br. Potomac River, WV`, aes(PAR_surface, GPP))+
   geom_point()
 ggplot(l$`S. Br. Potomac River, WV`, aes(PAR_surface, B))+
@@ -117,62 +116,108 @@ ggplot(l$`S. Br. Potomac River, WV`, aes(Date, sim_GPP))+
   geom_point()+
   geom_line(aes(Date, Q/50), color = "blue")+
   geom_line(aes(Date, exp(B)), color="chartreuse4")
-
 View(l$`S. Br. Potomac River, WV`)
 
-
-hysteresis_fig <- function(site, start, end){
+## Plot selected hysteresis example
+hysteresis_fig <- function(site, start, disturb_date, end){
   
   storm <- subset(site, Date >= start & Date <= end)
+  storm$pp_disturb <- NA
+  storm[which(storm$Date < disturb_date),]$pp_disturb <- "0"
+  storm[which(storm$Date >= disturb_date),]$pp_disturb <- seq(1, nrow(storm) - nrow(storm[which(storm$Date <= disturb_date),])+1)
+  storm$pp_disturb <- as.numeric(storm$pp_disturb)
+  storm$pp_cat <- NA
+  storm[which(storm$pp_disturb == "0"),]$pp_cat <- "Pre"
+  storm[-which(storm$pp_disturb == "0"),]$pp_cat <- "Post"
   
   plot_grid(
     ggplot(storm, aes(Date, Q))+
       geom_line(color="midnightblue", size=1)+
       geom_ribbon(aes(ymin=-Inf,ymax=Q), color="midnightblue", fill="midnightblue")+
-      geom_line(aes(Date, PAR_surface), color = "purple")+
+      geom_line(aes(Date, PAR_surface), color = "darkgoldenrod2", size=0.75)+
+      geom_point(aes(Date, PAR_surface), color = "darkgoldenrod2", size=1.5)+
       scale_x_datetime(expand = c(0,0))+
-      theme_bw(),
+      scale_y_continuous(name = "Daily Q (cms)", sec.axis = sec_axis(trans = ~.*1, name = "Daily Surface PAR"))+
+      theme_bw()+
+      theme(axis.title.y.left = element_text(color = "midnightblue"),
+            axis.title.y.right = element_text(color = "darkgoldenrod2")),
     
-  ggplot(storm, aes(Date, sim_GPP))+
-    geom_point()+
-    geom_point(aes(Date, exp(B)), color="chartreuse4")+
-    geom_line(aes(Date, exp(B)), color="chartreuse4")+
-    scale_x_datetime(expand = c(0,0))+
-    theme_bw(),
+    ggplot(storm, aes(Date, sim_GPP))+
+      geom_line(aes(Date, exp(B)), color="chartreuse4")+
+      geom_ribbon(aes(ymin=-Inf,ymax=exp(B)), color="chartreuse4", fill="chartreuse4", alpha=0.5)+
+      geom_line()+
+      geom_point(aes(color=pp_disturb, shape = pp_cat), size=3)+
+      scale_color_gradient("Days Since Disturbance",
+                           low = "blue", high = "orange",
+                          breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
+      scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
+      scale_x_datetime(expand = c(0,0))+
+      scale_y_continuous(name = "Predicted GPP", sec.axis = sec_axis(trans = ~.*1, name = "Latent Biomass"))+
+      theme_bw()+
+      theme(legend.position = "none"),
+    
+
+    
   
   plot_grid(
   
   ggplot(storm, aes(Q, sim_GPP))+
-    geom_point(data = site, aes(Q, sim_GPP), alpha=0.2, color="gray75")+
-    geom_point(data = storm, aes(Q, sim_GPP, color=Date), size=2)+
+    geom_point(data = site, aes(Q, sim_GPP), alpha=0.3, color="gray50")+
     geom_path()+
+    geom_point(aes(color=pp_disturb, shape = pp_cat), size=3)+
+    scale_color_gradient("Days Since Disturbance",
+                         low = "blue", high = "orange",
+                         breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
+    scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
+    labs(x = "Daily Q (cms)", y = "Predicted GPP")+
     theme_bw()+
     theme(legend.position = "none"),
   
   ggplot(storm, aes(Q, exp(B)))+
-    geom_point(data = site, aes(Q, exp(B)), alpha=0.2, color="gray75")+
-    geom_point(size=2, aes(color=Date))+
+    geom_point(data = site, aes(Q, exp(B)), alpha=0.3, color="gray50")+
     geom_path()+
+    geom_point(aes(color=pp_disturb, shape = pp_cat), size=3)+
+    scale_color_gradient("Days Since Disturbance",
+                         low = "blue", high = "orange",
+                         breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
+    scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
+    labs(x = "Daily Q (cms)", y = "Latent Biomass")+
     theme_bw()+
     theme(legend.position = "none"),
   
   ggplot(storm, aes(PAR_surface, sim_GPP))+
-    geom_point(data = site, aes(PAR_surface, sim_GPP), alpha=0.2, color="gray75")+
-    geom_point(data = storm, aes(PAR_surface, sim_GPP, color=Date), size=2)+
+    geom_point(data = site, aes(PAR_surface, sim_GPP), alpha=0.3, color="gray50")+
     geom_path()+
+    geom_point(aes(color=pp_disturb, shape = pp_cat), size=3)+
+    scale_color_gradient("Days Since Disturbance",
+                         low = "blue", high = "orange",
+                         breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
+    scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
+    labs(x = "Daily Surface PAR", y = "Predicted GPP")+
     theme_bw()+
     theme(legend.position = "none"),
   
   ncol = 3),
   
-  ncol = 1)
+  ncol = 1, rel_heights = c(0.8,0.8,1.2))
   
   
 }
 
-hysteresis_fig(l$`S. Br. Potomac River, WV`, "2013-05-01","2013-05-31")
+hysteresis_fig(l$`S. Br. Potomac River, WV`, "2013-05-01", "2013-05-08","2013-05-31")
 #hysteresis_fig(l$`S. Br. Potomac River, WV`, "2013-01-28","2013-03-10")
-#hysteresis_fig(l$`S. Br. Potomac River, WV`, "2013-04-09","2013-04-27")
+#hysteresis_fig(l$`S. Br. Potomac River, WV`, "2013-04-09","2013-04-12","2013-04-27")
+
+
+
+
+
+
+
+
+
+
+
 
 
 
