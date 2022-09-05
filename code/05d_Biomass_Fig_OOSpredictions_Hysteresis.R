@@ -140,7 +140,8 @@ hysteresis_fig <- function(site, start, disturb_date, end){
       scale_y_continuous(name = "Daily Q (cms)", sec.axis = sec_axis(trans = ~.*1, name = "Daily Surface PAR"))+
       theme_bw()+
       theme(axis.title.y.left = element_text(color = "midnightblue"),
-            axis.title.y.right = element_text(color = "darkgoldenrod2")),
+            axis.title.y.right = element_text(color = "darkgoldenrod2"),
+            axis.title.x = element_blank()),
     
     ggplot(storm, aes(Date, sim_GPP))+
       geom_line(aes(Date, exp(B)), color="chartreuse4")+
@@ -152,9 +153,11 @@ hysteresis_fig <- function(site, start, disturb_date, end){
                           breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
       scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
       scale_x_datetime(expand = c(0,0))+
-      scale_y_continuous(name = "Predicted GPP", sec.axis = sec_axis(trans = ~.*1, name = "Latent Biomass"))+
+      scale_y_continuous(name = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')'),
+                         sec.axis = sec_axis(trans = ~.*1, name = "Latent Biomass"))+
       theme_bw()+
-      theme(legend.position = "none"),
+      theme(legend.position = "none",
+            axis.title.y.right = element_text(color = "chartreuse4")),
     
 
     
@@ -169,7 +172,7 @@ hysteresis_fig <- function(site, start, disturb_date, end){
                          low = "blue", high = "orange",
                          breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
     scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
-    labs(x = "Daily Q (cms)", y = "Predicted GPP")+
+    labs(x = "Daily Q (cms)", y = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')'))+
     theme_bw()+
     theme(legend.position = "none"),
   
@@ -193,13 +196,13 @@ hysteresis_fig <- function(site, start, disturb_date, end){
                          low = "blue", high = "orange",
                          breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
     scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
-    labs(x = "Daily Surface PAR", y = "Predicted GPP")+
+    labs(x = "Daily Surface PAR", y = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')'))+
     theme_bw()+
     theme(legend.position = "none"),
   
   ncol = 3),
   
-  ncol = 1, rel_heights = c(0.8,0.8,1.2))
+  ncol = 1, rel_heights = c(0.6,0.7,1))
   
   
 }
