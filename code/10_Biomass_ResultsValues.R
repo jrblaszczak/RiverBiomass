@@ -271,16 +271,6 @@ Yr2_c_ppd <- lapply(Yr2_output_LBTS, function(x) extract(x, c("c")))
 
 
 
-######################
-## Hysteresis
-######################
-## See hysteresis code
-
-
-
-
-
-
 #########
 ## OLD
 #########

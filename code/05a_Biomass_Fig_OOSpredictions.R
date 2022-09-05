@@ -217,7 +217,7 @@ LatBio_oos_preds <- function(preds, df, PM.col, PM.title){
 }
 
 
-LatBio_oos_preds("./rds files/Sim_6riv_Ricker_oos.rds",df, PM_Ricker.col, "PM: LB")
+LatBio_oos_preds("./rds files/Sim_6riv_Ricker_oos_2022_02_27.rds",df, PM_Ricker.col, "PM: LB")
 #LatBio_oos_preds("./rds files/Sim_6riv_Gompertz_oos.rds",df, PM_Gompertz.col, "PM: Gompertz")
 
 
