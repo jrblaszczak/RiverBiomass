@@ -130,6 +130,9 @@ hysteresis_fig <- function(site, start, disturb_date, end){
   storm[which(storm$pp_disturb == "0"),]$pp_cat <- "Pre"
   storm[-which(storm$pp_disturb == "0"),]$pp_cat <- "Post"
   
+  
+  plot_grid(
+  
   plot_grid(
     ggplot(storm, aes(Date, Q))+
       geom_line(color="midnightblue", size=1)+
@@ -144,6 +147,8 @@ hysteresis_fig <- function(site, start, disturb_date, end){
             axis.title.x = element_blank()),
     
     ggplot(storm, aes(Date, sim_GPP))+
+      geom_point(aes(Date, GPP), color="grey80", size=2)+
+      geom_line(aes(Date, GPP), color="grey80")+
       geom_line(aes(Date, exp(B)), color="chartreuse4")+
       geom_ribbon(aes(ymin=-Inf,ymax=exp(B)), color="chartreuse4", fill="chartreuse4", alpha=0.5)+
       geom_line()+
@@ -153,13 +158,13 @@ hysteresis_fig <- function(site, start, disturb_date, end){
                           breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
       scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
       scale_x_datetime(expand = c(0,0))+
-      scale_y_continuous(name = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')'),
+      scale_y_continuous(name = expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),
                          sec.axis = sec_axis(trans = ~.*1, name = "Latent Biomass"))+
       theme_bw()+
       theme(legend.position = "none",
             axis.title.y.right = element_text(color = "chartreuse4")),
     
-
+    ncol=1, align = "hv"),
     
   
   plot_grid(
@@ -202,7 +207,7 @@ hysteresis_fig <- function(site, start, disturb_date, end){
   
   ncol = 3),
   
-  ncol = 1, rel_heights = c(0.6,0.7,1))
+  ncol = 1, rel_heights = c(1,1))
   
   
 }
