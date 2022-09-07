@@ -155,13 +155,14 @@ hysteresis_fig <- function(site, start, disturb_date, end){
       geom_point(aes(color=pp_disturb, shape = pp_cat), size=3)+
       scale_color_gradient("Days Since Disturbance",
                            low = "blue", high = "orange",
-                          breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
+                          breaks=c(0,round(nrow(storm)*0.25,0),round(nrow(storm)*0.5,0),
+                                   round(nrow(storm)*0.75,0),round(nrow(storm)*1,0)))+
       scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
       scale_x_datetime(expand = c(0,0))+
       scale_y_continuous(name = expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),
                          sec.axis = sec_axis(trans = ~.*1, name = "Latent Biomass"))+
       theme_bw()+
-      theme(legend.position = "none",
+      theme(legend.position = "none", ## switch to bottom to extract legend
             axis.title.y.right = element_text(color = "chartreuse4")),
     
     ncol=1, align = "hv"),
