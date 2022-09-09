@@ -233,7 +233,8 @@ WA_Qc_plot <- ggplot(c_siteinfo, aes(NHD_AREASQKM, Qc_cms, color=short_name))+
   scale_x_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 20), limits=c(1,20))+
   theme_bw()+
   theme(legend.position = "bottom")+
-  labs(x = "NHD Watershed Area (sq. km.)", y = expression(paste(Q[c]," (cms)"))
+  guides(color=guide_legend(title="Site Name"))+
+  labs(x = "NHD Watershed Area (sq. km.)", y = expression(paste(Q[c]," (cms)")))
 
 # NHD stream order
 SO_Qc_plot <- ggplot(c_siteinfo, aes(NHD_STREAMORDE, Qc_cms, color=short_name))+
@@ -241,16 +242,16 @@ SO_Qc_plot <- ggplot(c_siteinfo, aes(NHD_STREAMORDE, Qc_cms, color=short_name))+
   geom_errorbar(aes(ymin = (Qc_lower_cms), ymax = (Qc_upper_cms)),
                 width=0.2, size=0.5)+
   scale_y_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 50, 100, 150), limits=c(0.1,150))+
-  #scale_x_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 20), limits=c(1,20))+
-  theme_bw()
+  theme_bw()+
+  labs(x = "NHD Stream Order", y = expression(paste(Q[c]," (cms)")))
 
+## Plot together
 plot_grid(
 plot_grid(
   WA_Qc_plot+theme(legend.position = "none"),
   SO_Qc_plot+theme(legend.position = "none", axis.title.y = element_blank()),
   ncol = 2, align = "hv"),
 get_legend(WA_Qc_plot),ncol=1, rel_heights = c(1,0.2))
-
 
 ## no correlation when log transformed to meet normality
 cor.test(log(c_siteinfo$Qc_cms), log(c_siteinfo$NHD_AREASQKM))
