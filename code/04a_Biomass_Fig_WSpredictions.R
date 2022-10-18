@@ -148,6 +148,18 @@ df_bio3$short_name <- factor(df_bio3$short_name, levels=site_order_list)
 
 df_modB3 <- df_bio3
 
+## Add in K estimates
+stan_model_output_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_02_27.rds")
+Ricker_pars<-ldply(lapply(stan_model_output_Ricker, function(x) extract(x, c("r","lambda"))), data.frame)
+med_pars <- Ricker_pars %>%
+  group_by(.id) %>%
+  summarise(r.med = median(r, na.rm = TRUE), l.med = median(lambda, na.rm = TRUE))
+med_pars$K <- (-1*med_pars$r.med)/med_pars$l.med
+# add in info to merge with other data
+colnames(med_pars)[which(colnames(med_pars) == ".id")] <- "site_name"
+med_pars <- left_join(med_pars, site_info[,c("site_name","short_name")], by="site_name")
+med_pars$short_name <- factor(med_pars$short_name, levels=site_order_list)
+
 ## plot latent biomass model predictions
 df_modB3_plot <- ggplot(df_modB3, aes(Date, exp(B)))+
   geom_line(size=1.2, color="chartreuse4")+
@@ -161,6 +173,7 @@ df_modB3_plot <- ggplot(df_modB3, aes(Date, exp(B)))+
         strip.background = element_rect(fill="white", color="black"),
         strip.text = element_text(size=15))+
   coord_cartesian(ylim=c(0,30))+
+  geom_hline(data = med_pars, aes(yintercept = K), linetype = "dashed", size=0.9)+
   facet_wrap(~short_name, scales = "free_x", ncol = 2)
 df_modB3_plot
 
