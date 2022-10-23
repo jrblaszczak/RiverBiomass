@@ -84,10 +84,10 @@ plotting_P_dat <- function(x){
   p_down <- numeric()
   name <- substring(deparse(substitute(x)),7)
   for(i in 1:length(pq)){
-    temp <- exp(-exp(x$s*100*(pq[i]-x$c)))
-    p_median[i] <- median(temp)
-    p_up[i] <- quantile(temp, probs = 0.975)
-    p_down[i] <- quantile(temp, probs = 0.025)
+    t <- exp(-exp(x$s*100*(pq[i]-x$c)))
+    p_median[i] <- median(t)
+    p_up[i] <- quantile(t, probs = 0.975)
+    p_down[i] <- quantile(t, probs = 0.025)
   }
   df <- as.data.frame(as.matrix(cbind(pq,p_median, p_up, p_down)))
   df$site_name <- x$site_name
