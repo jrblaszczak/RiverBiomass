@@ -35,15 +35,15 @@ stan_psum <- function(x){
 ##
 pSTS <- ldply(lapply(stan_model_output_STS, function(z) stan_psum(z)), data.frame)
 #STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
-write.csv(pSTS, "./tables/STS_ws_posterior_sum.csv")
+write.csv(pSTS, "../figures and tables/2022 Tables/STS_ws_posterior_sum.csv")
 pSTS_sub <- pSTS[which(pSTS$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
-write.csv(pSTS_sub, "./tables/STS_ws_posteriorsubset_sum.csv")
+write.csv(pSTS_sub, "../figures and tables/2022 Tables/STS_ws_posteriorsubset_sum.csv")
 
 pLBTS <- ldply(lapply(stan_model_output_LBTS, function(z) stan_psum(z)), data.frame)
 #LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
-write.csv(pLBTS, "./tables/LBTS_ws_posterior_sum.csv")
+write.csv(pLBTS, "../figures and tables/2022 Tables/LBTS_ws_posterior_sum.csv")
 pLBTS_sub <- pLBTS[which(pLBTS$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
-write.csv(pLBTS_sub, "./tables/LBTS_ws_posteriorsubset_sum.csv")
+write.csv(pLBTS_sub, "../figures and tables/2022 Tables/LBTS_ws_posteriorsubset_sum.csv")
 
 ## Median latent biomass estimates by site
 pLBTS$par_id <- substring(pLBTS$pars, 1, 1)
@@ -52,43 +52,42 @@ pLBTS_LB <- pLBTS[which(pLBTS$par_id == "B"),]
 med_LB_yr1 <- pLBTS_LB %>%
   group_by(.id) %>%
   summarize_at(.vars = c("X50."), .funs = median)
+colnames(med_LB_yr1) <- c("site_name","median_LB") 
+med_LB_yr1 <- left_join(med_LB_yr1, site_info, by="site_name")
+write.csv(med_LB_yr1, "../figures and tables/2022 Tables/LBTS_medianLB_Yr1.csv")
 
+###############################################
+## GPP - LB Covariance
+###############################################
+levels(as.factor(pLBTS$par_id))
+pLBTS$pars_day <- sub(".*\\[([^][]+)].*", "\\1", pLBTS$pars)
+pLBTS_LB <- pLBTS[which(pLBTS$par_id %in% c("B")),]
+colnames(pLBTS_LB) <- c("site_name","pars_B","LB_50","LB_2.5","LB_97.5","LB_Rhat","LB_neff","LB_neff_10pct","par_id","pars_day")
+pLBTS_predGPP <- pLBTS[which(pLBTS$par_id %in% c("p")),]
+colnames(pLBTS_predGPP) <- c("site_name","pars_pG","pG_50","pG_2.5","pG_97.5","pG_Rhat","pG_neff","pG_neff_10pct","par_id","pars_day")
 
-##
-## YEAR 2 ##
-##
-Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_03_06.rds")
-Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09.rds")
-## need stan_psum function from above
+## merge based on site_id and day so that aligned properly
+LB_predGPP <- merge(pLBTS_LB, pLBTS_predGPP, by=c("site_name","pars_day"))
+LB_predGPP <- merge(LB_predGPP, site_info, by="site_name")
 
-pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
-#STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
-write.csv(pSTS2, "./tables/STS_ws_posterior_sum_Yr2.csv")
-pSTS2_sub <- pSTS2[which(pSTS2$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
-write.csv(pSTS2_sub, "./tables/STS_ws_posteriorsubset_sum_Yr2.csv")
+## Arrange rivers by river order
+LB_predGPP$short_name <- factor(LB_predGPP$short_name, levels=site_order_list)
 
-pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
-#LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
-write.csv(pLBTS2, "./tables/LBTS_ws_posterior_sum_Yr2.csv")
-pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
-write.csv(pLBTS2_sub, "./tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
+## visualize
+ggplot(LB_predGPP, aes(pG_50, exp(LB_50)))+
+  geom_point()+
+  geom_errorbar(aes(ymin = exp(LB_2.5), ymax = exp(LB_97.5)))+
+  geom_errorbarh(aes(xmin = pG_2.5, xmax = pG_97.5))+
+  facet_wrap(~short_name, ncol=2)+
+  labs(x=expression('Fit GPP (g '*~O[2]~ m^-2~d^-1*')'),
+       y="Median Latent Biomass")+
+  theme(panel.background = element_rect(fill = "white", color="black"),
+        panel.grid = element_line(color = "gray85", linetype = "dashed", size = 0.2),
+        axis.text = element_text(size=13), 
+        axis.title = element_text(size=15),
+        strip.background = element_rect(fill="white", color="black"),
+        strip.text = element_text(size=13))
 
-## Median latent biomass estimates by site
-pLBTS2$par_id <- substring(pLBTS2$pars, 1, 1)
-pLBTS2_LB <- pLBTS2[which(pLBTS2$par_id == "B"),]
-
-med_LB_yr2 <- pLBTS_LB2 %>%
-  group_by(.id) %>%
-  summarize_at(.vars = c("X50."), .funs = median)
-
-######################
-## S-TS description
-######################
-
-
-######################
-## LB-TS description
-######################
 
 
 #############################################
@@ -104,7 +103,7 @@ sapply(RI_2, class)
 site_info <- merge(site_info, RI_2, by="site_name")
 
 ## Reimport c estimates (within-sample) if not already loaded
-pLBTS_sub <- read.csv("./tables/LBTS_ws_posteriorsubset_sum.csv", header=T)
+pLBTS_sub <- read.csv("../figures and tables/2022 Tables/LBTS_ws_posteriorsubset_sum.csv", header=T)
 c_sites <- pLBTS_sub[which(pLBTS_sub$pars == "c"),]
 colnames(c_sites)[2] <- "site_name"
 
@@ -214,6 +213,50 @@ ggplot(Qc_pct_df, aes(x=short_name,y=Pct, color = pct_type)) +
         legend.text = element_text(size=18), legend.position = c(0.15,0.85),
         axis.title = element_text(size=20))
 
+## Patterns with watershed area
+## Import hypoxia data set with more site info
+hyp <- read.csv("../data/GRDO_GEE_HA_NHD.csv", header=T)
+hyp_sub <- hyp[which(hyp$SiteID %in% c_eval$site_name),]
+colnames(hyp_sub)[which(colnames(hyp_sub) == "SiteID")] <- "site_name"
+
+c_siteinfo <- merge(c_eval, hyp_sub, by = "site_name")
+##order
+c_siteinfo$short_name <- factor(c_siteinfo$short_name, levels= site_order_list)
+scaleFUN <- function(x) sprintf("%.2f", x)
+
+# NHD watershed area
+WA_Qc_plot <- ggplot(c_siteinfo, aes(NHD_AREASQKM, Qc_cms, color=short_name))+
+  geom_point(size = 3)+
+  geom_errorbar(aes(ymin = (Qc_lower_cms), ymax = (Qc_upper_cms)),
+                width=0.2, size=0.5)+
+  scale_y_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 50, 100, 150), limits=c(0.1,150))+
+  scale_x_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 20), limits=c(1,20))+
+  theme_bw()+
+  theme(legend.position = "bottom")+
+  guides(color=guide_legend(title="Site Name"))+
+  labs(x = "NHD Watershed Area (sq. km.)", y = expression(paste(Q[c]," (cms)")))
+
+# NHD stream order
+SO_Qc_plot <- ggplot(c_siteinfo, aes(NHD_STREAMORDE, Qc_cms, color=short_name))+
+  geom_point(size = 3)+
+  geom_errorbar(aes(ymin = (Qc_lower_cms), ymax = (Qc_upper_cms)),
+                width=0.2, size=0.5)+
+  scale_y_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 50, 100, 150), limits=c(0.1,150))+
+  theme_bw()+
+  labs(x = "NHD Stream Order", y = expression(paste(Q[c]," (cms)")))
+
+## Plot together
+plot_grid(
+plot_grid(
+  WA_Qc_plot+theme(legend.position = "none"),
+  SO_Qc_plot+theme(legend.position = "none", axis.title.y = element_blank()),
+  ncol = 2, align = "hv"),
+get_legend(WA_Qc_plot),ncol=1, rel_heights = c(1,0.2))
+
+## no correlation when log transformed to meet normality
+cor.test(log(c_siteinfo$Qc_cms), log(c_siteinfo$NHD_AREASQKM))
+
+
 ##
 ## 2 - Patterns in s
 ##
@@ -272,17 +315,37 @@ Yr2_c_ppd <- lapply(Yr2_output_LBTS, function(x) extract(x, c("c")))
 
 
 
-######################
-## Hysteresis
-######################
-## See hysteresis code
+#########
+## OLD
+#########
 
+## REASON: No longer evaluating Year 2 model fit
+##
+## YEAR 2 ##
+##
+Yr2_output_STS <- readRDS("./rds files/stan_6riv_2ndYr_output_AR_2022_03_06.rds")
+Yr2_output_LBTS <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09.rds")
+## need stan_psum function from above
 
+pSTS2 <- ldply(lapply(Yr2_output_STS, function(z) stan_psum(z)), data.frame)
+#STS params of interest: c("phi","alpha","beta","sig_p","sig_o")
+write.csv(pSTS2, "../figures and tables/2022 Tables/STS_ws_posterior_sum_Yr2.csv")
+pSTS2_sub <- pSTS2[which(pSTS2$pars %in% c("phi","alpha","beta","sig_p","sig_o")),]
+write.csv(pSTS2_sub, "../figures and tables/2022 Tables/STS_ws_posteriorsubset_sum_Yr2.csv")
 
+pLBTS2 <- ldply(lapply(Yr2_output_LBTS, function(z) stan_psum(z)), data.frame)
+#LB-TS params of interest: c("r","lambda","s","c","sig_p","sig_o")
+write.csv(pLBTS2, "../figures and tables/LBTS_ws_posterior_sum_Yr2.csv")
+pLBTS2_sub <- pLBTS2[which(pLBTS2$pars %in% c("r","lambda","s","c","sig_p","sig_o")),]
+write.csv(pLBTS2_sub, "../figures and tables/LBTS_ws_posteriorsubset_sum_Yr2.csv")
 
+## Median latent biomass estimates by site
+pLBTS2$par_id <- substring(pLBTS2$pars, 1, 1)
+pLBTS2_LB <- pLBTS2[which(pLBTS2$par_id == "B"),]
 
-
-
+med_LB_yr2 <- pLBTS_LB2 %>%
+  group_by(.id) %>%
+  summarize_at(.vars = c("X50."), .funs = median)
 
 
 

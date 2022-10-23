@@ -63,7 +63,7 @@ plotting_covar <- function(x) {
   
 }
 
-plotting_covar(df$nwis_08447300)
+plotting_covar(df$nwis_07191222)
 
 
 
@@ -104,7 +104,7 @@ PM_outputlist_Ricker <- lapply(stan_data_l,
                                                 control=list(max_treedepth=12, adapt_delta=0.95)))
 saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09.rds")
 
-#PM_outputlist_Ricker <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09.rds")
+PM_outputlist_Ricker <- readRDS("./rds files/stan_6riv_2ndYr_output_Ricker_2022_04_09.rds")
 launch_shinystan(PM_outputlist_Ricker$nwis_08447300)
 
 
