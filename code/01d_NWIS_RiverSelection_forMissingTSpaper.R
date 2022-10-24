@@ -66,7 +66,7 @@ head(NWIS)
 
 NWIS <- NWIS[which(NWIS$GPP.Rhat < 1.05),]
 NWIS <- NWIS[which(NWIS$K600.Rhat < 1.05),]
-length(levels(factor(NWIS$site_name))) ## 355
+length(levels(factor(NWIS$site_name))) ## 354
 
 
 ## Subset columns and sites
@@ -97,19 +97,22 @@ gap_per_year <- NWIS_sub %>%
 maxgap <- gap_per_year %>%
   group_by(site_name, year) %>%
   summarize_at(.vars = "gap", .funs = max)
-## subset for sites with a max gap of 14 days
-sub_by_gap <- maxgap[which(maxgap$gap <= 14),]
-length(levels(as.factor(sub_by_gap$site_name))) ## 92
+
+## EDITED BELOW FOR MISSING TS MANUSCRIPT
+
+## subset for sites with a max gap of 2 days
+sub_by_gap <- maxgap[which(maxgap$gap <= 2),]
+length(levels(as.factor(sub_by_gap$site_name))) ## 24
 ## merge with number of days per year
 sub_by_gap <- merge(sub_by_gap, dat_per_year, by=c("site_name","year"))
 ## at least 275 days per year
 sub_by_gap <- sub_by_gap[which(sub_by_gap$n >= 275),]
 
 sub_by_gap_sum <- sub_by_gap %>% group_by(site_name) %>% count()
-high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 2),] # 41 when tight dam restriction
+high_q <- sub_by_gap_sum[which(sub_by_gap_sum$n >= 1),] # 7 (don't need two years)
 
 ## Subset NWIS_sub
-TS <- NWIS_sub[which(NWIS_sub$site_name %in% high_q$site_name),] ## only sites with two or more years
+TS <- NWIS_sub[which(NWIS_sub$site_name %in% high_q$site_name),] ## only high_q sites
 
 ## Subset to years that meet criteria
 sub_by_gap$site_year <- paste(sub_by_gap$site_name,sub_by_gap$year,sep = "_")
@@ -142,41 +145,38 @@ View(TS_site[which(TS_site$order_group == "mid"),])
 View(TS_site[which(TS_site$order_group == "large"),])
 
 ## plot
-sid <- "nwis_13213000"
-two_years <- c(2014,2016) ## Boise River near Parma, ID alternative
+sid <- "nwis_04137500"
+#two_years <- c(2014,2016) ## Boise River near Parma, ID alternative
 TS_site[which(TS_site$site_name == sid),]
 head(TS[which(TS$site_name == sid),]); tail(TS[which(TS$site_name == sid),])
 
 plot_grid(
   ggplot(TS[which(TS$site_name == sid),], aes(date, GPP_temp))+
     geom_line()+labs(title=TS_site[which(TS_site$site_name == sid),]$long_name),
-  ggplot(TS[which(TS$site_name == sid & TS$year %in% two_years),], aes(date, GPP_temp))+
+  ggplot(TS[which(TS$site_name == sid),], aes(date, GPP_temp))+ # & TS$year %in% two_years
   geom_line(),
   ncol = 1)
 
-## small: nwis_02336526 2015,2016 (Order 2; PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA) - light
-## small: nwis_01649190 2010,2011 (Order 2; PAINT BRANCH NEAR COLLEGE PARK, MD) - light
-## mid: nwis_07191222 2009,2010 (Order 3; Beaty Creek near Jay, OK) - light
-## mid: nwis_01608500 2012,2013 (Order 5; SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV) - light
-## large: nwis_11044000 2015,2016 (Order 6; SANTA MARGARITA R NR TEMECULA CA) - no light
-## large: nwis_08447300 2012,2013 (Order 7: Pecos Rv at Brotherton Rh nr Pandale, TX) - no light
+## good candidates for Missing TS manuscript
+# nwis_05435943 (2012 - BADGER MILL CREEK AT VERONA, WI)
+# nwis_01608500 (2012 - SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV)
 
-site_subset <- rbind(TS[which(TS$site_name == "nwis_02336526" & TS$year %in% c(2015,2016)),],
-               TS[which(TS$site_name == "nwis_01649190" & TS$year %in% c(2010,2011)),],
-               TS[which(TS$site_name == "nwis_07191222" & TS$year %in% c(2009,2010)),],
-               TS[which(TS$site_name == "nwis_01608500" & TS$year %in% c(2012,2013)),],
-               TS[which(TS$site_name == "nwis_11044000" & TS$year %in% c(2015,2016)),],
-               TS[which(TS$site_name == "nwis_08447300" & TS$year %in% c(2012,2013)),])
+## look at little suspicious candidates for Missing TS manuscript
+# nwis_04125460 (2016 - PINE RIVER AT HIGH SCHOOL BRIDGE NR HOXEYVILLE, MI)
+# nwis_04137500 (2009 - AU SABLE RIVER NEAR AU SABLE, MI)
+
+site_subset <- rbind(TS[which(TS$site_name == "nwis_05435943" & TS$year %in% c(2012)),],
+               TS[which(TS$site_name == "nwis_01608500" & TS$year %in% c(2012)),],
+               TS[which(TS$site_name == "nwis_04125460" & TS$year %in% c(2016)),],
+               TS[which(TS$site_name == "nwis_04137500" & TS$year %in% c(2009)),])
 
 TS_site_subset <- df[which(df$site_name %in% site_subset$site_name),]
 
 ## Save sub_by_gap info
-site_subset_numdays <- rbind(sub_by_gap[which(sub_by_gap$site_name == "nwis_02336526" & sub_by_gap$year %in% c(2015,2016)),],
-                     sub_by_gap[which(sub_by_gap$site_name == "nwis_01649190" & sub_by_gap$year %in% c(2010,2011)),],
-                     sub_by_gap[which(sub_by_gap$site_name == "nwis_07191222" & sub_by_gap$year %in% c(2009,2010)),],
-                     sub_by_gap[which(sub_by_gap$site_name == "nwis_01608500" & sub_by_gap$year %in% c(2012,2013)),],
-                     sub_by_gap[which(sub_by_gap$site_name == "nwis_11044000" & sub_by_gap$year %in% c(2015,2016)),],
-                     sub_by_gap[which(sub_by_gap$site_name == "nwis_08447300" & sub_by_gap$year %in% c(2012,2013)),])
+site_subset_numdays <- rbind(sub_by_gap[which(sub_by_gap$site_name == "nwis_05435943" & sub_by_gap$year %in% c(2012)),],
+                     sub_by_gap[which(sub_by_gap$site_name == "nwis_01608500" & sub_by_gap$year %in% c(2012)),],
+                     sub_by_gap[which(sub_by_gap$site_name == "nwis_04125460" & sub_by_gap$year %in% c(2016)),],
+                     sub_by_gap[which(sub_by_gap$site_name == "nwis_04137500" & sub_by_gap$year %in% c(2009)),])
 colnames(site_subset_numdays) <- c("site_name","year","max_gap","Ndays","site_year")
 
 
@@ -184,11 +184,12 @@ colnames(site_subset_numdays) <- c("site_name","year","max_gap","Ndays","site_ye
 ## Export
 ###########################
 
-## NWIS site subset
+## NWIS site subset -- for Missing TS manuscript!
 setwd("~/GitHub/RiverBiomass/code")
-saveRDS(site_subset, "./rds files/NWIS_6site_subset_SL.rds")
-saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_SL.rds")
-saveRDS(site_subset_numdays,"./rds files/NWIS_6site_Ndays_SL.rds")
+
+write.csv(site_subset, "./Other manuscripts/NWIS_MissingTS_subset.csv")
+write.csv(TS_site_subset, "./Other manuscripts/NWIS_MissingTSinfo_subset.csv")
+write.csv(site_subset_numdays,"./Other manuscripts/NWIS_MissingTS_Ndays.csv")
 
 
 ##############################
@@ -196,19 +197,32 @@ saveRDS(site_subset_numdays,"./rds files/NWIS_6site_Ndays_SL.rds")
 ###########################
 site_subset_list <- split(site_subset, site_subset$site_name)
 
+## good candidates for Missing TS manuscript
+# nwis_05435943 (2012 - BADGER MILL CREEK AT VERONA, WI)
+# nwis_01608500 (2012 - SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV)
 
-df <- site_subset_list$nwis_01649190
+## look at little suspicious candidates for Missing TS manuscript
+# nwis_04125460 (2016 - PINE RIVER AT HIGH SCHOOL BRIDGE NR HOXEYVILLE, MI)
+# nwis_04137500 (2009 - AU SABLE RIVER NEAR AU SABLE, MI)
+
+
+df <- site_subset_list$nwis_05435943
+# add short name
+df$short_name <- revalue(as.character(df$site_name), replace = c("nwis_05435943"="Badger Mill Creek, WI",
+                                                                 "nwis_01608500"="S. Br. Potomac River, WV",
+                                                                 "nwis_04125460"="Pine River, MI (Suspicious)",
+                                                                 "nwis_04137500"="Au Sable River, MI (Suspicious)"))
+
 ratio_QL <- max(df$light)/max(df$Q)
 GPP_plot <- ggplot(df, aes(date, GPP_temp))+
   #geom_errorbar(aes(ymin = GPP.lower, ymax = GPP.upper), width=0.2,color="chartreuse4")+
       geom_point(color="chartreuse4", size=2)+geom_line(color="chartreuse4", size=1)+
-      labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+      labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'), title=df$short_name[1])+
       theme(legend.position = "none",
             panel.background = element_rect(color = "black", fill=NA, size=1),
             axis.title.x = element_blank(), axis.text.x = element_blank(),
             axis.text.y = element_text(size=12),
-            axis.title.y = element_text(size=12))+
-  geom_vline(xintercept = as.POSIXct("2013-01-01", format="%Y-%m-%d"),size=1, linetype="dashed")
+            axis.title.y = element_text(size=12))
     
 data_plot <- ggplot(df, aes(date, Q*ratio_QL))+
       geom_point(data=df, aes(date, light), size=1.5, color="darkgoldenrod3")+
@@ -222,10 +236,13 @@ data_plot <- ggplot(df, aes(date, Q*ratio_QL))+
             axis.title.y.right = element_text(size=12, color="deepskyblue4"),
             axis.text.x = element_text(angle=25, hjust = 1),
             strip.background = element_rect(fill="white", color="black"),
-            strip.text = element_text(size=15))+
-  geom_vline(xintercept = as.POSIXct("2013-01-01", format="%Y-%m-%d"),size=1, linetype="dashed")
+            strip.text = element_text(size=15))
     
 GPP_plot + data_plot + plot_layout(ncol = 1)
+
+
+
+## other
 
 ggplot(df, aes(light, GPP))+
   geom_point(size=1.5)+
