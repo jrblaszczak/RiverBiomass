@@ -140,7 +140,7 @@ hysteresis_fig <- function(site, start, disturb_date, end){
       geom_line(aes(Date, PAR_surface), color = "darkgoldenrod2", size=0.75)+
       geom_point(aes(Date, PAR_surface), color = "darkgoldenrod2", size=1.5)+
       scale_x_datetime(expand = c(0,0))+
-      scale_y_continuous(name = "Daily Q (cms)", sec.axis = sec_axis(trans = ~.*1, name = "Daily Surface PAR"))+
+      scale_y_continuous(name = "Daily Q (cms)", sec.axis = sec_axis(trans = ~.*1, name = "Surface PAR"))+
       theme_bw()+
       theme(axis.title.y.left = element_text(color = "midnightblue"),
             axis.title.y.right = element_text(color = "darkgoldenrod2"),
@@ -202,13 +202,13 @@ hysteresis_fig <- function(site, start, disturb_date, end){
                          low = "blue", high = "orange",
                          breaks=c(0,round(nrow(storm)*0.5,0),nrow(storm)))+
     scale_shape_manual("Pre/Post Disturbance", values = c("Pre" = 13,"Post" = 19))+
-    labs(x = "Daily Surface PAR", y = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')'))+
+    labs(x = "Surface PAR", y = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')'))+
     theme_bw()+
     theme(legend.position = "none"),
   
   ncol = 3),
   
-  ncol = 1, rel_heights = c(1,1))
+  ncol = 1, rel_heights = c(1,0.8))
   
   
 }
