@@ -313,6 +313,88 @@ ggplot(Qc_wide, aes(short_name, pct.diff))+geom_point()
 Yr1_c_ppd <- lapply(stan_model_output_LBTS, function(x) extract(x, c("c")))
 Yr2_c_ppd <- lapply(Yr2_output_LBTS, function(x) extract(x, c("c")))
 
+################################################
+## rmax among sites - how related to river size
+################################################
+
+## Import par summary
+LBTS_parsum <- read.csv("../figures and tables/2022 Tables/LBTS_ws_posteriorsubset_sum.csv")
+# subset to only r
+r <- LBTS_parsum[which(LBTS_parsum$pars == "r"),]
+colnames(r)[which(colnames(r) == ".id")] <- "site_name"
+# merge with site_info
+r <- merge(r, site_info, by="site_name")
+
+# import GRDO
+hyp <- read.csv("../data/GRDO_GEE_HA_NHD.csv", header=T)
+hyp_sub <- hyp[which(hyp$SiteID %in% r$site_name),]
+colnames(hyp_sub)[which(colnames(hyp_sub) == "SiteID")] <- "site_name"
+# merge with r
+r <- merge(r, hyp_sub, by="site_name")
+
+
+##order
+r$short_name <- factor(r$short_name, levels= site_order_list)
+scaleFUN <- function(x) sprintf("%.2f", x)
+
+# NHD watershed area
+WA_r_plot <- ggplot(r, aes(NHD_AREASQKM, `X50.`, color=short_name))+
+  geom_point(size = 3)+
+  geom_errorbar(aes(ymin = (`X2.5.`), ymax = (`X97.5.`)),
+                width=0.2, size=0.5)+
+  scale_x_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 20), limits=c(1,20))+
+  theme_bw()+
+  theme(legend.position = "bottom")+
+  guides(color=guide_legend(title="Site Name"))+
+  labs(x = "NHD Watershed Area (sq. km.)", y = expression(r[max]))
+
+
+# NHD stream order
+SO_r_plot <- ggplot(r, aes(NHD_STREAMORDE.x, `X50.`, color=short_name))+
+  geom_point(size = 3)+
+  geom_errorbar(aes(ymin = (`X2.5.`), ymax = (`X97.5.`)),
+                width=0.2, size=0.5)+
+  theme_bw()+
+  labs(x = "NHD Stream Order", y = expression(r[max]))
+
+
+
+## investigate relationships with light and temperature
+mean_light_ws <- ldply(lapply(df, function(x) mean(x$PAR_surface, na.omit=T)), data.frame)
+colnames(mean_light_ws) <- c("site_name","mean_PAR")
+r <- merge(r, mean_light_ws, by="site_name")
+
+mean_temp_ws <- ldply(lapply(df, function(x) mean(x$temp, na.omit=T)), data.frame)
+colnames(mean_temp_ws) <- c("site_name","mean_temp")
+r <- merge(r, mean_temp_ws, by="site_name")
+
+
+PAR_r_plot <- ggplot(r, aes(mean_PAR, `X50.`, color=short_name))+
+  geom_point(size = 3)+
+  geom_errorbar(aes(ymin = (`X2.5.`), ymax = (`X97.5.`)),
+                width=20, size=0.5)+
+  theme_bw()+
+  labs(x = "Mean Annual PAR at Stream Surface", y = expression(r[max]))
+
+WT_r_plot <- ggplot(r, aes(mean_temp, `X50.`, color=short_name))+
+  geom_point(size = 3)+
+  geom_errorbar(aes(ymin = (`X2.5.`), ymax = (`X97.5.`)),
+                width=0.2, size=0.5)+
+  theme_bw()+
+  labs(x = "Mean Annual Streamwater Temperature (C)", y = expression(r[max]))
+
+
+## Plot together
+plot_grid(
+  plot_grid(
+    WA_r_plot+theme(legend.position = "none"),
+    SO_r_plot+theme(legend.position = "none", axis.title.y = element_blank()),
+    ncol = 2, align = "hv"),
+  plot_grid(
+    PAR_r_plot+theme(legend.position = "none"),
+    WT_r_plot+theme(legend.position = "none", axis.title.y = element_blank()),
+    ncol = 2, align = "hv"),
+  get_legend(WA_r_plot),ncol=1, rel_heights = c(1,1,0.2))
 
 
 #########
