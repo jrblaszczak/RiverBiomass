@@ -231,7 +231,7 @@ sc_plotting <- function(z, t){
   
 }
 
-sc_plotting(sc_R, "LB-TS Productivity Model")
+sc_plotting(sc_R, "LB-TS Productivity Model s and c Estimates")
 #sc_plotting(sc_G, "PM4: Gompertz")
 
 
