@@ -1,8 +1,8 @@
 ## Simple map of sites used in persistence plots
 
 lapply(c("plyr","dplyr","ggplot2","cowplot",
-         "rstan", "shinystan","gridExtra","usmap",
-         "wesanderson","ggrepel"), require, character.only=T)
+         "rstan", "gridExtra","usmap",
+         "wesanderson","ggrepel","ggsn","ggspatial"), require, character.only=T)
 
 
 site_info <- readRDS("./rds files/NWIS_6siteinfo_subset_SL.rds")
@@ -21,12 +21,14 @@ sp_transformed <- usmap_transform(site_info_map)
 col <- wes_palette("Zissou1", 6, type = "continuous")
 
 
-
-plot_usmap() +
+## Plot
+plot_usmap(exclude = c("AK","HI")) +
   geom_point(data = sp_transformed, aes(x = x, y = y,
                                         fill=short_name),
              shape=21, size=3)+
   geom_label_repel(data = sp_transformed, aes(x = x, y = y, label = short_name,
                                         fill = short_name))+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  ggspatial::annotation_scale(location = 'tl')+
+  annotation_north_arrow(location = "br")
   
