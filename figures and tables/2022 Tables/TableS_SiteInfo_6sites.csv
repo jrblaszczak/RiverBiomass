@@ -1,0 +1,7 @@
+"","short_name","nwis_id","lat","lon","NHD_STREAMORDE","struct.canal_flag","struct.dam_flag","struct.npdes_flag"
+"1","S. Br. Potomac River, WV",1608500,39.44703879,-78.6541817,5,95,95,80
+"2","Paint Branch, MD",1649190,39.03313889,-76.96427778,2,95,95,50
+"3","Proctor Creek, GA",2336526,33.79427255,-84.4743747,2,95,95,95
+"4","Beaty Creek, OK",7191222,36.35535924,-94.7763388,3,95,95,95
+"5","Pecos River, TX",8447300,30.314,-101.7415556,7,95,95,95
+"6","Santa Margarita River, CA",11044000,33.4739175,-117.1422536,6,95,95,95
