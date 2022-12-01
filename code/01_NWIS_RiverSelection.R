@@ -179,6 +179,31 @@ site_subset_numdays <- rbind(sub_by_gap[which(sub_by_gap$site_name == "nwis_0233
                      sub_by_gap[which(sub_by_gap$site_name == "nwis_08447300" & sub_by_gap$year %in% c(2012,2013)),])
 colnames(site_subset_numdays) <- c("site_name","year","max_gap","Ndays","site_year")
 
+## site subset diagnostics
+site_subset_diagnostics <- diagnostics[which(diagnostics$site %in% TS_site_subset$site_name),] ## nwis_01649190 & nwis_11044000 have duplicates
+
+#which of nwis_01649190 overlaps with 2010 and 2011?
+#unzipped Powell center file nwis_01649190
+raw_PB <- read.table("../data/nwis_01649190-ts_doobs_nwis.tsv",sep = "\t", header=T)
+#start and end date of 5 vs 15 min
+raw_PB$DateTime <- as.POSIXct(as.character(raw_PB$DateTime), format="%Y-%m-%d %H:%M:%S")
+PB_ts_diff <- raw_PB %>%
+  mutate(diff = strptime(DateTime, "%Y-%m-%d %H:%M:%S") - lag(strptime(DateTime, "%Y-%m-%d %H:%M:%S"), default = strptime(DateTime, "%Y-%m-%d %H:%M:%S")[1]),
+         diff_secs = as.numeric(diff, units = 'secs'))
+#2010 and 2011 are both the 15 min model
+site_subset_diagnostics <- site_subset_diagnostics[-which(site_subset_diagnostics$resolution == "5min"),] ## only wrong nwis_01649190 has 5min resolution
+
+#which of nwis_11044000 overlaps with 2015 and 2016?
+#unzipped Powell center file nwis_11044000
+raw_SM <- read.table("../data/nwis_11044000-ts_doobs_nwis.tsv",sep = "\t", header=T)
+#start and end date of 15 vs 60 min
+raw_SM$DateTime <- as.POSIXct(as.character(raw_SM$DateTime), format="%Y-%m-%d %H:%M:%S")
+SM_ts_diff <- raw_SM %>%
+  mutate(diff = strptime(DateTime, "%Y-%m-%d %H:%M:%S") - lag(strptime(DateTime, "%Y-%m-%d %H:%M:%S"), default = strptime(DateTime, "%Y-%m-%d %H:%M:%S")[1]),
+         diff_secs = as.numeric(diff, units = 'secs'))
+#2015 and 2016 are both the 15 min model
+site_subset_diagnostics <- site_subset_diagnostics[-which(site_subset_diagnostics$resolution == "60min"),] ## only wrong nwis_11044000 has 60min resolution
+
 
 ###########################
 ## Export
@@ -189,6 +214,8 @@ setwd("~/GitHub/RiverBiomass/code")
 saveRDS(site_subset, "./rds files/NWIS_6site_subset_SL.rds")
 saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_SL.rds")
 saveRDS(site_subset_numdays,"./rds files/NWIS_6site_Ndays_SL.rds")
+write.csv(site_subset_diagnostics,"../figures and tables/2022 Tables/NWIS_6site_MetabDiagnostics.csv")
+
 
 
 ##############################
