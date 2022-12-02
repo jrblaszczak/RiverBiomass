@@ -374,26 +374,27 @@ PAR_r_plot <- ggplot(r, aes(mean_PAR, `X50.`, color=short_name))+
   geom_errorbar(aes(ymin = (`X2.5.`), ymax = (`X97.5.`)),
                 width=20, size=0.5)+
   theme_bw()+
-  labs(x = "Mean Annual PAR at Stream Surface", y = expression(r[max]))
+  labs(x = "Mean Within-Sample PAR at Stream Surface", y = expression(r[max]))
+
+WT_lab <- "Mean Within-Sample Water Temperature (°C)"
 
 WT_r_plot <- ggplot(r, aes(mean_temp, `X50.`, color=short_name))+
   geom_point(size = 3)+
   geom_errorbar(aes(ymin = (`X2.5.`), ymax = (`X97.5.`)),
                 width=0.2, size=0.5)+
   theme_bw()+
-  labs(x = "Mean Annual Streamwater Temperature (C)", y = expression(r[max]))
-
+  labs(x = WT_lab, y = expression(r[max]))
 
 ## Plot together
 plot_grid(
   plot_grid(
     WA_r_plot+theme(legend.position = "none"),
     SO_r_plot+theme(legend.position = "none", axis.title.y = element_blank()),
-    ncol = 2, align = "hv"),
+    ncol = 2, align = "hv", labels = c('a','b')),
   plot_grid(
     PAR_r_plot+theme(legend.position = "none"),
     WT_r_plot+theme(legend.position = "none", axis.title.y = element_blank()),
-    ncol = 2, align = "hv"),
+    ncol = 2, align = "hv", labels = c('c','d')),
   get_legend(WA_r_plot),ncol=1, rel_heights = c(1,1,0.2))
 
 
