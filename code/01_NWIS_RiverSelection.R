@@ -179,6 +179,7 @@ site_subset_numdays <- rbind(sub_by_gap[which(sub_by_gap$site_name == "nwis_0233
                      sub_by_gap[which(sub_by_gap$site_name == "nwis_08447300" & sub_by_gap$year %in% c(2012,2013)),])
 colnames(site_subset_numdays) <- c("site_name","year","max_gap","Ndays","site_year")
 
+
 ## site subset diagnostics
 site_subset_diagnostics <- diagnostics[which(diagnostics$site %in% TS_site_subset$site_name),] ## nwis_01649190 & nwis_11044000 have duplicates
 
@@ -214,6 +215,7 @@ setwd("~/GitHub/RiverBiomass/code")
 saveRDS(site_subset, "./rds files/NWIS_6site_subset_SL.rds")
 saveRDS(TS_site_subset, "./rds files/NWIS_6siteinfo_subset_SL.rds")
 saveRDS(site_subset_numdays,"./rds files/NWIS_6site_Ndays_SL.rds")
+write.csv(site_subset_numdays,"../figures and tables/2022 Tables/NWIS_6site_yearNdays.csv")
 write.csv(site_subset_diagnostics,"../figures and tables/2022 Tables/NWIS_6site_MetabDiagnostics.csv")
 
 
