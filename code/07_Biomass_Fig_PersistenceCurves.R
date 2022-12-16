@@ -149,10 +149,7 @@ Persistence_plots <- function(site, df, site_info, P_df){
           axis.title = element_blank(), 
           strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=15))+
-    #annotate("text", label=as.character(P$short_name[1]),
-    #         x = 1.2*c, 
-    #         y= 0.9, size=3.75, hjust=0)+
-    labs(x="Range of Standardized Discharge",y="Persistence")+
+    #labs(x="Range of Standardized Discharge",y="Persistence")+
     scale_y_continuous(limits=c(0,1), labels = function(x) paste0(x*100, '%'))+
     geom_vline(xintercept = crit_Q, size=1, linetype="dotted", color="grey25")+
     geom_vline(xintercept = c, size=1, linetype="dashed")
@@ -180,8 +177,8 @@ grid.arrange(
                          plots$nwis_11044000,
                          plots$nwis_08447300),
               ncol = 2,
-              bottom=textGrob("Discharge (cms)", gp=gpar(fontsize=16)), 
-              left=textGrob("Day-to-Day Biomass Persistence", gp=gpar(fontsize=16), rot=90)),
+              bottom=textGrob(expression('Discharge ('*m^3~s^-1*')'), gp=gpar(fontsize=14)), 
+              left=textGrob("Day-to-Day Biomass Persistence", gp=gpar(fontsize=14), rot=90)),
   widths=c(9,1)
 )
 
