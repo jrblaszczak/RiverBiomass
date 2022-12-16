@@ -88,7 +88,31 @@ ggplot(LB_predGPP, aes(pG_50, exp(LB_50)))+
         strip.background = element_rect(fill="white", color="black"),
         strip.text = element_text(size=13))
 
+#########################################
+## K and mean/median GPP correlation
+########################################
 
+## First, calculate K
+yr1_LB_par <- read.csv("../figures and tables/2022 Tables/LBTS_ws_posterior_sum.csv")
+yr1_r_lambda <- yr1_LB_par[which(yr1_LB_par$pars %in% c("r","lambda")),]
+
+#rearrange dataframe
+yr1_r_lambda <- yr1_r_lambda %>%
+  select(.id, pars, X50.) %>%
+  spread(pars, X50.)
+
+#calculate K
+yr1_r_lambda$K <- (-1*yr1_r_lambda$r)/yr1_r_lambda$lambda
+
+## Second, determine median/max GPP per site
+med_GPP <- ldply(lapply(df, function(x) median(x$GPP)), data.frame)
+colnames(med_GPP) <- c(".id","median_GPP")  
+
+## Third, merge by site and correlate
+medGPP_K <- merge(yr1_r_lambda, med_GPP, by=".id")
+
+ggplot(medGPP_K, aes(median_GPP, K))+geom_point()
+cor.test(medGPP_K$median_GPP, medGPP_K$K, method = "pearson")
 
 #############################################
 ## Critical flow thresholds and sensitivity
@@ -376,7 +400,7 @@ PAR_r_plot <- ggplot(r, aes(mean_PAR, `X50.`, color=short_name))+
   theme_bw()+
   labs(x = "Mean Within-Sample PAR at Stream Surface", y = expression(r[max]))
 
-WT_lab <- "Mean Within-Sample Water Temperature (°C)"
+WT_lab <- "Mean Within-Sample Water Temperature (?C)"
 
 WT_r_plot <- ggplot(r, aes(mean_temp, `X50.`, color=short_name))+
   geom_point(size = 3)+
