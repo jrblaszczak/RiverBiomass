@@ -247,14 +247,15 @@ c_siteinfo <- merge(c_eval, hyp_sub, by = "site_name")
 ##order
 c_siteinfo$short_name <- factor(c_siteinfo$short_name, levels= site_order_list)
 scaleFUN <- function(x) sprintf("%.2f", x)
+scaleFUN0 <- function(x) sprintf("%.0f", x)
 
 # NHD watershed area
-WA_Qc_plot <- ggplot(c_siteinfo, aes(NHD_AREASQKM, Qc_cms, color=short_name))+
+WA_Qc_plot <- ggplot(c_siteinfo, aes(NHD_TOTDASQKM, Qc_cms, color=short_name))+
   geom_point(size = 3)+
   geom_errorbar(aes(ymin = (Qc_lower_cms), ymax = (Qc_upper_cms)),
                 width=0.2, size=0.5)+
   scale_y_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 50, 100, 150), limits=c(0.1,150))+
-  scale_x_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 20), limits=c(1,20))+
+  scale_x_continuous(trans="log", labels=scaleFUN0, breaks = c(10, 100, 1000, 15000, 100000), limits=c(10,100000))+
   theme_bw()+
   theme(legend.position = "bottom")+
   guides(color=guide_legend(title="Site Name"))+
