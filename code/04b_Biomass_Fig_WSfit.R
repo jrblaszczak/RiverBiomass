@@ -41,10 +41,10 @@ sts_GPP$short_name <- factor(sts_GPP$short_name, levels=site_order_list)
 ## Plot GPP pred
 ggplot(sts_GPP, aes(Date, GPP))+
   geom_point(size=2, color="black")+
-  geom_line(aes(Date, pred_GPP), color=PM_AR.col, size=1.2)+
+  geom_line(aes(Date, pred_GPP), color=PM_AR.col, size=0.75)+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="Within-Sample S-TS Model Fit")+
   geom_ribbon(aes(ymin=pred_GPP_lower,ymax=pred_GPP_upper),
-              fill=PM_AR.col, alpha=0.2, show.legend = FALSE)+
+              fill=PM_AR.col, alpha=0.5, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=12),
@@ -79,10 +79,10 @@ lbts_GPP$short_name <- factor(lbts_GPP$short_name, levels=site_order_list)
 ## Plot GPP pred
 ggplot(lbts_GPP, aes(Date, GPP))+
   geom_point(size=2, color="black")+
-  geom_line(aes(Date, pred_GPP), color=PM_Ricker.col, size=1.2)+
+  geom_line(aes(Date, pred_GPP), color=PM_Ricker.col, size=0.75)+
   labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),title="Within-Sample LB-TS Model Fit")+
   geom_ribbon(aes(ymin=pred_GPP_lower,ymax=pred_GPP_upper),
-              fill=PM_Ricker.col, alpha=0.2, show.legend = FALSE)+
+              fill=PM_Ricker.col, alpha=0.5, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=12),
@@ -105,10 +105,10 @@ df_modB3$short_name <- factor(df_modB3$short_name, levels=site_order_list)
 
 ## Plot latent biomass predictions
 ggplot(df_modB3, aes(Date, exp(B)))+
-  geom_line(size=1.2, color="chartreuse4")+
+  geom_line(size=0.75, color="chartreuse4")+
   labs(y="Latent Biomass",title="Within-Sample LB-TS Model Estimates")+
   geom_ribbon(aes(ymin=exp(B_lower),ymax=exp(B_upper)),
-              fill="chartreuse4", alpha=0.3, show.legend = FALSE)+
+              fill="chartreuse4", alpha=0.5, show.legend = FALSE)+
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
         axis.title.x = element_blank(), axis.text = element_text(size=12),
