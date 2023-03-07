@@ -356,22 +356,22 @@ colnames(hyp_sub)[which(colnames(hyp_sub) == "SiteID")] <- "site_name"
 # merge with r
 r <- merge(r, hyp_sub, by="site_name")
 
-
 ##order
 r$short_name <- factor(r$short_name, levels= site_order_list)
 scaleFUN <- function(x) sprintf("%.2f", x)
+scaleFUN0 <- function(x) sprintf("%.0f", x)
 
 # NHD watershed area
-WA_r_plot <- ggplot(r, aes(NHD_AREASQKM, `X50.`, color=short_name))+
+WA_r_plot <- ggplot(r, aes(NHD_TOTDASQKM, `X50.`, color=short_name))+
   geom_point(size = 3)+
   geom_errorbar(aes(ymin = (`X2.5.`), ymax = (`X97.5.`)),
                 width=0.2, size=0.5)+
-  scale_x_continuous(trans="log", labels=scaleFUN, breaks = c(1, 5, 10, 20), limits=c(1,20))+
+  scale_x_continuous(trans="log", labels=scaleFUN0, breaks = c(10, 100, 1000, 15000, 100000), limits=c(10,100000))+
   theme_bw()+
   theme(legend.position = "bottom")+
   guides(color=guide_legend(title="Site Name"))+
   labs(x = "NHD Watershed Area (sq. km.)", y = expression(r[max]))
-
+WA_r_plot
 
 # NHD stream order
 SO_r_plot <- ggplot(r, aes(NHD_STREAMORDE.x, `X50.`, color=short_name))+
@@ -400,7 +400,7 @@ PAR_r_plot <- ggplot(r, aes(mean_PAR, `X50.`, color=short_name))+
   theme_bw()+
   labs(x = "Mean Within-Sample PAR at Stream Surface", y = expression(r[max]))
 
-WT_lab <- "Mean Within-Sample Water Temperature (?C)"
+WT_lab <- "Mean Within-Sample Water Temperature (°C)"
 
 WT_r_plot <- ggplot(r, aes(mean_temp, `X50.`, color=short_name))+
   geom_point(size = 3)+
