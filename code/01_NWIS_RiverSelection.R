@@ -132,11 +132,25 @@ TS_site[which(TS_site$NHD_STREAMORDE %in% c(1,2)),]$order_group <- "small"
 TS_site[which(TS_site$NHD_STREAMORDE %in% c(3,4,5)),]$order_group <- "mid"
 TS_site[which(TS_site$NHD_STREAMORDE >= 6),]$order_group <- "large"
 
+## validate years that meet criteria
+## count days per year
+TSdat_per_year <- TS %>%
+  group_by(site_name, year) %>%
+  count()
+## identify the max day gap per year
+TSgap_per_year <- TS %>%
+  group_by(site_name, year) %>%
+  mutate(gap = doy - lag(doy, default=doy[1]))
+TSmaxgap <- TSgap_per_year %>%
+  group_by(site_name, year) %>%
+  summarize_at(.vars = "gap", .funs = max)
+TS_valid_years <- merge(TSdat_per_year, TSmaxgap, by=c("site_name","year"))
+
 ###########################################################################
 ## Choose two consecutive river years from small, mid, and large rivers
 ###########################################################################
 
-## choose sites from different groups
+## choose sites from different groups that meet criteria
 View(TS_site[which(TS_site$order_group == "small"),])
 View(TS_site[which(TS_site$order_group == "mid"),])
 View(TS_site[which(TS_site$order_group == "large"),])
@@ -169,6 +183,11 @@ site_subset <- rbind(TS[which(TS$site_name == "nwis_02336526" & TS$year %in% c(2
                TS[which(TS$site_name == "nwis_08447300" & TS$year %in% c(2012,2013)),])
 
 TS_site_subset <- df[which(df$site_name %in% site_subset$site_name),]
+
+## longer training data set comparison
+## more years which still meet the criteria
+Potomac_long <- TS[which(TS$site_name == "nwis_01608500" & TS$year %in% TS_valid_years[which(TS_valid_years$site_name == "nwis_01608500"),]$year),]
+SantaMarg_long <- TS[which(TS$site_name == "nwis_11044000" & TS$year %in% TS_valid_years[which(TS_valid_years$site_name == "nwis_11044000"),]$year),]
 
 ## Save sub_by_gap info
 site_subset_numdays <- rbind(sub_by_gap[which(sub_by_gap$site_name == "nwis_02336526" & sub_by_gap$year %in% c(2015,2016)),],
@@ -218,6 +237,9 @@ saveRDS(site_subset_numdays,"./rds files/NWIS_6site_Ndays_SL.rds")
 write.csv(site_subset_numdays,"../figures and tables/2022 Tables/NWIS_6site_yearNdays.csv")
 write.csv(site_subset_diagnostics,"../figures and tables/2022 Tables/NWIS_6site_MetabDiagnostics.csv")
 
+# Potomac & SM long for longer training data set comparison
+saveRDS(Potomac_long, "./rds files/SBPotomac_longTS.rds")
+saveRDS(SantaMarg_long, "./rds files/SantaMarg_longTS.rds")
 
 
 ##############################
@@ -266,3 +288,6 @@ ggplot(df, aes(light, GPP))+
         axis.title = element_text(size=18))
 
 
+####################
+## More years
+####################
