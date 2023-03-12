@@ -8,8 +8,17 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "parallel","tidyverse","rstan","devtools","shinystan",
          "MCMCglmm"), require, character.only=T)
 
-## Source data
-source("DataSource_6rivers_StreamLight.R")
+## Read in data files
+Pot_TS <- readRDS("./rds files/SBPotomac_longTS.rds")
+
+## Read in streamlight
+Pot_SL <- readRDS("./rds files/SBPotomac_SL.rds")
+
+###################################
+## Longer time series data prep
+###################################
+
+
 
 ####################
 ## Stan data prep ##

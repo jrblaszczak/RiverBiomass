@@ -1,4 +1,7 @@
-## StreamLight output
+##==============================================================================
+## Script for getting StreamLight data for subset of sites
+## Code author: J.R. Blaszczak
+##==============================================================================
 
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "tidyverse","data.table","patchwork","devtools"), require, character.only=T)
@@ -14,7 +17,7 @@ for(i in 1:length(sites)){
 }
 
 ## Import streamlight
-setwd("~/GitHub/RiverBiomass/data/StreamLight model inputs and outputs/individual files")
+setwd("../data/StreamLight model inputs and outputs/individual files")
 
 SL <- ldply(sites_files, function(filename) {
   d <- read.table(filename, header = T, sep = "\t")
@@ -64,6 +67,10 @@ site_subset_split <- split(site_subset, site_subset$.id)
 
 lapply(site_subset_split, function(x) sum(is.na(x$PAR_surface))) # all 0
 lapply(site_subset_split, function(x) sum(is.na(x$PAR_turb))) # 108, 126, 153, 46
+
+## Save longer Potomac River time series for longer training validation comparison
+Potomac_SL <- SF_df[which(SF_df$site_name == "nwis_01608500"),]
+saveRDS(Potomac_SL, "../../../code/rds files/SBPotomac_SL.rds")
 
 ####################################################
 ## For remaining sites - Santa Margarita and Pecos
@@ -242,6 +249,7 @@ all_site_light <- rbind(site_subset, SantaMar_daily, Pecos_daily)
 
 ## Save
 saveRDS(all_site_light, "./rds files/StreamLight_daily_6riv_all.rds")
+
 
 
 
