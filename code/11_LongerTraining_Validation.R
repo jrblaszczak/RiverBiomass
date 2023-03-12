@@ -36,6 +36,10 @@ data[which(data$GPP < 0),]$GPP <- sample(exp(-3):exp(-2), 1)
 ## Create a GPP SD; SD = (CI - mean)/1.96
 data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
 
+# remove 2013
+Pot_longtrain <- data[which(data$year %in% c("2012","2014","2015","2016")),]
+Pot_shorttrain <- data[which(data$year == "2012"),]
+
 ## Relativize light and discharge
 rel_LQT <- function(x){
   x$light_rel_PPFD <- x$light/max(x$light)
@@ -47,14 +51,20 @@ rel_LQT <- function(x){
   return(x)
 }
 
-Pot_df <- rel_LQT(data)
-# remove 2013
-Pot_longtrain <- Pot_df[-which(Pot_df$year == "2013"),]
-Pot_shorttrain <- Pot_df[which(Pot_df$year == "2012"),]
+Pot_longtrain <- rel_LQT(Pot_longtrain)
+Pot_shorttrain <- rel_LQT(Pot_shorttrain)
 
 ggplot(Pot_longtrain, aes(date, GPP))+
   geom_point()+
-  geom_point(data = Pot_shorttrain, aes(date, GPP), color = "blue")
+  geom_point(data = Pot_shorttrain, aes(date, GPP), color = "blue")+
+  geom_point(data = data[which(data$year == "2013"),], aes(date, GPP), color = "purple")
+
+plot_grid(
+  ggplot(Pot_longtrain, aes(date, light_rel_PAR))+
+  geom_point(),
+  ggplot(Pot_longtrain, aes(date, tQ))+
+    geom_point(),
+  ncol= 1)
 
 ####################
 ## Stan data prep ##
@@ -94,17 +104,20 @@ test_ricker <- stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
                     control=list(max_treedepth=12, adapt_delta=0.95))
 launch_shinystan(test_ricker)
 
+rm(test_ar, test_ricker)
+
 
 ###################################################
 ## Run Stan to get parameter estimates - all sites
 ###################################################
+stan_data_l <- list(stan_data_Pot_long, stan_data_Pot_short)
 
 ## PM 1 - Standard time series
 PM_outputlist_AR <- lapply(stan_data_l,
                            function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
                                                    data=x, chains=4, iter=5000,
                                                    control=list(max_treedepth=12, adapt_delta=0.95)))
-saveRDS(PM_outputlist_AR, "./rds files/stan_6riv_output_AR_2022_02_22.rds")
+saveRDS(PM_outputlist_AR, "./rds files/stan_Pot_output_AR_2023_03_11.rds")
 
 
 ## PM 2 - Latent Biomass (Ricker)
@@ -115,52 +128,18 @@ PM_outputlist_Ricker <- lapply(stan_data_l,
                                function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
                                                 data=x, init = init_Ricker, chains=4, iter=5000,
                                                 control=list(max_treedepth=12, adapt_delta=0.95)))
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_6riv_output_Ricker_2022_02_27.rds")
+names(PM_outputlist_Ricker) <- c("Pot_long","Pot_short")
+launch_shinystan(PM_outputlist_Ricker$Pot_long)
+launch_shinystan(PM_outputlist_Ricker$Pot_short)
 
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_Pot_output_Ricker_2023_03_11.rds")
 
-## PM 3 - Latent Biomass (Gompertz)
-init_Gompertz <- function(...) {
-  list(c = 0.5, s = 1.5)
-}
-PM_outputlist_Gompertz <- lapply(stan_data_l,
-                               function(x) stan("Stan_ProductivityModel3_Gompertz.stan",
-                                                data=x, init = init_Gompertz, chains=3, iter=5000,
-                                                control=list(max_treedepth=12, adapt_delta=0.95)))
-saveRDS(PM_outputlist_Gompertz, "./rds files/stan_6riv_output_Gompertz_2022_01_23.rds")
+# if need to import
+#PM_outputlist_AR <- readRDS("./rds files/stan_Pot_output_AR_2023_03_11.rds")
+#PM_outputlist_Ricker <- readRDS("./rds files/stan_Pot_output_Ricker_2023_03_11.rds")
 
 
 
-PM_outputlist_AR <- readRDS("./rds files/stan_6riv_output_AR_2022_01_23.rds")
-PM_outputlist_Ricker <- readRDS("./rds files/stan_6riv_output_Ricker_2022_01_23.rds")
-PM_outputlist_Gompertz <- readRDS("./rds files/stan_6riv_output_Gompertz_2022_01_23.rds")
-
-#####################################
-## Summary of divergent transitions
-#####################################
-
-launch_shinystan(PM_outputlist_AR$nwis_08447300)
-## 01608500 (South Branch Potomac) - 0 divergent transitions
-## 01649190 (Paint Branch) - 0 divergent transitions
-## 02336526 (Proctor Creek) - 0 divergent transitions
-## 07191222 (Beatty Creek) - 0 divergent transitions
-## 08447300 (Pecos River) - 0 divergent transitions
-## 11044000 (Santa Margarita) - 0 divergent transitions
-
-launch_shinystan(PM_outputlist_Ricker$nwis_08447300)
-## 01608500 (South Branch Potomac) - 0 divergent transitions
-## 01649190 (Paint Branch) - 70 divergent transitions
-## 02336526 (Proctor Creek) - 14 divergent transitions
-## 07191222 (Beatty Creek) - 0 divergent transitions
-## 08447300 (Pecos River) - 298 divergent transitions
-## 11044000 (Santa Margarita) - 4 divergent transitions
-
-launch_shinystan(PM_outputlist_Gompertz$nwis_11044000) # 3 chains, 5000 iterations
-## 01608500 (South Branch Potomac) - 0 divergent transitions
-## 01649190 (Paint Branch) - 0 divergent transitions
-## 02336526 (Proctor Creek) - 3 divergent transitions
-## 07191222 (Beatty Creek) - 0 divergent transitions
-## 08447300 (Pecos River) - 1 divergent transitions - c not converging
-## 11044000 (Santa Margarita) - 10 divergent transitions - c not converging
 
 
 
