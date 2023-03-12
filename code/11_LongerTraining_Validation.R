@@ -79,7 +79,8 @@ stan_data_Pot_short <- stan_data_compile(Pot_shorttrain)
 #AR
 test_ar <- stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
              data=stan_data_Pot_short,
-             chains=4,iter=5000, control=list(max_treedepth=12))
+             chains=4,iter=5000, 
+             control=list(max_treedepth=12, adapt_delta=0.95))
 launch_shinystan(test_ar)
 
 #Ricker - P reparameterized
@@ -88,7 +89,7 @@ init_Ricker <- function(...) {
 }
 
 test_ricker <- stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
-                    data=stan_data_l$nwis_01608500,
+                    data=stan_data_Pot_short,
                     init = init_Ricker,chains=4,iter=5000,
                     control=list(max_treedepth=12, adapt_delta=0.95))
 launch_shinystan(test_ricker)
