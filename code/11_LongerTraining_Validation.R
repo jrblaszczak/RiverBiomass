@@ -14,17 +14,53 @@ Pot_TS <- readRDS("./rds files/SBPotomac_longTS.rds")
 ## Read in streamlight
 Pot_SL <- readRDS("./rds files/SBPotomac_SL.rds")
 
-###################################
-## Longer time series data prep
-###################################
+#######################################################################
+## Longer time series data prep - South Branch Potomac River, WV
+#######################################################################
 
+## Join TS data and StreamLight
+colnames(Pot_SL)[colnames(Pot_SL) == "Date"] <- "date"
+data <- left_join(Pot_TS, Pot_SL, by=c("site_name", "date"))
 
+## How many days of data per site per year
+data$year <- year(data$date)
+data_siteyears <- data %>%
+  group_by(site_name, year) %>%
+  tally()
+data_siteyears$year
+# SB Potomac = 2008 2010 2012 2013 2014 2015 2016 (previous out-of-sample year was 2013 predicted from 2012)
+
+## Set any GPP < 0 to a small value between 0.05 to 0.13 g O2 m-2 d-1
+data[which(data$GPP < 0),]$GPP <- sample(exp(-3):exp(-2), 1)
+
+## Create a GPP SD; SD = (CI - mean)/1.96
+data$GPP_sd <- (((data$GPP.upper - data$GPP)/1.96) + ((data$GPP.lower - data$GPP)/-1.96))/2
+
+## Relativize light and discharge
+rel_LQT <- function(x){
+  x$light_rel_PPFD <- x$light/max(x$light)
+  x$light_rel_PAR <- x$PAR_surface/max(x$PAR_surface)
+  x$temp_rel <- x$temp/max(x$temp)
+  x$tQ <- x$Q/max(x$Q)
+  
+  x<-x[order(x$date),]
+  return(x)
+}
+
+Pot_df <- rel_LQT(data)
+# remove 2013
+Pot_longtrain <- Pot_df[-which(Pot_df$year == "2013"),]
+Pot_shorttrain <- Pot_df[which(Pot_df$year == "2012"),]
+
+ggplot(Pot_longtrain, aes(date, GPP))+
+  geom_point()+
+  geom_point(data = Pot_shorttrain, aes(date, GPP), color = "blue")
 
 ####################
 ## Stan data prep ##
 ####################
 rstan_options(auto_write=TRUE)
-options(mc.cores=16)
+options(mc.cores=4)
 
 stan_data_compile <- function(x){
   data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
@@ -32,7 +68,8 @@ stan_data_compile <- function(x){
   return(data)
 }
 
-stan_data_l <- lapply(df, function(x) stan_data_compile(x))
+stan_data_Pot_long <- stan_data_compile(Pot_longtrain)
+stan_data_Pot_short <- stan_data_compile(Pot_shorttrain)
 
 ##############################################################
 ## Run Stan to get parameter estimates - initial tests
@@ -41,7 +78,7 @@ stan_data_l <- lapply(df, function(x) stan_data_compile(x))
 ## Initial tests
 #AR
 test_ar <- stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
-             data=stan_data_l$nwis_01608500,
+             data=stan_data_Pot_short,
              chains=4,iter=5000, control=list(max_treedepth=12))
 launch_shinystan(test_ar)
 
@@ -55,17 +92,6 @@ test_ricker <- stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
                     init = init_Ricker,chains=4,iter=5000,
                     control=list(max_treedepth=12, adapt_delta=0.95))
 launch_shinystan(test_ricker)
-
-#Gompertz
-init_Gompertz <- function(...) {
-  list(c = 0.5, s = 1.5)
-}
-
-test_Gompertz <- stan("Stan_ProductivityModel3_Gompertz.stan",
-                    data=stan_data_l$nwis_01608500,
-                    init = init_Gompertz,chains=3,iter=5000,
-                    control=list(max_treedepth=12, adapt_delta=0.95))
-launch_shinystan(test_Gompertz)
 
 
 ###################################################
