@@ -4,9 +4,9 @@
 ##==============================================================================
 
 # load packages
-lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
-         "parallel","tidyverse","rstan","devtools","shinystan",
-         "MCMCglmm"), require, character.only=T)
+lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate","parallel",
+         "tidyverse","rstan","bayesplot","shinystan","Metrics","MCMCglmm",
+         "reshape2","ggExtra","patchwork","grid","gridExtra"), require, character.only=T)
 
 ## Read in data files
 Pot_TS <- readRDS("./rds files/SBPotomac_longTS.rds")
@@ -54,6 +54,7 @@ rel_LQT <- function(x){
 Pot_longtrain <- rel_LQT(Pot_longtrain)
 Pot_shorttrain <- rel_LQT(Pot_shorttrain)
 
+## visualize years included
 ggplot(Pot_longtrain, aes(date, GPP))+
   geom_point()+
   geom_point(data = Pot_shorttrain, aes(date, GPP), color = "blue")+
@@ -65,6 +66,10 @@ plot_grid(
   ggplot(Pot_longtrain, aes(date, tQ))+
     geom_point(),
   ncol= 1)
+
+ggplot(Pot_longtrain, aes(tQ))+
+  geom_histogram()+
+  geom_histogram(data = Pot_shorttrain, aes(tQ), fill = "blue")
 
 ####################
 ## Stan data prep ##
@@ -137,29 +142,77 @@ saveRDS(PM_outputlist_Ricker, "./rds files/stan_Pot_output_Ricker_2023_03_12.rds
 
 
 ########################################################################
-## Compare out of sample predictions from long versus short TS
+## Compare out-of-sample predictions from long versus short TS
 ########################################################################
 
-## if need to import
-#PM_outputlist_AR <- readRDS("./rds files/stan_Pot_output_AR_2023_03_12.rds")
-#PM_outputlist_Ricker <- readRDS("./rds files/stan_Pot_output_Ricker_2023_03_12.rds")
+## Import model fit if needed
+PM_outputlist_AR <- readRDS("./rds files/stan_Pot_output_AR_2023_03_12.rds")
+PM_outputlist_Ricker <- readRDS("./rds files/stan_Pot_output_Ricker_2023_03_12.rds")
 
 ## Prep out-of-sample data for short versus long TS
+# define oos year
+Pot_oos <- data[which(data$year == "2013"),]
+# extract longtrain and shorttrain max light and discharge by site
+long_max <- Pot_longtrain %>% 
+  summarise_at(.vars = c("Q","PAR_surface"), .funs = max)
+short_max <- Pot_shorttrain %>% 
+  summarise_at(.vars = c("Q","PAR_surface"), .funs = max)
+# relativize Q and light by the max specific to the long and short training data sets
+oos_relativize <- function(prev_max, post_dat){
+  
+  max.vals <- prev_max
+  dat <- post_dat
+  
+  dat$light_rel_PAR <- dat$PAR_surface/max.vals$PAR_surface
+  dat$tQ <- dat$Q/max.vals$Q
+  
+  dat <- dat[order(dat$date),]
+  return(dat)
+  
+}
+
+Pot_oos_long <- oos_relativize(long_max, Pot_oos)
+Pot_oos_short <- oos_relativize(short_max, Pot_oos)
+
+# visualize difference
+ggplot(Pot_oos_long, aes(date, tQ))+
+  geom_line()+
+  geom_line(data = Pot_oos_short, aes(date, tQ), color="purple")
 
 
-
-
-
-
-
-
-# source simulation models
+## source simulation models
 source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
 source("Predicted_ProductivityModel_Ricker.R") # parameters: r, lambda, s, c, sig_p
 
+## Ricker simulations using long and short posteriors
+Ricker_sim_fxn <- function(x, oos_dat){
+  #separate data
+  output <- x
+  df <- oos_dat
+  
+  # extract
+  pars3<-extract(output, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o"))
+  simmat3<-matrix(NA,length(df$GPP),length(unlist(pars3$sig_p)))
+  biomat3<-matrix(NA,length(df$GPP),length(unlist(pars3$sig_p)))
+  rmsemat3<-matrix(NA,length(df$GPP),1)
+  #Simulated
+  for (i in 1:length(pars3$r)){
+    simmat3[,i]<-PM_Ricker(pars3$r[i],pars3$lambda[i],pars3$s[i],pars3$c[i],pars3$sig_p[i],pars3$sig_o[i],df)
+    biomat3[,i]<-PM_Ricker_B(pars3$r[i],pars3$lambda[i],pars3$s[i],pars3$c[i],pars3$sig_p[i],pars3$sig_o[i],df)
+    rmsemat3[i]<-sqrt(sum((simmat3[,i]-df$GPP)^2)/length(df$GPP))
+  }
+  
+  l <- list(simmat3, rmsemat3, biomat3)
+  return(l)
+  
+}
 
+Ricker_sim_Pot_long <- Ricker_sim_fxn(PM_outputlist_Ricker$Pot_long, Pot_oos_long)
+Ricker_sim_Pot_short <- Ricker_sim_fxn(PM_outputlist_Ricker$Pot_short, Pot_oos_short)
 
-
+## Save simulation
+saveRDS(Ricker_sim_Pot_long, "./rds files/sim_Pot_long_Ricker_2023_03_15.rds")
+saveRDS(Ricker_sim_Pot_short, "./rds files/sim_Pot_short_Ricker_2023_03_15.rds")
 
 
 
