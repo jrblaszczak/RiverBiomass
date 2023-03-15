@@ -246,6 +246,39 @@ long_Ricker_simdat <- GPP_oos_preds_ts(Ricker_sim_Pot_long, Pot_oos_long)
 short_Ricker_simdat <- GPP_oos_preds_ts(Ricker_sim_Pot_short, Pot_oos_short)
 
 
+## Visualize
+# colors
+PM_AR.col <- "#d95f02"
+PM_Ricker.col <- "#7570b3"
+
+short_Ricker_simdat_orig <- readRDS("./rds files/Potomac_orig_oos_simdat.rds")
+
+
+ggplot(long_Ricker_simdat, aes(Date, GPP))+
+  geom_point(size=1.5, color="black")+
+  #long training
+  geom_line(aes(Date, sim_GPP), color=PM_AR.col, size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM_AR.col, alpha=0.2, show.legend = FALSE)+
+  #short training
+  #geom_line(data=short_Ricker_simdat, aes(Date, sim_GPP), color=PM_Ricker.col, size=1.2)+
+  #geom_ribbon(data=short_Ricker_simdat, aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+  #            fill=PM_Ricker.col, alpha=0.2, show.legend = FALSE)+
+  #previous short training
+  geom_line(data=short_Ricker_simdat_orig, aes(Date, sim_GPP), color="blue", size=1.2)+
+  geom_ribbon(data=short_Ricker_simdat_orig, aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill="blue", alpha=0.2, show.legend = FALSE)+
+  #theme
+  theme(legend.position = "none",
+        panel.background = element_rect(color = "black", fill=NA, size=1),
+        axis.title.x = element_blank(), axis.text = element_text(size=12),
+        axis.text.x = element_text(angle=25, hjust = 1),
+        axis.title.y = element_text(size = 14),
+        strip.background = element_rect(fill="white", color="black"),
+        strip.text = element_text(size=15))+
+  labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'))
+
+
 ## Calculate metrics - coverage, NRMSE (accuracy), MRE (bias)
 
 calc_gof_metrics <- function(x, mod){
@@ -278,13 +311,8 @@ calc_gof_metrics <- function(x, mod){
 }
 
 calc_gof_metrics(long_Ricker_simdat, "LB-TS long")
-calc_gof_metrics(short_Ricker_simdat, "LB-TS short")
-
-
-
-
-
-
+#calc_gof_metrics(short_Ricker_simdat, "LB-TS short")
+calc_gof_metrics(short_Ricker_simdat_orig, "LB-TS short orig")
 
 
 

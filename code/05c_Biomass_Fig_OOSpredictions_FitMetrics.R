@@ -56,6 +56,9 @@ GPP_oos_preds_ts <- function(preds, df){
 STS_simdat <- GPP_oos_preds_ts("./rds files/Sim_6riv_AR_oos_2022_02_27.rds",df)
 LB_simdat <- GPP_oos_preds_ts("./rds files/Sim_6riv_Ricker_oos_2022_02_27.rds",df)
 
+#original Potomac for short vs long training
+saveRDS(LB_simdat[which(LB_simdat$site_name == "nwis_01608500"),], "./rds files/Potomac_orig_oos_simdat.rds")
+
 ###################################################################
 ## Calculate metrics - coverage, RRMSE (accuracy), MRE (bias)
 ###################################################################
