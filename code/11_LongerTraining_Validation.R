@@ -208,12 +208,77 @@ Ricker_sim_fxn <- function(x, oos_dat){
 }
 
 Ricker_sim_Pot_long <- Ricker_sim_fxn(PM_outputlist_Ricker$Pot_long, Pot_oos_long)
+names(Ricker_sim_Pot_long) <- c("GPP_sim","LB_sim","RMSE_sim")
 Ricker_sim_Pot_short <- Ricker_sim_fxn(PM_outputlist_Ricker$Pot_short, Pot_oos_short)
+names(Ricker_sim_Pot_short) <- c("GPP_sim","LB_sim","RMSE_sim")
 
 ## Save simulation
 saveRDS(Ricker_sim_Pot_long, "./rds files/sim_Pot_long_Ricker_2023_03_15.rds")
 saveRDS(Ricker_sim_Pot_short, "./rds files/sim_Pot_short_Ricker_2023_03_15.rds")
 
+################################
+## Predicted time series - compile original GPP data with simulated GPP based on median parameter estimates
+################################
+
+# import simulation if needed
+Ricker_sim_Pot_long <- readRDS("./rds files/sim_Pot_long_Ricker_2023_03_15.rds")
+Ricker_sim_Pot_short <- readRDS("./rds files/sim_Pot_short_Ricker_2023_03_15.rds")
+
+# pair mean, lower, and upper CI of GPP with data
+GPP_oos_preds_ts <- function(preds, dat){
+
+  # For every day extract median and CI
+  mean_simmat <- apply(preds[[1]], 1, function(x) mean(x))
+  lower_simmat <- apply(preds[[1]], 1, function(x) quantile(x, probs = 0.025))
+  upper_simmat <- apply(preds[[1]], 1, function(x) quantile(x, probs = 0.975))
+  
+  ## Plot simulated GPP
+  df_sim <- as.data.frame(cbind(dat$site_name, as.character(dat$date), dat$GPP, mean_simmat, lower_simmat, upper_simmat))
+  colnames(df_sim) <- c("site_name","Date","GPP","sim_GPP","sim_GPP_lower","sim_GPP_upper")
+  df_sim$Date <- as.POSIXct(as.character(df_sim$Date), format="%Y-%m-%d")
+  df_sim[,3:6] <- apply(df_sim[,3:6],2,function(x) as.numeric(as.character(x)))
+  
+  return(df_sim)
+  
+}
+
+long_Ricker_simdat <- GPP_oos_preds_ts(Ricker_sim_Pot_long, Pot_oos_long)
+short_Ricker_simdat <- GPP_oos_preds_ts(Ricker_sim_Pot_short, Pot_oos_short)
+
+
+## Calculate metrics - coverage, NRMSE (accuracy), MRE (bias)
+
+calc_gof_metrics <- function(x, mod){
+  
+  ts_sub <- x
+  
+  ##RMSE
+  rmse <- sqrt(sum((ts_sub$sim_GPP-ts_sub$GPP)^2)/length(ts_sub$GPP))
+  
+  ##NRMSE
+  nrmse <- rmse/(max(ts_sub$GPP)-min(ts_sub$GPP))
+  
+  ## RRMSE
+  rrmse_pre <- sum(((ts_sub$sim_GPP-ts_sub$GPP)/ts_sub$GPP)^2)
+  rrmse <- sqrt(rrmse_pre*(100/length(ts_sub$GPP)))
+  
+  ## MRE
+  mre_pre <- sum((ts_sub$sim_GPP-ts_sub$GPP)/ts_sub$GPP)
+  mre <- mre_pre*(100/length(ts_sub$GPP))
+  
+  ## Coverage
+  ts_sub$c_yn <- ifelse(ts_sub$GPP >= ts_sub$sim_GPP_lower & ts_sub$GPP <= ts_sub$sim_GPP_upper,
+                        yes=1, no=0)
+  cov_pct <- (sum(ts_sub$c_yn)/length(ts_sub$c_yn))*100
+  
+  ## Compile
+  metrics <- as.data.frame(cbind(rmse, nrmse, rrmse, mre, cov_pct,mod))
+  return(metrics)
+  
+}
+
+calc_gof_metrics(long_Ricker_simdat, "LB-TS long")
+calc_gof_metrics(short_Ricker_simdat, "LB-TS short")
 
 
 
