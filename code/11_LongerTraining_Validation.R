@@ -117,7 +117,8 @@ PM_outputlist_AR <- lapply(stan_data_l,
                            function(x) rstan::stan("Stan_ProductivityModel1_Autoregressive_obserr.stan",
                                                    data=x, chains=4, iter=5000,
                                                    control=list(max_treedepth=12, adapt_delta=0.95)))
-saveRDS(PM_outputlist_AR, "./rds files/stan_Pot_output_AR_2023_03_11.rds")
+names(PM_outputlist_AR) <- c("Pot_long","Pot_short")
+saveRDS(PM_outputlist_AR, "./rds files/stan_Pot_output_AR_2023_03_12.rds")
 
 
 ## PM 2 - Latent Biomass (Ricker)
@@ -127,16 +128,40 @@ init_Ricker <- function(...) {
 PM_outputlist_Ricker <- lapply(stan_data_l,
                                function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
                                                 data=x, init = init_Ricker, chains=4, iter=5000,
-                                                control=list(max_treedepth=12, adapt_delta=0.95)))
+                                                control=list(max_treedepth=12, adapt_delta=0.99)))
 names(PM_outputlist_Ricker) <- c("Pot_long","Pot_short")
 launch_shinystan(PM_outputlist_Ricker$Pot_long)
 launch_shinystan(PM_outputlist_Ricker$Pot_short)
 
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_Pot_output_Ricker_2023_03_11.rds")
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_Pot_output_Ricker_2023_03_12.rds")
 
-# if need to import
-#PM_outputlist_AR <- readRDS("./rds files/stan_Pot_output_AR_2023_03_11.rds")
-#PM_outputlist_Ricker <- readRDS("./rds files/stan_Pot_output_Ricker_2023_03_11.rds")
+
+########################################################################
+## Compare out of sample predictions from long versus short TS
+########################################################################
+
+## if need to import
+#PM_outputlist_AR <- readRDS("./rds files/stan_Pot_output_AR_2023_03_12.rds")
+#PM_outputlist_Ricker <- readRDS("./rds files/stan_Pot_output_Ricker_2023_03_12.rds")
+
+## Prep out-of-sample data for short versus long TS
+
+
+
+
+
+
+
+
+# source simulation models
+source("Predicted_ProductivityModel_Autoregressive.R") # parameters: phi, alpha, beta, sig_p
+source("Predicted_ProductivityModel_Ricker.R") # parameters: r, lambda, s, c, sig_p
+
+
+
+
+
+
 
 
 
