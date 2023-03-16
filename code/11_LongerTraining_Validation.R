@@ -138,7 +138,7 @@ names(PM_outputlist_Ricker) <- c("Pot_long","Pot_short")
 launch_shinystan(PM_outputlist_Ricker$Pot_long)
 launch_shinystan(PM_outputlist_Ricker$Pot_short)
 
-saveRDS(PM_outputlist_Ricker, "./rds files/stan_Pot_output_Ricker_2023_03_12.rds")
+saveRDS(PM_outputlist_Ricker, "./rds files/stan_Pot_output_Ricker_2023_03_15.rds")
 
 
 ########################################################################
@@ -147,7 +147,7 @@ saveRDS(PM_outputlist_Ricker, "./rds files/stan_Pot_output_Ricker_2023_03_12.rds
 
 ## Import model fit if needed
 PM_outputlist_AR <- readRDS("./rds files/stan_Pot_output_AR_2023_03_12.rds")
-PM_outputlist_Ricker <- readRDS("./rds files/stan_Pot_output_Ricker_2023_03_12.rds")
+PM_outputlist_Ricker <- readRDS("./rds files/stan_Pot_output_Ricker_2023_03_15.rds")
 
 ## Prep out-of-sample data for short versus long TS
 # define oos year
@@ -178,6 +178,10 @@ Pot_oos_short <- oos_relativize(short_max, Pot_oos)
 ggplot(Pot_oos_long, aes(date, tQ))+
   geom_line()+
   geom_line(data = Pot_oos_short, aes(date, tQ), color="purple")
+
+ggplot(Pot_longtrain, aes(date, tQ))+
+  geom_line()+
+  geom_line(data = Pot_shorttrain, aes(date, tQ), color="purple")
 
 
 ## source simulation models
@@ -213,16 +217,16 @@ Ricker_sim_Pot_short <- Ricker_sim_fxn(PM_outputlist_Ricker$Pot_short, Pot_oos_s
 names(Ricker_sim_Pot_short) <- c("GPP_sim","LB_sim","RMSE_sim")
 
 ## Save simulation
-saveRDS(Ricker_sim_Pot_long, "./rds files/sim_Pot_long_Ricker_2023_03_15.rds")
-saveRDS(Ricker_sim_Pot_short, "./rds files/sim_Pot_short_Ricker_2023_03_15.rds")
+saveRDS(Ricker_sim_Pot_long, "./rds files/sim_Pot_long_Ricker_2023_03_15b.rds")
+saveRDS(Ricker_sim_Pot_short, "./rds files/sim_Pot_short_Ricker_2023_03_15b.rds")
 
 ################################
 ## Predicted time series - compile original GPP data with simulated GPP based on median parameter estimates
 ################################
 
 # import simulation if needed
-Ricker_sim_Pot_long <- readRDS("./rds files/sim_Pot_long_Ricker_2023_03_15.rds")
-Ricker_sim_Pot_short <- readRDS("./rds files/sim_Pot_short_Ricker_2023_03_15.rds")
+Ricker_sim_Pot_long <- readRDS("./rds files/sim_Pot_long_Ricker_2023_03_15b.rds")
+Ricker_sim_Pot_short <- readRDS("./rds files/sim_Pot_short_Ricker_2023_03_15b.rds")
 
 # pair mean, lower, and upper CI of GPP with data
 GPP_oos_preds_ts <- function(preds, dat){
@@ -246,28 +250,39 @@ long_Ricker_simdat <- GPP_oos_preds_ts(Ricker_sim_Pot_long, Pot_oos_long)
 short_Ricker_simdat <- GPP_oos_preds_ts(Ricker_sim_Pot_short, Pot_oos_short)
 
 
-## Visualize
-# colors
-PM_AR.col <- "#d95f02"
-PM_Ricker.col <- "red"#"#7570b3"
-
+## Visualize including original used in manuscript
 short_Ricker_simdat_orig <- readRDS("./rds files/Potomac_orig_oos_simdat.rds")
 
+# colors
+PM_long.col <- "#d95f02"
+PM_short.col <- "#7570b3"#"red"
 
+## Compare short simulations to check that they are the same (yes)
+ggplot(short_Ricker_simdat, aes(Date, GPP))+
+  geom_point(size=1.5, color="black")+
+  #long training
+  geom_line(aes(Date, sim_GPP), color=PM_long.col, size=1.2)+
+  geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM_long.col, alpha=0.2, show.legend = FALSE)+
+  geom_line(data=short_Ricker_simdat_orig, aes(Date, sim_GPP), color="blue", size=1.2)+
+  geom_ribbon(data=short_Ricker_simdat_orig, aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill="blue", alpha=0.2, show.legend = FALSE)
+
+## Compare short to long simulations
 ggplot(long_Ricker_simdat, aes(Date, GPP))+
   geom_point(size=1.5, color="black")+
   #long training
-  geom_line(aes(Date, sim_GPP), color=PM_AR.col, size=1.2)+
+  geom_line(aes(Date, sim_GPP), color=PM_long.col, size=1.2)+
   geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
-              fill=PM_AR.col, alpha=0.2, show.legend = FALSE)+
+              fill=PM_long.col, alpha=0.2, show.legend = FALSE)+
   #short training
-  #geom_line(data=short_Ricker_simdat, aes(Date, sim_GPP), color=PM_Ricker.col, size=1.2)+
-  #geom_ribbon(data=short_Ricker_simdat, aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
-  #            fill=PM_Ricker.col, alpha=0.2, show.legend = FALSE)+
+  geom_line(data=short_Ricker_simdat, aes(Date, sim_GPP), color=PM_short.col, size=1.2)+
+  geom_ribbon(data=short_Ricker_simdat, aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+              fill=PM_short.col, alpha=0.2, show.legend = FALSE)+
   #previous short training
-  geom_line(data=short_Ricker_simdat_orig, aes(Date, sim_GPP), color="blue", size=1.2)+
-  geom_ribbon(data=short_Ricker_simdat_orig, aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
-              fill="blue", alpha=0.2, show.legend = FALSE)+
+  #geom_line(data=short_Ricker_simdat_orig, aes(Date, sim_GPP), color="blue", size=1.2)+
+  #geom_ribbon(data=short_Ricker_simdat_orig, aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+  #            fill="blue", alpha=0.2, show.legend = FALSE)+
   #theme
   theme(legend.position = "none",
         panel.background = element_rect(color = "black", fill=NA, size=1),
@@ -280,7 +295,6 @@ ggplot(long_Ricker_simdat, aes(Date, GPP))+
 
 
 ## Calculate metrics - coverage, NRMSE (accuracy), MRE (bias)
-
 calc_gof_metrics <- function(x, mod){
   
   ts_sub <- x
@@ -311,26 +325,54 @@ calc_gof_metrics <- function(x, mod){
 }
 
 calc_gof_metrics(long_Ricker_simdat, "LB-TS long")
-#calc_gof_metrics(short_Ricker_simdat, "LB-TS short")
+calc_gof_metrics(short_Ricker_simdat, "LB-TS short")
 calc_gof_metrics(short_Ricker_simdat_orig, "LB-TS short orig")
+
+## Compare 1:1 line predictions
+plot_grid(
+  ggplot(long_Ricker_simdat, aes(GPP, sim_GPP))+
+    geom_point(color = PM_long.col)+
+    scale_x_continuous(limits = c(0,15))+
+    scale_y_continuous(limits = c(0,15))+
+    geom_abline(slope = 1, intercept = 0)+
+    theme_bw()+
+    labs(title = "Long training set (n = 4 years)"),
+  ggplot(short_Ricker_simdat, aes(GPP, sim_GPP))+
+    geom_point(color = PM_short.col)+
+    scale_x_continuous(limits = c(0,15))+
+    scale_y_continuous(limits = c(0,15))+
+    geom_abline(slope = 1, intercept = 0)+
+    theme_bw()+
+    labs(title = "Short training set (n = 1 year)"),
+  ncol = 2)
+  
+
+## fitting the model over more years doesn't substantially change the dynamics
+## but different times of the year are predicted better by short versus long
 
 ################################
 ## Compare parameter estimates
 ################################
 
-## fitting the model over more years doesn't substantially change the dynamics
-## but different times of the year are better predicted
+par_LBTS <- lapply(PM_outputlist_Ricker, function(x) extract(x, c("r","lambda","s","c","sig_p","sig_o")))
+mean_LBTS <- lapply(par_LBTS, function(x) lapply(x, function(y) mean(y)))
+sd_LBTS <- lapply(par_LBTS, function(x) lapply(x, function(y) sd(y)))
+
+# Parameter posteriors
+par_post_df <- ldply(par_LBTS, data.frame)
+par_post_df2 <- gather(par_post_df, parameters, value, r:sig_o)
 
 
-
-
-
-
-
-
-
-
-
+ggplot(par_post_df2, aes(value, fill = .id))+
+  geom_density(alpha=0.2)+
+  facet_wrap(~parameters, scales = "free")+
+  labs(x="Value",y="Density")+
+  theme_bw()+
+  theme(strip.background = element_rect(fill="white", color="black"),
+        strip.text = element_text(size=14),
+        axis.text.x = element_text(size=12, angle = 45, hjust = 1),
+        axis.text.y = element_text(size=12),
+        axis.title = element_text(size=14), title = element_text(size=14))
 
 
 
