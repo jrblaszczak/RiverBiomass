@@ -420,7 +420,31 @@ plot_grid(
     
     ncol = 1, align = "hv", labels = c("A","B")),
   
-  
+  plot_grid(
+    
+    plot_grid(
+      ggplot(long_Ricker_simdat, aes(GPP, sim_GPP))+
+        geom_point(color = PM_long.col)+
+        scale_x_continuous(limits = c(0,15))+
+        scale_y_continuous(limits = c(0,15))+
+        geom_abline(slope = 1, intercept = 0)+
+        theme_bw()+
+        theme(axis.title = element_text(size = 8))+
+        labs(title = "Long training set (n = 4 years)",
+             x = expression('GPP Data (g '*~O[2]~ m^-2~d^-1*')'),
+             y = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')')),
+      ggplot(short_Ricker_simdat, aes(GPP, sim_GPP))+
+        geom_point(color = PM_short.col)+
+        scale_x_continuous(limits = c(0,15))+
+        scale_y_continuous(limits = c(0,15))+
+        geom_abline(slope = 1, intercept = 0)+
+        theme_bw()+
+        theme(axis.title = element_text(size = 8))+
+        labs(title = "Short training set (n = 1 year)",
+             x = expression('GPP Data (g '*~O[2]~ m^-2~d^-1*')'),
+             y = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')')),
+      ncol = 1),
+    
   ggplot(par_post_df2, aes(value, fill = .id))+
     geom_density(alpha=0.4)+
     facet_wrap(~parameters, scales = "free")+
@@ -432,7 +456,10 @@ plot_grid(
     theme_bw()+
     theme(strip.background = element_rect(fill="white", color="black"),
           strip.text = element_text(size=12),
-          legend.position = "bottom"),
+          legend.position = "none"),
   
-  ncol = 1, rel_heights = c(1, 1), labels = c("","C"))
+
+  ncol = 2, rel_widths = c(0.5, 1), labels = c("C","D")),
+  
+  ncol = 1, rel_heights = c(1, 1))
 
