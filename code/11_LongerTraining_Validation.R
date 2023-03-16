@@ -14,6 +14,10 @@ Pot_TS <- readRDS("./rds files/SBPotomac_longTS.rds")
 ## Read in streamlight
 Pot_SL <- readRDS("./rds files/SBPotomac_SL.rds")
 
+# colors
+PM_long.col <- "#004520"
+PM_short.col <- "#48A347"
+
 #######################################################################
 ## Longer time series data prep - South Branch Potomac River, WV
 #######################################################################
@@ -56,9 +60,13 @@ Pot_shorttrain <- rel_LQT(Pot_shorttrain)
 
 ## visualize years included
 ggplot(Pot_longtrain, aes(date, GPP))+
-  geom_point()+
-  geom_point(data = Pot_shorttrain, aes(date, GPP), color = "blue")+
-  geom_point(data = data[which(data$year == "2013"),], aes(date, GPP), color = "purple")
+  geom_point(color = PM_long.col)+
+  geom_point(data = Pot_shorttrain, aes(date, GPP), color = PM_short.col)+
+  geom_point(data = data[which(data$year == "2013"),], aes(date, GPP), color = "black")+
+  theme_bw()+
+  labs(y = expression('GPP Data (g '*~O[2]~ m^-2~d^-1*')'),
+       x = "Date")
+  
 
 plot_grid(
   ggplot(Pot_longtrain, aes(date, light_rel_PAR))+
@@ -253,10 +261,6 @@ short_Ricker_simdat <- GPP_oos_preds_ts(Ricker_sim_Pot_short, Pot_oos_short)
 ## Visualize including original used in manuscript
 short_Ricker_simdat_orig <- readRDS("./rds files/Potomac_orig_oos_simdat.rds")
 
-# colors
-PM_long.col <- "#d95f02"
-PM_short.col <- "#7570b3"#"red"
-
 ## Compare short simulations to check that they are the same (yes)
 ggplot(short_Ricker_simdat, aes(Date, GPP))+
   geom_point(size=1.5, color="black")+
@@ -336,14 +340,18 @@ plot_grid(
     scale_y_continuous(limits = c(0,15))+
     geom_abline(slope = 1, intercept = 0)+
     theme_bw()+
-    labs(title = "Long training set (n = 4 years)"),
+    labs(title = "Long training set (n = 4 years)",
+         x = expression('GPP Data (g '*~O[2]~ m^-2~d^-1*')'),
+         y = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')')),
   ggplot(short_Ricker_simdat, aes(GPP, sim_GPP))+
     geom_point(color = PM_short.col)+
     scale_x_continuous(limits = c(0,15))+
     scale_y_continuous(limits = c(0,15))+
     geom_abline(slope = 1, intercept = 0)+
     theme_bw()+
-    labs(title = "Short training set (n = 1 year)"),
+    labs(title = "Short training set (n = 1 year)",
+         x = expression('GPP Data (g '*~O[2]~ m^-2~d^-1*')'),
+         y = expression('Predicted GPP (g '*~O[2]~ m^-2~d^-1*')')),
   ncol = 2)
   
 
@@ -375,5 +383,56 @@ ggplot(par_post_df2, aes(value, fill = .id))+
         axis.title = element_text(size=14), title = element_text(size=14))
 
 
+####################
+## Final compiled
+####################
 
+plot_grid(
+  
+  plot_grid(
+    ggplot(Pot_longtrain, aes(date, GPP))+
+      geom_point(color = PM_long.col)+
+      geom_point(data = Pot_shorttrain, aes(date, GPP), color = PM_short.col)+
+      geom_point(data = data[which(data$year == "2013"),], aes(date, GPP), color = "black")+
+      theme_bw()+
+      theme(axis.title.y = element_text(size = 10),
+            axis.title.x = element_blank())+
+      labs(y = expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),
+           title = "South Branch Potomac River Data (2012-2016)"),
+    
+    ggplot(long_Ricker_simdat, aes(Date, GPP))+
+      geom_point(size=1.75, color="black")+
+      #long training
+      geom_line(aes(Date, sim_GPP), color=PM_long.col, size=1)+
+      geom_ribbon(aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+                  fill=PM_long.col, alpha=0.4, show.legend = FALSE)+
+      #short training
+      geom_line(data=short_Ricker_simdat, aes(Date, sim_GPP), color=PM_short.col, size=1)+
+      geom_ribbon(data=short_Ricker_simdat, aes(ymin=sim_GPP_lower,ymax=sim_GPP_upper),
+                  fill=PM_short.col, alpha=0.3, show.legend = FALSE)+
+      theme_bw()+
+      theme(legend.position = "none",
+            axis.title.x = element_blank(),
+            axis.text.x = element_text(angle=25, hjust = 1),
+            axis.title.y = element_text(size = 10))+
+      labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),
+           title = "South Branch Potomac River 2013 Data & Out-of-Sample Predictions"),
+    
+    ncol = 1, align = "hv", labels = c("A","B")),
+  
+  
+  ggplot(par_post_df2, aes(value, fill = .id))+
+    geom_density(alpha=0.4)+
+    facet_wrap(~parameters, scales = "free")+
+    labs(x="Value",y="Density",
+         title = "LB-TS Parameter Posterior Distributions")+
+    scale_fill_manual("Training Data",
+                      labels = c("Long", "Short"),
+                      values = c("Pot_long" = PM_long.col, "Pot_short" = PM_short.col))+
+    theme_bw()+
+    theme(strip.background = element_rect(fill="white", color="black"),
+          strip.text = element_text(size=12),
+          legend.position = "bottom"),
+  
+  ncol = 1, rel_heights = c(1, 1), labels = c("","C"))
 
