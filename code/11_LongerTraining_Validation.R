@@ -75,7 +75,7 @@ ggplot(Pot_longtrain, aes(tQ))+
 ## Stan data prep ##
 ####################
 rstan_options(auto_write=TRUE)
-options(mc.cores=4)
+options(mc.cores=8)
 
 stan_data_compile <- function(x){
   data <- list(Ndays=length(x$GPP), light = x$light_rel_PAR, GPP = x$GPP,
@@ -132,7 +132,7 @@ init_Ricker <- function(...) {
 }
 PM_outputlist_Ricker <- lapply(stan_data_l,
                                function(x) stan("Stan_ProductivityModel2_Ricker_s_mod2.stan",
-                                                data=x, init = init_Ricker, chains=4, iter=5000,
+                                                data=x, init = init_Ricker, chains=4, iter=10000,
                                                 control=list(max_treedepth=12, adapt_delta=0.99)))
 names(PM_outputlist_Ricker) <- c("Pot_long","Pot_short")
 launch_shinystan(PM_outputlist_Ricker$Pot_long)
@@ -249,7 +249,7 @@ short_Ricker_simdat <- GPP_oos_preds_ts(Ricker_sim_Pot_short, Pot_oos_short)
 ## Visualize
 # colors
 PM_AR.col <- "#d95f02"
-PM_Ricker.col <- "#7570b3"
+PM_Ricker.col <- "red"#"#7570b3"
 
 short_Ricker_simdat_orig <- readRDS("./rds files/Potomac_orig_oos_simdat.rds")
 
@@ -313,6 +313,25 @@ calc_gof_metrics <- function(x, mod){
 calc_gof_metrics(long_Ricker_simdat, "LB-TS long")
 #calc_gof_metrics(short_Ricker_simdat, "LB-TS short")
 calc_gof_metrics(short_Ricker_simdat_orig, "LB-TS short orig")
+
+################################
+## Compare parameter estimates
+################################
+
+## fitting the model over more years doesn't substantially change the dynamics
+## but different times of the year are better predicted
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
