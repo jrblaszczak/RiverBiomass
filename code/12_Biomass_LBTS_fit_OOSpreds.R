@@ -276,7 +276,9 @@ plot_grid(
       theme_classic()+
       theme(legend.position = "none",
             panel.background = element_rect(color = "black", fill=NA, size=1),
-            axis.title.x = element_blank(), axis.text.x = element_text(angle=25, hjust = 1)),
+            axis.title.x = element_blank(),
+            axis.text.y = element_text(size = 10),
+            axis.text.x = element_text(angle=25, hjust = 1)),
     
     ## Plot latent biomass predictions
     ggplot(Pot_LB, aes(Date, exp(B)))+
@@ -287,7 +289,9 @@ plot_grid(
       theme_classic()+
       theme(legend.position = "none",
             panel.background = element_rect(color = "black", fill=NA, size=1),
-            axis.title.x = element_blank(), axis.text.x = element_text(angle=25, hjust = 1)),
+            axis.title.x = element_blank(),
+            axis.text.y = element_text(size = 10),
+            axis.text.x = element_text(angle=25, hjust = 1)),
     
     ## Plot OOS predictions
     ggplot(LB_simdat_site, aes(Date, GPP))+
@@ -298,7 +302,9 @@ plot_grid(
       theme_classic()+
       theme(legend.position = "none",
             panel.background = element_rect(color = "black", fill=NA, size=1),
-            axis.title.x = element_blank(), axis.text.x = element_text(angle=25, hjust = 1))+
+            axis.title.x = element_blank(),
+            axis.text.y = element_text(size = 10),
+            axis.text.x = element_text(angle=25, hjust = 1))+
       coord_cartesian(ylim=c(0,max(LB_simdat_site$sim_GPP_upper)*1.75))+
       labs(y=expression('GPP (g '*~O[2]~ m^-2~d^-1*')'),
            title = "2013 Out-of-Sample LB-TS Model GPP Predictions"),
@@ -320,6 +326,7 @@ plot_grid(
                                    "Beaty Creek, OK (3)" = r_max_colors[6]))+
       theme_classic()+
       theme(legend.position = "none",
+            axis.text = element_text(size = 10),
             panel.background = element_rect(color = "black", fill=NA, size=1)),
     
     ## K estimate distributions
@@ -335,6 +342,7 @@ plot_grid(
                                    "Beaty Creek, OK (3)" = r_max_colors[6]))+
       theme_classic()+
       theme(legend.position = "none",
+            axis.text = element_text(size = 10),
             panel.background = element_rect(color = "black", fill=NA, size=1)),
     
     ncol = 1, align = "hv", labels = c("D","E")),
@@ -342,18 +350,18 @@ plot_grid(
   ncol = 2, rel_widths = c(1, 0.9))
 
 ## save legend
-plot_grid(get_legend(r_plot))
+plot_grid(get_legend(r_plot+theme(legend.position = "bottom")))
 
 ## save inset plot for Potomac and add in illustrator to Panel C (OOS preds)
 ggplot(LB_simdat_site, aes(GPP, sim_GPP))+
-  geom_point(color = PM_Ricker.col, size=0.5)+
+  geom_point(color = PM_Ricker.col, size=0.75)+
   scale_x_continuous(limits=c(0,xy.limits[2]), expand = c(0,0.5)) + 
   scale_y_continuous(limits=c(0,xy.limits[2]), expand = c(0,0.5)) +
   labs(x="GPP Data",y="Predicted\n GPP")+
   geom_abline(slope = 1, intercept = 0)+
   theme_classic()+
-  theme(axis.title = element_text(size = 8),
-        axis.text = element_text(size = 7))
+  theme(axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10))
 
 
 
