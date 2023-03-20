@@ -354,14 +354,14 @@ plot_grid(get_legend(r_plot+theme(legend.position = "bottom")))
 
 ## save inset plot for Potomac and add in illustrator to Panel C (OOS preds)
 ggplot(LB_simdat_site, aes(GPP, sim_GPP))+
-  geom_point(color = PM_Ricker.col, size=0.75)+
+  geom_point(color = PM_Ricker.col, size=1)+
   scale_x_continuous(limits=c(0,xy.limits[2]), expand = c(0,0.5)) + 
   scale_y_continuous(limits=c(0,xy.limits[2]), expand = c(0,0.5)) +
-  labs(x="GPP Data",y="Predicted\n GPP")+
+  labs(x="GPP Data",y="Predicted GPP")+
   geom_abline(slope = 1, intercept = 0)+
   theme_classic()+
-  theme(axis.title = element_text(size = 12),
-        axis.text = element_text(size = 10))
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12))
 
 
 
