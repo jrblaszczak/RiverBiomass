@@ -79,13 +79,10 @@ rK_vals <- rk_formatting(rK_ws)
 r_vals <- rK_vals[which(rK_vals$key == "r"),]
 r_vals$max_inc <- exp(r_vals$value) - 1
 
-#r_plot <-
 
+r_max_colors <- hcl.colors(n=6, palette = "Spectral")
 
-
-r_max_colors <- hcl.colors(n=6, palette = "Geyser")
-
-ggplot(r_vals, aes(max_inc, fill = short_name_SO))+
+r_plot <- ggplot(r_vals, aes(max_inc, fill = short_name_SO))+
   geom_density(color="black", alpha=0.75)+
   #colors scaled by rmax value
   scale_fill_manual(values = c("Pecos River, TX (7)" = r_max_colors[1],
@@ -98,7 +95,7 @@ ggplot(r_vals, aes(max_inc, fill = short_name_SO))+
   labs(x = "Daily Maximum % Increase in Biomass",
        y = "Density")+
   theme_bw()
-
+r_plot
 
 
 
@@ -313,7 +310,7 @@ plot_grid(
     ggplot(r_vals, aes(max_inc, fill = short_name_SO))+
       geom_density(color="black", alpha=0.5)+
       scale_x_continuous(limits = c(0,0.6), labels = scales::percent)+
-      labs(x = expression('Daily Maximum % Increase in Biomass ('*italic(e)^r*' - 1)'),
+      labs(x = "Daily Maximum % Increase in Biomass",
            y = "Density")+
       scale_fill_manual(values = c("Pecos River, TX (7)" = r_max_colors[1],
                                    "Paint Branch, MD (2)" = r_max_colors[2],
@@ -327,8 +324,7 @@ plot_grid(
     
     ## K estimate distributions
     ggplot(K_vals, aes(value, fill = short_name_SO))+
-      geom_density(color="black", alpha=0.5)+
-      #scale_x_continuous(limits = c(0,0.6), labels = scales::percent)+
+      geom_density(color="black", alpha=0.6)+
       labs(x = "Latent Biomass Carry Capacity (K)",
            y = "Density")+
       scale_fill_manual(values = c("Pecos River, TX (7)" = r_max_colors[1],
@@ -345,12 +341,14 @@ plot_grid(
   
   ncol = 2, rel_widths = c(1, 0.9))
 
+## save legend
+plot_grid(get_legend(r_plot))
 
 ## save inset plot for Potomac and add in illustrator to Panel C (OOS preds)
 ggplot(LB_simdat_site, aes(GPP, sim_GPP))+
   geom_point(color = PM_Ricker.col, size=0.5)+
-  scale_x_continuous(limits=c(0,xy.limits[2])) + 
-  scale_y_continuous(limits=c(0,xy.limits[2])) +
+  scale_x_continuous(limits=c(0,xy.limits[2]), expand = c(0,0.5)) + 
+  scale_y_continuous(limits=c(0,xy.limits[2]), expand = c(0,0.5)) +
   labs(x="GPP Data",y="Predicted\n GPP")+
   geom_abline(slope = 1, intercept = 0)+
   theme_classic()+
