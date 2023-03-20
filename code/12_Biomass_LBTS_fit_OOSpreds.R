@@ -15,15 +15,12 @@ source("StanParameterExtraction_Source.R")
 
 ## Import Stan model fit
 stan_model_output_LBTS <- readRDS("./rds files/stan_6riv_output_Ricker_2022_02_27.rds")
-## Import OOS simulations
-
 
 ##############################################
 ## A) rmax distribution comparisons
 ##############################################
-
-
 ## Extract parameters
+##############################################
 par_LBTS <- lapply(stan_model_output_LBTS, function(x) rstan::extract(x, c("r","lambda","s","c","B","P","pred_GPP","sig_p","sig_o")))
 
 r_K_func <- function(x) {
@@ -109,6 +106,47 @@ K_plot <- ggplot(K_vals, aes(value, fill = short_name_SO))+
        y = "Density")+
   theme_bw()
 
+
+
+## Inspect r vs K covariance
+r_K_func2 <- function(x) {
+  rx <- x$r
+  rm <- as.data.frame(cbind(rx[1:2500],rx[2501:5000],rx[5001:7500]))
+  rm <- rm %>%
+    rowwise() %>% mutate(Avg=mean(c(V1, V2, V3))) 
+  
+  lx <- x$lambda
+  lambda <- as.data.frame(cbind(lx[1:2500],lx[2501:5000],lx[5001:7500]))
+  lambda <- lambda %>%
+    rowwise() %>% mutate(Avg=mean(c(V1, V2, V3))) 
+  
+  new <- as.data.frame(cbind(rm$Avg, lambda$Avg))
+  colnames(new) <- c("r","lambda")
+  new$K <- (-1*new$r)/new$lambda
+
+  return(new)
+}
+
+
+rK_covar_df <- ldply(lapply(par_LBTS, function(x) r_K_func2(x)), data.frame)
+rK_covar_df <- rk_formatting(rK_covar_df)
+rK_covar_df$short_name <- factor(rK_covar_df$short_name, levels= site_order_list)
+
+ggplot(rK_covar_df, aes(r, K))+
+  geom_point()+
+  facet_wrap(~short_name, ncol = 2, scales = "free")+
+  theme_bw()+
+  theme(legend.position = "none",
+          panel.background = element_rect(color = "black", fill=NA, size=1),
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=15), axis.text.x = element_text(angle=25, hjust = 1),
+          strip.background = element_rect(fill="white", color="black"),
+          strip.text = element_text(size=15))
+
+#investigate correlation between r and K
+rK_covar_list <- split(rK_covar_df, rK_covar_df$short_name)
+
+lapply(rK_covar_list, function(x) cor.test(x = x$r, y = x$K))
 
 ##############################################
 ## B) WS model fit
@@ -368,6 +406,8 @@ ggplot(LB_simdat_site, aes(GPP, sim_GPP))+
 
 
 
+  
+}
 
 
 
