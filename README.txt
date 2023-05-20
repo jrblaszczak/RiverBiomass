@@ -8,9 +8,7 @@ Keywords: disturbance ecology, gross primary productivity, population dynamics, 
 
 Funding of this work: This research was supported by the StreamPulse project with funding from the National Science Foundation’s Division of Environmental Biology (1834679) and the modelscape project with funding from NSF Office of Integrative Activities (2019528).
 
-###
-
-Data Provenance:
+### Data Provenance:
 
 Data for this project were pulled from multiple published data sources including:
 
@@ -20,19 +18,16 @@ Blaszczak, J.R., Koenig, L.E., Mejia, F.H., Gómez-Gener, L., Dutton, C.L., Cart
 
 Savoy, P., and Harvey, J.W., 2021, Light model and GPP estimates for 173 U.S. rivers: U.S. Geological Survey data release, https://doi.org/10.5066/P9LREC3P.
 
-
 In addition, daily discharge data for each river from 1970-01-01 to 2020-12-31 measured by the USGS was downloaded using the 'dataRetrieval' package in R.
 
 
 ### Data Files -- see Zenodo data release for cleaned data files.
 
-
 ### Scripts/code (software) -- see Zenodo data release for cleaned data files.
 
-Note: All code is in the scripting language R.
+### Zenodo data release
 
-
-
+Blaszczak, Joanna. (2023). Data and Code for Blaszczak et al. 2023, Models of underlying autotrophic biomass dynamics fit to daily river ecosystem productivity estimates improve understanding of ecosystem disturbance and resilience [Data set]. Zenodo. https://doi.org/10.5281/zenodo.7942389
 
 
 
